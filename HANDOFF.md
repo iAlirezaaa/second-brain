@@ -21,7 +21,7 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 242 |
+| tests collected (`python -m unittest discover -s tests`) | 255 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 12 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
@@ -57,6 +57,10 @@ status: active
   field nobody reads. Found while dogfooding the amendment: a markdown record's prose lived only
   in the rendered body, so any write-back deleted the paragraph — the field round-trips now, and
   the test that caught it is `test_an_amendment_does_not_lose_the_prose_of_a_markdown_record`.
+  Filing the first decision record then produced the fifth law: the note gate judged a definition
+  as a broken note (`invalid status: 'draft' (allowed: [inbox, raw, …])`), and one file now gets
+  one contract — `frontmatter_check.py` picks it from the file's content — in
+  `tests/test_phase24_a_record_is_not_a_note.py`.
 - GitHub: issues #3–#11 are closed, each with the command output that proves the fix; #11 is the
   clone-portability finding filed from the red run and closed by the commits that fixed it.
   #12 (create-only registry + unenforced `supersedes`) and #13 (invisible markdown record) were
@@ -103,6 +107,13 @@ status: active
 - Records are enumerated by content — a registry-shaped `id` plus a declared `kind`. Refused:
   renaming every markdown record `note.md` to fit the old match, because a generated body
   (`OVERVIEW.md`, `SKILL.md`) carries the same id and would then read as a second record.
+- One file, one contract: `frontmatter_check.py` judges a markdown by the contract its own content
+  claims — the same recognizer `iter_records` uses (a registry-shaped `id` **and** a declared
+  `kind`) — and reads the record's required fields and status vocabulary from
+  `15_SYSTEM/config/system.json` and `15_SYSTEM/schemas/manifest.schema.json` rather than a second
+  list typed in the gate. Refused: emitting a note `title`/`status` beside the record's `name`/
+  `status`, which is two names for one field and a disagreement waiting to happen; refused:
+  exempting record files from the gate, which is how a definition escapes every judge it has.
 - A markdown record's prose lives in a field that round-trips (`notes`/`claim` in frontmatter,
   rendered into the body). Refused: blocking `set` on markdown kinds, which would have protected
   the paragraph by making half the registry unfixable.
@@ -115,6 +126,13 @@ status: active
   `context` walks relations from one record and was not measured for this). Whether a retired
   definition should surface there — and marked how — has not been decided; nobody should claim an
   answer until a test names it.
+- The status vocabulary is only half-declared: 20 of the 33 kinds in
+  `15_SYSTEM/config/system.json` have no `status_sets` entry and fall back to
+  `draft|tested|approved|deprecated`, so a `task`, an `episode` or a `wiki_note` can be
+  "approved" and a retired `wiki_note` is spelled `deprecated` while a retired `news` is spelled
+  `superseded`. Both gates now read the same set from the same file, so this is a design question
+  about the vocabulary, not a drift bug: decide per kind, then let `doctor` and
+  `frontmatter_check` enforce whatever is written.
 - A base is local by construction: its bytes sit in the gitignored `15_SYSTEM/backups/`. So
   `--recover` is a recovery on the machine that saved it, and a fresh clone is refused out loud
   rather than pretending. If cross-machine fall back is ever wanted, the design question is what
@@ -139,6 +157,12 @@ status: active
       or keep it out of the way (see §4) — the index is settled, the reading surface is not
 - [ ] give the registry a real retirement in production: nothing in `11_CONTROL` is superseded
       today, so the new path is proven by tests and a scratch vault, not by this repo's own data
+- [ ] close #12 and #13 with the evidence comment each one owes — the command output that showed
+      the wrong behaviour, the test file that is red without the fix, and the CI run that proves
+      the green
+- [ ] decide the per-kind status vocabularies (see §4): 20 of 33 kinds fall back to
+      `draft|tested|approved|deprecated`, which is a default standing in for a thought not yet
+      thought
 - [ ] before the next risky change, `python scripts/base.py --save --note why` — the way back is
       only there if it was recorded while the house was green
 - [ ] re-measure before quoting any number: `python scripts/doc_report.py` prints the table

@@ -76,6 +76,12 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   retirements and errors when a record supersedes itself, and `cmd_status` reports the split.
   Nothing is deleted — `list` still enumerates every record on disk; retirement is a verdict,
   not a shredder. `tests/test_phase23_superseded_leaves_the_index.py` is red without it.
+- `02_WIKI/decisions/` has its first inhabitant: *Gates enforce laws or they are comments*
+  (`WIK-B7ED0084`), written through `plan` → `apply --approve` and amended through `set` for its
+  own provenance — the instruction in `AGENTS.md` to "record decisions in `02_WIKI/decisions`"
+  finally carried out, with the lesson of the same pass that built the tools it describes.
+  `doctor` counts it (`registry records: 13`, `errors: 0`, `by kind: {"wiki_note": 1}`); the
+  generated index it also lands in stays local paperwork, outside the git boundary.
 
 ### Changed
 - `scripts/loop.py` exports the unanswered-search register it read from the local
@@ -87,6 +93,18 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   was replaced by what is actually in the folder.
 
 ### Fixed
+- A registry record in a human zone was judged as a broken note. `apply` writes a `wiki_note` as
+  markdown into `02_WIKI`, and an installed brain scans its own root (`health.py --vault .`), so
+  the first decision record this repo filed came back `INVALID: missing field: type … invalid
+  status: 'draft'` — the note contract and the registry contract both claiming one file. The
+  tempting fix (write a `title`, a `type` and a note `status` next to `name`, `kind` and a registry
+  `status`) would have given one field two truths nobody keeps in step, so the gate now picks the
+  contract from the file's content using the recognizer the registry already uses, and reads the
+  record's required fields and status vocabulary from `15_SYSTEM/config/system.json` and
+  `15_SYSTEM/schemas/manifest.schema.json` instead of retyping them. It bites harder, not softer: a
+  record with a status its kind disallows, or missing its identity, is refused, and a file that
+  claims a registry `kind` with an id the registry cannot enumerate is named as an orphan.
+  `tests/test_phase24_a_record_is_not_a_note.py` (13 tests) is red without it.
 - Amending or linking a markdown record deleted its prose — found by dogfooding `set` the moment
   it shipped. The body was *rendered from* `notes`/`claim`, but the reader parsed only the
   frontmatter, so the next write-back re-rendered the file from fields that no longer held the

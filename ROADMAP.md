@@ -150,6 +150,17 @@ keep-base fallback). The rows are in build order; every checked row has a test.*
       `note.md`, so a record created through the sanctioned path answered `NOT FOUND` and the
       gate still printed `errors: 0`; prose, relations and the amendment trail now round-trip
       through the markdown writer (`tests/test_phase21_records_are_visible.py`)
+- [x] **S** one file, one contract — a record `apply` writes into a human zone (`02_WIKI`,
+      `04_INTELLIGENCE`) was judged by the note schema and came back `invalid status: 'draft'`;
+      `frontmatter_check.py` now selects the contract from the file's content, using the
+      recognizer the registry already uses, and reads the record's required fields and status
+      vocabulary from the registry's own config and schema instead of a second list. Refusing a
+      record that claims a kind its id cannot be enumerated by is part of the fix, not an
+      exception to it (`tests/test_phase24_a_record_is_not_a_note.py`)
+- [ ] **S** per-kind status vocabularies — 20 of 33 kinds in `system.json` inherit
+      `draft|tested|approved|deprecated`, so `retired` is `deprecated` for a wiki note and
+      `superseded` for news while a `task` has no status that means "done"; the gates already read
+      whatever the config says, so this is a decision to make, not a mechanism to build
 - [x] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit — `.github/workflows/ci.yml`
       runs the six gates plus the full suite on `3.9` and `3.12` across ubuntu and windows, and
       run `40558517318` closed 4/4 green on `33522ec`

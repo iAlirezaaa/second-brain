@@ -67,6 +67,16 @@ Naming after `note.md` made every `news` and `wiki_note` record invisible to `do
 `errors: 0`. A silent gate is worse than a red one. A body (`OVERVIEW.md`, `SKILL.md`) carries
 its record's id with `type: note` and no `kind`, so it stays a body instead of becoming a twin.
 
+**A record in a human zone is judged by one contract, not two.** The same content check decides
+which gate owns a file: `frontmatter_check.py` applies the note schema to a note and the
+*registry* contract to a file whose frontmatter carries a registry-shaped `id` **and** a declared
+`kind`. Writing `title`, `type` and a note `status` beside `name`, `kind` and a registry `status`
+would give one field two truths that can quietly disagree. The exemption is not a hole: a record is
+still refused -- for the fields and the status vocabulary its own kind declares, read from
+`15_SYSTEM/config/system.json` and `15_SYSTEM/schemas/manifest.schema.json`, never retyped in the
+gate -- and a note that merely claims a `kind` with an id the registry cannot enumerate is
+refused as an orphan, because a file belonging to neither contract is invisible to one of them.
+
 **A wrong definition is corrected, not duplicated.** `hades.py set --id ID --field F --value V`
 plans an amendment and `apply --plan PLAN --approve` performs it — the same gate a creation goes
 through, because editing the plane every agent reads before acting *is* a structural change, not
