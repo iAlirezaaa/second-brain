@@ -13,7 +13,11 @@ What one probe does:
   3. diffs the repo inventory before and after, so a probe that moves files the
      candidate did not declare under `probe_writes:` is reported as unsafe instead of
      quietly folded into the evidence
-  4. writes a record to 14_CANDIDATES/loop/probes/<cand>-<fingerprint>.md plus one
+  4. fingerprints the *state of the brain* (the tree minus its paperwork: the quarantine
+     shelf, the disposable runtime plane, the proposal sink) before and after, so filing
+     a decision cannot invalidate a measurement — and hashes the candidate itself, so
+     editing a verdict after the run cannot inherit the run's evidence
+  5. writes a record to 14_CANDIDATES/loop/probes/<cand>-<fingerprint>.md plus one
      line in probes/index.jsonl (human-readable AND agent-greppable)
 
 Usage:
@@ -26,6 +30,7 @@ nothing that did not actually produce can be promoted on top of it.
 import argparse
 import datetime
 import glob
+import hashlib
 import json
 import subprocess
 import sys
@@ -33,7 +38,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import (find_root, fingerprint_of_inventory, inventory_diff, parse_frontmatter,
+from common import (find_root, inventory_diff, parse_frontmatter, state_fingerprint,
                     tree_inventory)
 
 try:
@@ -130,6 +135,7 @@ def write_record(root, candidate, fm, record):
         "returncode: %s" % record["returncode"],
         "fingerprint_at: %s" % record["fingerprint_at"],
         "fingerprint_after: %s" % record["fingerprint_after"],
+        "candidate_digest: %s" % record["candidate_digest"],
         "command: %s" % record["command"],
         "---",
         "",
@@ -161,6 +167,8 @@ def write_record(root, candidate, fm, record):
             "mutated": bool(record["unsanctioned"]),
             "changed": [r for r, _k in record["moves"]],
             "fingerprint_at": record["fingerprint_at"],
+            "fingerprint_after": record["fingerprint_after"],
+            "candidate_digest": record["candidate_digest"],
             "command": record["command"], "record": path.relative_to(root).as_posix(),
         }, ensure_ascii=False, sort_keys=True) + "\n")
     return path
@@ -193,7 +201,7 @@ def main():
         sanctioned = [sanctioned]
 
     inv_before = tree_inventory(root)
-    fingerprint_before = fingerprint_of_inventory(inv_before)
+    fingerprint_before = state_fingerprint(root)
     started = time.monotonic()
     try:
         result = subprocess.run(argv, cwd=str(root), capture_output=True, text=True,
@@ -205,7 +213,7 @@ def main():
         stderr = ""
     duration = time.monotonic() - started
     inv_after = tree_inventory(root)
-    fingerprint_after = fingerprint_of_inventory(inv_after)
+    fingerprint_after = state_fingerprint(root)
     moves = inventory_diff(inv_before, inv_after)
     off_surface = unsanctioned_moves(moves, sanctioned)
     hits = delivered_files(root, expectations)
@@ -219,6 +227,9 @@ def main():
         "moves": moves, "unsanctioned": off_surface, "sanctioned_prefixes": sanctioned,
         "delivered_expectations": [{"pattern": p, "matches": n} for p, n in hits],
         "fingerprint_at": fingerprint_before, "fingerprint_after": fingerprint_after,
+        # the claim itself is hashed: editing a verdict after the run must not inherit
+        # the run's evidence
+        "candidate_digest": hashlib.sha1(candidate.read_bytes()).hexdigest()[:16],
         "duration_s": duration,
         "command": " ".join([Path(argv[0]).name, str(Path(argv[1]).relative_to(root).as_posix())]
                             + argv[2:]).replace("\\", "/"),

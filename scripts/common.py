@@ -84,6 +84,18 @@ def iter_markdown(vault):
 # probe report "the probe mutated the vault").
 FINGERPRINT_SKIP_DIRS = {"__pycache__", ".git", ".kb", ".obsidian", "node_modules"}
 FINGERPRINT_SKIP_PATHS = ("14_CANDIDATES/loop/probes",)
+# Paperwork is not the state of the brain. The quarantine shelf, the disposable runtime
+# plane and the proposal sink all grow while nothing being measured moves; if they sat
+# inside the identity, every gate would demand a re-probe after ordinary filing and the
+# discipline would get switched off. The candidate's own digest is checked separately, so
+# excluding the shelf cannot be used to rewrite a claim after it was measured.
+PAPERWORK_SKIP_PATHS = ("14_CANDIDATES/", "12_RUNTIME/",
+                        "vault-template/90_Agent_Output/proposals/")
+
+
+def state_fingerprint(root, extra_skip_paths=()):
+    """Content identity of the brain itself: the tree minus its paperwork."""
+    return tree_fingerprint(root, list(PAPERWORK_SKIP_PATHS) + list(extra_skip_paths))
 
 
 def tree_inventory(root, extra_skip_paths=()):
