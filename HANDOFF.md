@@ -75,15 +75,16 @@ status: active
   never amended. Needs a shelf row or an issue before it is designed.
 - The chosen spine piece `keep_base` (fall back to the last known good snapshot, `fell_back:
   true`) is not implemented yet; `--recover` has no contract.
-- The Python 3.9 floor is claimed by `AGENTS.md` and re-measured only by hand; a CI job on 3.9
-  would make it a fact instead of a habit.
-- CI status after this push is the check that the fix is real: the tests run against a rebuilt
-  clone, but only GitHub proves the clone it builds is the one that broke.
+- Nothing blocks the Python 3.9 floor any more: `.github/workflows/ci.yml` runs the gates and
+  the whole suite on `3.9` and `3.12` on ubuntu and windows, so the claim in `AGENTS.md` is a
+  measured fact rather than a habit. What it does not prove is performance on a machine with
+  less RAM than the runner -- nobody has claimed that, and nobody should.
 
 ## 5. Next Actions
 
-- [ ] push, then confirm all four CI matrices are green — that is the regression test for this arc
-- [ ] close GitHub issues #3–#10 with the evidence comment each one already has written
+- [x] push, then confirm the CI matrices are green — run `40558517318` on `33522ec`: 4/4 success
+- [x] close GitHub issues #3–#10 with the evidence comment each one already had; #11 (the
+      clone-portability finding, filed from the red run) closed with the same trail
 - [ ] implement `keep_base` + `--recover` with a probe-gated test, then close the spine
 - [ ] give `hades.py` an `edit`/`set` path so the registry stops being create-only
 - [ ] re-measure before quoting any number: `python scripts/doc_report.py` prints the table

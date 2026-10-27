@@ -134,7 +134,9 @@ keep-base fallback). The rows are in build order; every checked row has a test.*
       probe regresses, mark it `fell_back: true`, and let the next run resume from it
 - [ ] **S** `hades.py edit`/`set` — the registry is create-only today, so a record can be
       filed and never amended
-- [ ] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit
+- [x] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit — `.github/workflows/ci.yml`
+      runs the six gates plus the full suite on `3.9` and `3.12` across ubuntu and windows, and
+      run `40558517318` closed 4/4 green on `33522ec`
 
 ---
 
