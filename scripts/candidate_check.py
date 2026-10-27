@@ -88,7 +88,10 @@ def evidence_resolves(entry, root, known_probe_ids):
         if pid in known_probe_ids:
             return True, ""
         return False, "probe id %s is not in 14_CANDIDATES/loop/probes/index.jsonl" % pid
-    candidate_path = (root / text.replace("\\", "/").lstrip("./"))
+    cleaned = text.replace("\\", "/")
+    if cleaned.startswith("./"):
+        cleaned = cleaned[2:]        # only a ./ prefix -- lstrip would eat ".kb" too
+    candidate_path = root / cleaned
     if candidate_path.exists():
         return True, ""
     return False, "evidence path does not exist: %s" % text

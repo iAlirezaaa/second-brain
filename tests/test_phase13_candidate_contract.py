@@ -148,6 +148,19 @@ class TestContractValidation(Harness):
         result = self.check()
         self.assertEqual(result.returncode, 0, result.stdout)
 
+    def test_a_path_that_starts_with_a_dot_is_opened_not_mangled(self):
+        """.kb/kb.sqlite is real state; "./x" is the same file written two ways. Stripping a
+        leading character class instead of a leading ./ used to turn both into nothing."""
+        hidden = self.tmp / ".kb"
+        hidden.mkdir(exist_ok=True)
+        (hidden / "kb.sqlite").write_text("sqlite\n", encoding="utf-8")
+        self.write(frontmatter(evidence=[".kb/kb.sqlite"]))
+        result = self.check()
+        self.assertNotIn("evidence path does not exist", result.stdout, result.stdout)
+        self.write(frontmatter(evidence=["./.kb/kb.sqlite"]))
+        result = self.check("--file", "14_CANDIDATES/loop/cand-001.md")
+        self.assertNotIn("evidence path does not exist", result.stdout, result.stdout)
+
     def test_evidence_pointing_at_nothing_is_a_fabrication(self):
         path = self.write(frontmatter(evidence=["does/not/exist.md"]))
         self.assertEqual(self.probe(path).returncode, 0)
