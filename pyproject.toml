@@ -1,0 +1,21 @@
+[project]
+name = "second-brain"
+version = "0.0.3"
+description = "An AI-augmented second brain: a plain-markdown vault a human curates and AI agents maintain"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "iAlirezaaa" }]
+keywords = ["second-brain", "obsidian", "ai-agents", "pkm", "claude-code", "opencode"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Knowledge Management",
+]
+
+[project.urls]
+Homepage = "https://github.com/iAlirezaaa/second-brain"
+Roadmap = "https://github.com/iAlirezaaa/second-brain/blob/main/ROADMAP.md"
