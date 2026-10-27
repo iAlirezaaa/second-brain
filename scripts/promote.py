@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+"""Promote an approved inbox capture into the human-owned vault.
+
+Usage:
+  python scripts/promote.py --proposals P.json --item 00_Inbox/clip.md
+
+Refuses unless the matching proposal is approved. Updates frontmatter, keeps an
+audit trail in 90_Agent_Output/proposals/promotions.md, then re-checks links.
+"""
+import argparse
+import datetime
+import json
+import re
+import sys
+import subprocess
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+from common import find_root, load_json, parse_frontmatter
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except AttributeError:
+    pass
+
+
+def patch_top_level_text(text, updates):
+    """Rewrite top-level frontmatter values; append not-yet-present keys before the close."""
+    updates = dict(updates)
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        # no frontmatter: build a minimal block
+        block = ["---"] + [f"{k}: {v}" for k, v in updates.items()] + ["---"]
+        return "\n".join(block) + "\n\n" + text, None
+    out = ["---"]
+    i = 1
+    while i < len(lines) and lines[i].strip() != "---":
+        line = lines[i]
+        key = line.partition(":")[0].strip()
+        if key in updates:
+            out.append(f"{key}: {updates.pop(key)}")
+        else:
+            out.append(line)
+        i += 1
+    for key, value in updates.items():
+        out.append(f"{key}: {value}")
+    if i < len(lines):
+        out.append(lines[i])  # closing ---
+        out.extend(lines[i + 1:])
+    return "\n".join(out) + ("\n" if not text.endswith("\n") else ""), None
+
+
+def promote(item, proposals_path, root):
+    proposals = load_json(proposals_path)["proposals"]
+    config = load_json(root / "rules" / "zones.json")
+    match = next((p for p in proposals if p.get("capture") == item), None)
+    if not match:
+        print(f"REFUSED: no proposal for {item}")
+        return 1
+    target = match.get("target", "")
+    create_only = set(config.get("agent_create_only_in", []))
+    if target not in set(k for k in config["zones"].keys()):
+        print(f"REFUSED: unknown zone {target}")
+        return 1
+    if target not in create_only and not match.get("approved"):
+        print(f"REFUSED: {target} is human-owned and the proposal is not approved.")
+        return 1
+    vault = root / "vault-template"
+    src = vault / item
+    if not src.is_file():
+        print(f"REFUSED: {item} not found in the vault")
+        return 1
+    destination = match.get("destination") or f"{target}/{src.name}"
+    dest = vault / destination
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    text = src.read_text(encoding="utf-8")
+    fm, _body = parse_frontmatter(text)
+    today = datetime.date.today().isoformat()
+    updates = {
+        "status": "raw" if (fm.get("status") == "inbox" or not fm.get("status")) else fm.get("status"),
+        "promoted_by": "human",
+        "promoted_on": today,
+        "updated": today,
+    }
+    new_text, _ = patch_top_level_text(text, updates)
+    dest.write_text(new_text, encoding="utf-8")
+    src.unlink()
+    audit = vault / "90_Agent_Output/proposals/promotions.md"
+    audit.parent.mkdir(parents=True, exist_ok=True)
+    audit.open("a", encoding="utf-8").write(
+        f"- {today}: {item} → {destination} (reason: {match.get('reason', '-')})\n")
+    print(f"PROMOTED  {item} → {destination}")
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--proposals", required=True)
+    parser.add_argument("--item", required=True)
+    parser.add_argument("--root", default=None, help="repo root override (for tests/examples)")
+    args = parser.parse_args()
+    root = Path(args.root) if args.root else find_root(Path(__file__))
+    code = promote(args.item, Path(args.proposals), root)
+    if code == 0:  # post-move health check
+        result = subprocess.run([sys.executable, str(Path(__file__).parent / "link_check.py")],
+                                capture_output=True, text=True)
+        print(result.stdout.strip())
+        if result.returncode != 0:
+            print("WARNING: the vault now has broken links — fix before continuing.")
+            code = 1
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main())
