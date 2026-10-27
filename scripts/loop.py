@@ -23,8 +23,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import candidate_check
-from common import (DATE_RE, find_root, iter_markdown, load_json, parse_frontmatter,
-                    run_utf8, state_fingerprint)
+from common import (DATE_RE, clone_readable, find_root, iter_markdown, load_json,
+                   parse_frontmatter, run_utf8, state_fingerprint)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -81,13 +81,31 @@ def vault_signals(vault, proposals_glob):
 
 
 def kb_gaps(root, limit=5):
+    """Unanswered searches, and a tracked copy of them a reader somewhere else can open.
+
+    The register itself is a table inside `.kb/kb.sqlite`, which is gitignored state. A
+    candidate that cites it rests on a file that exists only on the machine that ran the
+    loop -- so the loop exports the rows it read beside the report it wrote.
+    """
+    out = {"open": 0, "recent": [], "note": "no .kb index anywhere — ingest first",
+           "snapshot": ""}
     db = root / ".kb" / "kb.sqlite" if (root / ".kb" / "kb.sqlite").is_file() else None
     if db is None:
-        return {"open": 0, "recent": [], "note": "no .kb index anywhere — ingest first"}
+        return out
     conn = sqlite3.connect(str(db))
     rows = conn.execute("SELECT query, logged FROM search_gaps ORDER BY logged DESC").fetchall()
     conn.close()
-    return {"open": len(rows), "recent": [f"{q} ({d})" for q, d in rows[:limit]]}
+    out["open"] = len(rows)
+    out["note"] = "%d unanswered search(es)" % len(rows)
+    out["recent"] = ["%s (%s)" % (q, d) for q, d in rows[:limit]]
+    if rows:
+        shelf = root / "14_CANDIDATES" / "loop"
+        shelf.mkdir(parents=True, exist_ok=True)
+        (shelf / "gaps.jsonl").write_text(
+            "".join(json.dumps({"query": q, "logged": d}, ensure_ascii=False) + "\n"
+                    for q, d in rows), encoding="utf-8")
+        out["snapshot"] = "14_CANDIDATES/loop/gaps.jsonl"
+    return out
 
 
 def hygiene(root):
@@ -207,7 +225,8 @@ def candidates(metrics, verdicts):
             "cue": "a search in the index returned nothing",
             "lesson": "write the note the search asked for; an unanswered query is the "
                       "brain telling you what it is missing",
-            "evidence": [".kb/kb.sqlite"],
+            "evidence": [snapshot for snapshot in
+                         [metrics["kb_gaps"].get("snapshot")] if snapshot],
             "detail": metrics["kb_gaps"]["recent"],
             "confidence": 0.65,
         })
@@ -301,7 +320,10 @@ def write_rows(root, planned, report_rel, today):
     shelf.mkdir(parents=True, exist_ok=True)
     written = []
     for cid, row in planned:
-        evidence = [report_rel] + [item for item in row["evidence"] if (root / item).exists()]
+        # exists-here is not readable-there: a row that cites a gitignored artifact passes
+        # every check on the machine that wrote it and turns CI red in a fresh clone.
+        evidence = [report_rel] + [item for item in row["evidence"]
+                                   if item and clone_readable(item) and (root / item).exists()]
         (shelf / ("%s.md" % cid)).write_text(row_text(cid, today, row, evidence), encoding="utf-8")
         candidate_check.append_event(shelf, {
             "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
