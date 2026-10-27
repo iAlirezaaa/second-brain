@@ -266,6 +266,27 @@ class TestTheAmendedRecordIsStillOneRecord(unittest.TestCase):
         _code, doctor = self.vault.hades("doctor")
         self.assertIn("errors: 0", doctor, doctor)
 
+    def test_an_amendment_does_not_lose_the_prose_of_a_markdown_record(self):
+        """Found by dogfooding: the body was prose only, so rewriting the record rewrote it away.
+
+        `to_markdown` rendered `notes` into the body and the reader parsed only the frontmatter,
+        so any write-back (an amendment, a link) silently blanked the paragraph. A record is the
+        definition and the note is its body -- the body has to come from a field that survives.
+        """
+        prose = "the reason we chose a gate instead of a habit"
+        code, out = self.vault.hades("new", "--kind", "wiki_note", "--name", "Note Three",
+                                     "--description", prose, "--category", "concept", "--approve")
+        self.assertEqual(code, 0, out)
+        ident = re.search(r"\b(WIK-[0-9A-F]{8})\b", out).group(1)
+        path = record_file(self.vault, ident)
+        self.assertIn(prose, path.read_text(encoding="utf-8"))
+        self.vault.hades("set", "--id", ident, "--field", "topic", "--value", "decision",
+                         "--approve")
+        text = path.read_text(encoding="utf-8")
+        self.assertIn(prose, text, "the amendment deleted the paragraph it was never asked to touch")
+        shown, _out = hades_json(self.vault, "show", "--id", ident)
+        self.assertEqual(shown.get("notes"), prose, shown)
+
 
 class TestTheLawIsWrittenWhereAnAgentReadsIt(unittest.TestCase):
     def test_the_canon_states_the_amendment_law(self):

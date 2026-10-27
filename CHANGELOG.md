@@ -87,6 +87,11 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   was replaced by what is actually in the folder.
 
 ### Fixed
+- Amending or linking a markdown record deleted its prose — found by dogfooding `set` the moment
+  it shipped. The body was *rendered from* `notes`/`claim`, but the reader parsed only the
+  frontmatter, so the next write-back re-rendered the file from fields that no longer held the
+  paragraph. Those fields now round-trip, and
+  `test_an_amendment_does_not_lose_the_prose_of_a_markdown_record` is red without the fix.
 - A markdown record was created invisible (issue #13): `news` and `wiki_note` land as
   `<ID>-<slug>.md`, while `iter_records` admitted a markdown record only when its stem was
   exactly `note`. `apply` wrote the record, then `show`, `list`, `index` and `doctor` answered

@@ -137,8 +137,19 @@ keep-base fallback). The rows are in build order; every checked row has a test.*
 - [ ] **S** recovery on the probe's own initiative — today a `hurt` verdict tells the agent to
       fall back; `scripts/probe.py` does not run `base.py --recover` for it, because reverting a
       tree from an unattended measurement is a bigger permission than naming one
-- [ ] **S** `hades.py edit`/`set` — the registry is create-only today, so a record can be
-      filed and never amended
+- [x] **S** `hades.py set` — the registry is no longer create-only (issue #12): an amendment
+      goes through `plan` → `apply --approve`, `id`/`kind`/`created_at` stay immutable, a plan
+      whose record moved is refused as stale, and the record keeps its own `amendments` trail
+      (`tests/test_phase22_amend_a_record.py`)
+- [x] **S** `supersedes` enforces its own definition (issue #12, second half) — a superseded
+      record leaves the active index, `doctor` counts active records and names the retirements,
+      and self-supersession is an error rather than a quiet pass
+      (`tests/test_phase23_superseded_leaves_the_index.py`)
+- [x] **M** a markdown record is enumerated by content, not by one filename (issue #13) —
+      `news` and `wiki_note` were written as `<ID>-<slug>.md` while the scan only matched
+      `note.md`, so a record created through the sanctioned path answered `NOT FOUND` and the
+      gate still printed `errors: 0`; prose, relations and the amendment trail now round-trip
+      through the markdown writer (`tests/test_phase21_records_are_visible.py`)
 - [x] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit — `.github/workflows/ci.yml`
       runs the six gates plus the full suite on `3.9` and `3.12` across ubuntu and windows, and
       run `40558517318` closed 4/4 green on `33522ec`

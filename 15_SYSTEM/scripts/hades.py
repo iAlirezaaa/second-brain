@@ -1005,7 +1005,10 @@ def cmd_apply(cfg, sch, args):
 def to_markdown(obj):
     body = {k: v for k, v in obj.items()}
     front = ["---"]
-    for k in ("id", "kind", "name", "status", "classification", "created_at", "last_verified", "source_url", "observed_at", "topic", "tags", "relations", "amendments"):
+    # `notes` and `claim` are in the list because the body is rendered *from* them: a writer
+    # that put the prose only in the body lost it on the next write-back (an amendment or a
+    # link reads the frontmatter, so anything outside it is deleted by being re-rendered).
+    for k in ("id", "kind", "name", "status", "classification", "created_at", "last_verified", "source_url", "observed_at", "topic", "tags", "notes", "claim", "relations", "amendments"):
         if k in body:
             v = body[k]
             front.append("%s: %s" % (k, json.dumps(v, ensure_ascii=False)))
