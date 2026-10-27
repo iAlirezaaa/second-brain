@@ -19,7 +19,9 @@ never print it), fix it test-first with one theme per commit, then close it with
 `scripts/candidate_check.py` counts every row there — so an ignored finding stays visible instead
 of expiring quietly.
 
-**Read before acting:** (1) `README.md`, (2) `00_START_HERE/SYSTEM_MAP.md`, (3) `00_START_HERE/LIFECYCLE.md`, (4) `00_START_HERE/ACCESS.md`, (5) `15_SYSTEM/generated/catalog.json` if present, (6) the target project's `project.json`. Do **not** recursively load the vault into context.
+**Read before acting:** (1) `README.md`, (2) `00_START_HERE/PROJECT_CHARTER.md` — the owner's own brief, 15 sections, and the file this repo must answer to, (3) `00_START_HERE/SYSTEM_MAP.md`, (4) `00_START_HERE/LIFECYCLE.md`, (5) `00_START_HERE/ACCESS.md`, (6) `15_SYSTEM/generated/catalog.json` if present, (7) the target project's `project.json`. Do **not** recursively load the vault into context.
+
+**The charter outranks the task.** When a requested change conflicts with a law in it — independence from any app, one place per file, learn from the error and record it — the charter wins and the conflict goes to `14_CANDIDATES/loop/` as a finding, with the section number it conflicts with. An agent that quietly follows the task and skips the law has not solved a problem; it has created the defect the law exists to prevent.
 
 ## Independence from any app
 The system runs on Python 3.9+ standard library only — no Obsidian, no IDE, no network,

@@ -82,6 +82,17 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   finally carried out, with the lesson of the same pass that built the tools it describes.
   `doctor` counts it (`registry records: 13`, `errors: 0`, `by kind: {"wiki_note": 1}`); the
   generated index it also lands in stays local paperwork, outside the git boundary.
+- **The owner's charter is a tracked file** — `00_START_HERE/PROJECT_CHARTER.md`: the
+  project brief (15 sections — vision, app-independence, the reference repos, the
+  folder/ID law, the eight memory planes, the improvement cycle, agent and skill
+  management, the repository workflow, per-repo memory, PR review, conversation
+  knowledge, English docs, fourteen laws, the expected outcome, the order of work)
+  existed only in a chat, where no future agent could read it. It is now read-before-acting
+  item (2) in `AGENTS.md`, with the law that **the charter outranks the task**: a conflict
+  is filed on the shelf with its section number, not resolved silently by the last editor.
+  Text is verbatim except seventeen ZWNJ insertions the Persian hygiene gate requires
+  (`Skillها` → `Skill‌ها`); `qc` measures clean across 36 files and `doctor` at
+  `errors: 0 | warnings: 0`.
 
 ### Changed
 - `scripts/loop.py` exports the unanswered-search register it read from the local
