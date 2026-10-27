@@ -12,6 +12,12 @@ shelf, memory, host projections, and the numbers the documents quote, which are 
 than typed).
 A red gate is the task. If all you were given is this repo's URL, work through
 `skills/first-session/SKILL.md` — it is the orientation, not a suggestion.
+When you find something wrong, `skills/self-audit/SKILL.md` is the channel: file the finding as a
+GitHub issue carrying the command you ran and the output it actually printed (probe the credential,
+never print it), fix it test-first with one theme per commit, then close it with the evidence.
+`14_CANDIDATES/loop/` is where the same finding goes when there is no tracker to write to, and
+`scripts/candidate_check.py` counts every row there — so an ignored finding stays visible instead
+of expiring quietly.
 
 **Read before acting:** (1) `README.md`, (2) `00_START_HERE/SYSTEM_MAP.md`, (3) `00_START_HERE/LIFECYCLE.md`, (4) `00_START_HERE/ACCESS.md`, (5) `15_SYSTEM/generated/catalog.json` if present, (6) the target project's `project.json`. Do **not** recursively load the vault into context.
 
