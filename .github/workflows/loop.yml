@@ -1,0 +1,32 @@
+name: loop
+on:
+  schedule:
+    - cron: "30 3 * * *" # nightly ratchet cycle
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      # the ratchet reads state, writes candidates only to 14_CANDIDATES/loop
+      - name: Improvement loop cycle
+        run: python scripts/loop.py --no-tests --vault vault-template
+        continue-on-error: true # P1 findings must still produce a report commit
+      - name: Commit candidate report
+        run: |
+          git config user.name "improvement-loop"
+          git config user.email "actions@users.noreply.github.com"
+          git add 14_CANDIDATES/loop/
+          if git diff --cached --quiet; then
+            echo "quiet house — nothing to report"
+          else
+            git commit -m "loop(nightly): candidate report $(date +%F)"
+            git push
+          fi

@@ -51,5 +51,24 @@ Golden rules:
 - [x] scripts/install.py — vault + rules + skills into a fresh target, .claude/.opencode wiring
 - [x] ~~claude-plugin manifest~~ (deferred: keep skill tree canonical via installer instead)
 
-## Phase 7 — Scale (future, only when needed) · ☐
+## Phase 7 — Continuous improvement loop · ✅
+- [x] scripts/loop.py — one-cycle ratchet: collects signals (integrity, tests, stale inbox,
+      pending approvals, KB gaps, TODO hygiene) → candidate report → compares vs previous run
+      (`improved / stable / REGRESSED`); P1 findings exit non-zero so nothing sleeps on them
+- [x] skills/loop SKILL.md — bounded agent protocol (max 3 cycles, stop at zero P1/P2,
+      two-in-a-row REGRESSED = stop and escalate)
+- [x] .github/workflows/loop.yml — nightly cron committing reports to `14_CANDIDATES/loop/`
+      (machine plane; human promotes). Reports are valid note candidates with frontmatter.
+- [x] 5 new tests (baseline, stable, regression detection, candidate format, repo-isolated cycle)
+
+## Phase 8 — Scale & community (backlog from research) · ☐
 - [ ] optional GBrain-style retrieval bridge / memory layer with identity scoping
+- [ ] backlog-on-branch + atomic claiming: each candidate gets a branch; an agent
+      claims it with an atomic file lock so two sessions never duplicate work
+- [ ] audience-per-note: frontmatter field declaring who a note is for (self / public / agent),
+      enforced as a write-gate rule
+- [ ] QMD-style semantic-first skill: dedup + merge candidates surfaced by the loop
+      (currently keyword-only; semantic layer stays agent-side until proven)
+- [ ] dirty-mark pipeline: edited-but-uncommitted notes get re-validated before commit;
+      `people/*` stub pages auto-generated when notes mention a person repeatedly
+- [ ] plugin/extension packaging once the skill tree stabilizes (revisit the Phase-6 deferral)

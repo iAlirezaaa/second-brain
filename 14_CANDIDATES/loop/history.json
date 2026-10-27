@@ -1,0 +1,39 @@
+{
+ "reads_the_past": true,
+ "runs": [
+  {
+   "date": "2026-10-27",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first"
+    },
+    "hygiene": {
+     "todo_hygiene": 11,
+     "files_scanned": 17
+    },
+    "tests": {
+     "returncode": null,
+     "summary": "skipped"
+    }
+   }
+  }
+ ]
+}

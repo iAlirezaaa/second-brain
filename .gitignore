@@ -8,6 +8,12 @@
 13_LAB/
 14_CANDIDATES/
 
+# exception: the improvement-loop candidate shelf is tracked —
+# the nightly loop commits reports there and the human promotes from it
+!14_CANDIDATES/
+14_CANDIDATES/*
+!14_CANDIDATES/loop/
+
 # --- generated infrastructure output (rebuilt, never hand-edited) ---
 15_SYSTEM/generated/
 15_SYSTEM/backups/
