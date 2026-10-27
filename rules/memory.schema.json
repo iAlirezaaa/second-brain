@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "applies_to": ["15_SYSTEM/memory/lessons.jsonl", "MEMORY.md"],
+  "why": "The repo is supposed to get smarter, which needs a memory with the same spine as the candidate shelf: a lesson is a claim, a claim cites evidence, and evidence has to open. scripts/memory.py reads every key below; nothing here is decorative.",
+  "record": {
+    "id": {"type": "string", "means": "mem-<slug>, unique in the ledger. Reusing a label conflates two lessons."},
+    "date": {"type": "string", "means": "ISO 8601 UTC. Memory that cannot be ordered cannot be aged or superseded."},
+    "cue": {"type": "string", "means": "the situation the lesson applies to, phrased so a different agent can recognise it before it acts."},
+    "lesson": {"type": "string", "means": "what to do next time, as an instruction another agent could follow."},
+    "evidence": {"type": "string_list", "means": "paths in this repo, URLs, or probe ids. An entry that does not resolve is a fabricated memory and the gate refuses the row."},
+    "confidence": {"type": "number", "min": 0, "max": 1, "means": "how much this lesson is trusted. Retrieval orders by it; an unweighted lesson would be believed exactly as much as a measured one."},
+    "verdict": {"enum": ["proposed", "helped", "hurt", "no_observed_effect", "confounded", "keep_base"], "means": "what the measurement said, same vocabulary as rules/candidate.schema.json. proposed means written down but not yet confirmed by a run."},
+    "topics": {"type": "string_list", "optional": true, "means": "retrieval handles; --recall reads them."},
+    "source": {"type": "string", "optional": true, "means": "where the lesson came from (a chat, an issue, a commit). A provenance line, not evidence."},
+    "supersedes": {"type": "string", "optional": true, "means": "the id of the lesson this one retires. Superseded rows stay in the ledger for the record and drop out of MEMORY.md's active table."}
+  },
+  "invariants": [
+    "one row per id; a duplicate label is refused",
+    "every evidence entry resolves on disk, as a URL, or as a probe id",
+    "MEMORY.md is a rendering: every active row appears in it and every mem-* id in it exists in the ledger",
+    "supersedes points at a row the ledger actually holds",
+    "the ledger is append-only -- a lesson is retired by superseding it, never by deleting the line"
+  ],
+  "empty_is_legal": "--recall with no hits prints NO_ENTRY and exits 0. Saying 'nothing in memory applied' is data; inventing a lesson to fill the silence is how the memory starts lying.",
+  "enforced_by": "python scripts/memory.py --check, wired into scripts/health.py"
+}
