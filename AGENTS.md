@@ -66,3 +66,13 @@ Naming after `note.md` made every `news` and `wiki_note` record invisible to `do
 `link` and `promote`: the tool created it, then answered `NOT FOUND`, and still printed
 `errors: 0`. A silent gate is worse than a red one. A body (`OVERVIEW.md`, `SKILL.md`) carries
 its record's id with `type: note` and no `kind`, so it stays a body instead of becoming a twin.
+
+**A wrong definition is corrected, not duplicated.** `hades.py set --id ID --field F --value V`
+plans an amendment and `apply --plan PLAN --approve` performs it — the same gate a creation goes
+through, because editing the plane every agent reads before acting *is* a structural change, not
+a file edit. `id`, `kind` and `created_at` are immutable: changing one of those makes a different
+record, so file the new one and retire the old with `link --rel supersedes`. A plan is bound to
+the bytes it was written against; if the record moved since, `apply` refuses it as stale rather
+than overwriting work it never saw. Every accepted amendment appends to the record's own
+`amendments` trail (field, from, to, when, plan) — the audit trail lives in the definition, not
+in a chat log.

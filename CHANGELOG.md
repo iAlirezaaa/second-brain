@@ -61,6 +61,13 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   now paperwork, so recording a base cannot invalidate the state it just recorded —
   and recovery reverts the brain, never the shelf. This is the `keep_base` piece of the
   harness2 spine: falling back is an output, not a failure.
+- **Amendments** (issue #12) — `hades.py set --id --field --value [--approve]`: an applied
+  registry record can now be corrected instead of duplicated. It goes through the same
+  plan → `apply --approve` gate as a creation, `id` / `kind` / `created_at` are immutable,
+  an amendment that breaks the record's own contract or strands its `entrypoint` is refused
+  before a byte moves, a plan whose record moved since it was written is refused as stale,
+  and every accepted amendment appends `field, from, to, when, plan` to the record's own
+  `amendments` trail. `tests/test_phase22_amend_a_record.py` is red without it.
 
 ### Changed
 - `scripts/loop.py` exports the unanswered-search register it read from the local

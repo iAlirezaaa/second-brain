@@ -10,6 +10,9 @@ Design commitments (each one exists because v2 broke on it):
     at creation and re-checked by doctor -- it is not decoration
   * .gitignore is cross-checked against config, so the documented boundary and
     the real boundary cannot drift apart
+  * a record is amendable, not just creatable: `set` plans an amendment, `apply --approve`
+    performs it, the plan is bound to the bytes it was written against, and the record keeps
+    its own audit trail -- identity and provenance stay immutable
   * every count printed comes from a live scan of this disk, never from a doc
 """
 import sys
@@ -788,6 +791,117 @@ def existing_ids(cfg):
     return {r.get("id") for _, r in iter_records(cfg)}
 
 
+def find_record(cfg, ident):
+    """(path, record) for one registry id, or None -- the lookup every writer shares."""
+    for p, r in iter_records(cfg):
+        if r.get("id") == ident:
+            return (p, r)
+    return None
+
+
+# Identity and provenance: changing one of these is not correcting a record, it is a
+# different record. Retirement is what `supersedes` is for; `set` cannot rewrite history.
+IMMUTABLE_FIELDS = ("id", "kind", "created_at")
+# the audit trail is written by the tool that made the change, never typed by hand
+LEDGER_FIELDS = ("amendments",)
+
+
+def parse_value(raw):
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return raw
+
+
+def pre_image_sha(path):
+    return hashlib.sha1(path.read_bytes()).hexdigest()
+
+
+def cmd_set(cfg, sch, args):
+    """Amend one field of an applied record -- through a plan, approved like a creation.
+
+    The registry used to be create-only, so the only way to correct a definition was to
+    file a second record for the same thing (issue #12). An amendment is not a file edit:
+    it is an approved structural change, validated against the same contract before a
+    single byte moves, bound to the bytes it was written against, and stamped into the
+    record's own history.
+    """
+    hit = find_record(cfg, args.id)
+    if not hit:
+        raise SystemExit("ERROR: no record %s" % args.id)
+    path, rec = hit
+    if args.field in IMMUTABLE_FIELDS:
+        print("REFUSED: '%s' is identity or provenance -- changing it makes a different record, "
+              "it does not correct this one. File the new one and retire this one: "
+              "hades.py link --id NEW --rel supersedes --to %s" % (args.field, args.id))
+        return 2
+    if args.field in LEDGER_FIELDS or args.field.startswith("_"):
+        print("REFUSED: '%s' is written by the tool that made the change, not typed into it"
+              % args.field)
+        return 2
+    value = parse_value(args.value)
+    amended = json.loads(json.dumps(rec))
+    amended[args.field] = value
+    amended["updated_at"] = now()
+    problems = validate(amended, cfg, sch, path) + check_entrypoints(path, amended)
+    if problems:
+        print("REFUSED: the amended record fails its own contract, nothing was planned")
+        for problem in problems:
+            print("  %s" % problem)
+        return 2
+    plan = {"plan_id": "PLAN-" + uuid.uuid4().hex[:12].upper(), "created_utc": now(),
+            "applied": False, "mode": "amend", "target_kind": rec.get("kind"),
+            "record_id": args.id, "target_path": rel(path), "field": args.field,
+            "from": rec.get(args.field), "to": value, "pre_image_sha1": pre_image_sha(path),
+            "record": amended}
+    PLANS.mkdir(parents=True, exist_ok=True)
+    dump_json(PLANS / (plan["plan_id"] + ".json"), plan)
+    print("PLAN %s | amend %s --field %s | %s -> %s"
+          % (plan["plan_id"], args.id, args.field,
+             json.dumps(rec.get(args.field), ensure_ascii=False),
+             json.dumps(value, ensure_ascii=False)))
+    print("review it, then: hades.py apply --plan %s --approve" % plan["plan_id"])
+    if args.approve:
+        args.plan = plan["plan_id"]
+        return cmd_apply(cfg, sch, args)
+    return 0
+
+
+def cmd_apply_amend(cfg, sch, plan, pf):
+    """Perform an approved amendment, or refuse without touching the record."""
+    path = ROOT / plan["target_path"]
+    if not path.is_file():
+        print("REFUSED: the record this plan amends is no longer at %s" % plan["target_path"])
+        return 2
+    if pre_image_sha(path) != plan.get("pre_image_sha1"):
+        print("REFUSED: STALE plan -- the record moved after this plan was written, so the "
+              "plan describes a state that no longer exists. Look at the record, then plan again.")
+        return 2
+    amended = plan["record"]
+    problems = validate(amended, cfg, sch, path) + check_entrypoints(path, amended)
+    if problems:
+        print("REFUSED: the amended record fails its own contract, nothing was written")
+        for problem in problems:
+            print("  %s" % problem)
+        return 2
+    entry = {"field": plan["field"], "from": plan["from"], "to": plan["to"], "utc": now(),
+             "plan": plan["plan_id"]}
+    amended.setdefault("amendments", []).append(entry)
+    if path.suffix == ".md":
+        path.write_text(to_markdown(amended), encoding="utf-8")
+    else:
+        dump_json(path, amended)
+    # THE ORDER MATTERS: stamp the plan before any printing, so a console failure cannot leave
+    # an applied amendment looking unexecuted and invite a second one. The pre-image check is
+    # what makes a repeat safe: the bytes already moved, so the plan can only be STALE now.
+    plan["applied"] = True
+    plan["applied_utc"] = now()
+    dump_json(pf, plan)
+    print("AMENDED %s --field %s -> %s" % (plan["record_id"], plan["field"], rel(path)))
+    print("next: hades.py doctor && hades.py index")
+    return 0
+
+
 def cmd_apply(cfg, sch, args):
     if not args.approve:
         print("REFUSED: apply needs --approve (nothing was written)")
@@ -799,6 +913,8 @@ def cmd_apply(cfg, sch, args):
     if plan.get("applied"):
         print("REFUSED: plan already applied -> %s" % plan.get("target_path"))
         return 2
+    if plan.get("mode") == "amend":
+        return cmd_apply_amend(cfg, sch, plan, pf)
     obj = plan["record"]
     kc = kind_cfg(cfg, obj["kind"])
     tp = ROOT / plan["target_path"]
@@ -917,11 +1033,7 @@ def cmd_show(cfg, args):
 
 
 def cmd_link(cfg, args):
-    hit = None
-    for p, r in iter_records(cfg):
-        if r.get("id") == args.id:
-            hit = (p, r)
-            break
+    hit = find_record(cfg, args.id)
     if not hit:
         raise SystemExit("ERROR: no record %s" % args.id)
     p, r = hit
@@ -1320,6 +1432,9 @@ def build_parser():
     s.add_argument("--id", required=True)
     lk = sub.add_parser("link")
     lk.add_argument("--id", required=True); lk.add_argument("--rel", required=True); lk.add_argument("--to", required=True)
+    st = sub.add_parser("set")
+    st.add_argument("--id", required=True); st.add_argument("--field", required=True)
+    st.add_argument("--value", required=True); st.add_argument("--approve", action="store_true")
     cx = sub.add_parser("context")
     cx.add_argument("--project", required=True); cx.add_argument("--max-chars", type=int)
     se = sub.add_parser("search")
@@ -1363,6 +1478,8 @@ def main(argv=None):
         return cmd_show(cfg, args)
     if args.cmd == "link":
         return cmd_link(cfg, args)
+    if args.cmd == "set":
+        return cmd_set(cfg, sch, args)
     if args.cmd == "context":
         return cmd_context(cfg, args)
     if args.cmd == "search":
