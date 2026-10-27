@@ -32,6 +32,8 @@ instead of pointing at local state.
 ## The one rule that explains the layout
 `00`–`10` is the **human plane**: readable, citable, canonical. `11` and above is the **machine plane**: definitions in `11_CONTROL`, disposable state in `12_RUNTIME`, quarantine in `13_LAB`, your review shelf in `14_CANDIDATES`, infrastructure in `15_SYSTEM`. Anything the machine produces that is worth keeping must be **promoted** into the human plane with an ID and evidence — never left living only in harness memory.
 
+Registry enumeration matches on **content**, never on a filename: a frontmatter `id` shaped like a registry id plus a declared `kind` (issue #13). Whatever `apply` writes, `doctor` enumerates — a record the tools just created cannot be invisible to `show`, `list`, `link`, `index` or `doctor`, and an ordinary human note (an `id:`/`type:` frontmatter with no declared kind) never becomes a registry record. A gate that reports `errors: 0` over a record it cannot see is a silent gate, not a clean house.
+
 ## The way back is a mechanism, not an intention
 A change that measures worse is not something you note and leave in the tree: fall back to the
 last known good state. `scripts/base.py --save` records that state only when every health gate
@@ -58,3 +60,5 @@ Run every script as `py -3.10 <script>` (PowerShell: `py -3.10`). Plain `python`
 
 ## Structural changes
 Creating or reclassifying a project, skill, agent, model or registry item goes through plan → review → `apply --approve`. The applied stamp is written **before** any console output, so a printing failure can never leave an orphan record. Then `doctor` + `index` to verify. Publishing anything outward goes through the audit gate and needs your explicit approval; the vault is never published as a whole.
+
+Correcting an existing record is a structural change too (issue #12): `hades.py edit` plans the amendment — fields, old and new values, `updated_at` — and nothing is written until `apply --approve`. The record's identity (`id`, `kind`, `created_at`, `promoted_from`) is immutable by edit: a change there is a **new record with a new id**, superseding the old one, not a rewrite of it under the same number. `supersedes` is enforced, not decorative: a superseded record leaves the active index (`catalog.json` marks it `active: false` with `superseded_by`), `status` and `index` count it as retired, and `doctor` names the retirement as a warning. Refused amendments write nothing.

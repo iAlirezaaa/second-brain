@@ -61,6 +61,21 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   now paperwork, so recording a base cannot invalidate the state it just recorded —
   and recovery reverts the brain, never the shelf. This is the `keep_base` piece of the
   harness2 spine: falling back is an output, not a failure.
+- **Registry amendments and a real `supersedes`** (issue #12) — `hades.py edit` plans an
+  amendment through the same plan → review → `apply --approve` door as creation, with an
+  audit diff (`mode: amend`, `changes: {field: {old, new}}`) and `updated_at`; identity
+  fields (`id`, `kind`, `created_at`, `promoted_from`) are immutable by edit, unknown
+  fields are refused at the plan (a typo would be a second truth), and an amendment that
+  would fail the record's own contract writes nothing. `supersedes` now does what
+  `system.json` declares: the superseded record leaves the active index
+  (`catalog.json`: `active: false`, `superseded_by`), `status` and `index` count it as
+  retired, and `doctor` names the retirement instead of staying quiet.
+- **Enumeration on content** (issue #13) — markdown-layout kinds (`news`, `wiki_note`)
+  are enumerated by frontmatter (a registry-shaped `id` plus a declared `kind`), not by
+  the filename `apply` happens to write: a `<ID>-<slug>.md` record can no longer be
+  created by the sanctioned path and then be invisible to `show`, `list`, `link`, `index`
+  and `doctor`. Markdown files round-trip without dropping fields, so `link` and
+  amendments on a markdown record keep kind, edges and values.
 
 ### Changed
 - `scripts/loop.py` exports the unanswered-search register it read from the local
