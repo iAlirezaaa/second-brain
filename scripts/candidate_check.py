@@ -34,7 +34,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import find_root, load_json, parse_frontmatter, state_fingerprint
+from common import clone_readable, find_root, load_json, parse_frontmatter, state_fingerprint
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -101,6 +101,9 @@ def evidence_resolves(entry, root, known_probe_ids):
     cleaned = text.replace("\\", "/")
     if cleaned.startswith("./"):
         cleaned = cleaned[2:]        # only a ./ prefix -- lstrip would eat ".kb" too
+    if not clone_readable(cleaned):
+        return False, ("evidence lives behind the documented git boundary: %s is not in a "
+                       "fresh clone, so no one else can ever open what this row cites" % text)
     candidate_path = root / cleaned
     if candidate_path.exists():
         return True, ""

@@ -123,6 +123,41 @@ FINGERPRINT_SKIP_PATHS = ("14_CANDIDATES/loop/probes",)
 PAPERWORK_SKIP_PATHS = ("14_CANDIDATES/", "12_RUNTIME/",
                         "vault-template/90_Agent_Output/proposals/")
 
+# The documented git boundary, restated for one question: could a reader who cloned this
+# repository open this path? A laptop-only file is not evidence -- it is a rumour the author
+# happens to be able to check. .gitignore is the law; this mirrors the parts of it that a
+# citation could land in, and tests/test_phase19 keeps the two from drifting apart.
+BOUNDARY_PREFIXES = (".kb/", "12_RUNTIME/", "13_LAB/", "14_CANDIDATES/",
+                     "15_SYSTEM/generated/", "15_SYSTEM/backups/", "15_SYSTEM/logs/",
+                     ".secrets/", ".obsidian/", "node_modules/")
+BOUNDARY_EXCEPTIONS = ("14_CANDIDATES/loop/", "14_CANDIDATES/README.md")
+BOUNDARY_SUFFIXES = (".sqlite", ".sqlite3", ".db", ".pem", ".key", ".token", ".env",
+                     ".safetensors", ".ckpt", ".gguf", ".onnx", ".zip", ".rar")
+BOUNDARY_SEGMENTS = ("__pycache__/", "/secrets/", ".git/")
+# the probe shelf is where a run writes its scratch: it is deliberately outside the
+# fingerprint, so a citation there says even less about the repo than a citation of a
+# local database -- a clone has nothing at that path, ever
+PROBE_SHELF = "14_CANDIDATES/loop/probes"
+
+
+def clone_readable(rel):
+    """True when a fresh clone of this repo would contain the path `rel` names."""
+    text = str(rel).replace("\\", "/")
+    if text.startswith("./"):
+        text = text[2:]
+    text = text.lstrip("/")
+    if not text:
+        return False
+    if text.startswith(PROBE_SHELF):
+        return False
+    if text.startswith(BOUNDARY_EXCEPTIONS):
+        return True
+    if text.startswith(BOUNDARY_PREFIXES):
+        return False
+    if any(segment in ("/" + text) for segment in BOUNDARY_SEGMENTS):
+        return False
+    return not text.endswith(BOUNDARY_SUFFIXES)
+
 
 def state_fingerprint(root, extra_skip_paths=()):
     """Content identity of the brain itself: the tree minus its paperwork."""

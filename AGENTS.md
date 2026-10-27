@@ -22,6 +22,13 @@ scripts work on a pristine `git clone`. Obsidian (or any editor) is an **optiona
 the same markdown; if a document tells you an app is required to proceed, that is a bug in
 the document — write it to `14_CANDIDATES/loop/` and continue with `scripts/`.
 
+**Evidence must survive a clone.** A claim is only evidence if a reader who ran nothing but
+`git clone` can open it. `common.clone_readable()` names the gitignored boundary —
+`.kb/`, `12_RUNTIME/`, `13_LAB/`, most of `14_CANDIDATES/`, any `*.sqlite` — and
+`candidate_check.py` refuses a shelf row that cites behind it, even when the file exists on
+the machine that wrote it. Export what you measured (see `14_CANDIDATES/loop/gaps.jsonl`)
+instead of pointing at local state.
+
 ## The one rule that explains the layout
 `00`–`10` is the **human plane**: readable, citable, canonical. `11` and above is the **machine plane**: definitions in `11_CONTROL`, disposable state in `12_RUNTIME`, quarantine in `13_LAB`, your review shelf in `14_CANDIDATES`, infrastructure in `15_SYSTEM`. Anything the machine produces that is worth keeping must be **promoted** into the human plane with an ID and evidence — never left living only in harness memory.
 
