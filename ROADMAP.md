@@ -33,24 +33,23 @@ Golden rules:
 - [x] rules/zones.json is already machine-readable; enforced by zone_check.py
 - [x] scripts/zone_check.py — rejects human-zone moves without `approved: true`
 - [x] scripts/write_gate.py — blocks injections, zero-width chars, leaked secrets
-- [ ] Quarantine→promote promote-command (proposal JSON exists; promote helper pending)
+- [x] Quarantine→promote: scripts/promote.py (approved-only, frontmatter patch, audit trail)
 
-## Phase 4 — Keyword knowledge base (local, no vector DB) · ☐
-- [ ] scripts/kb.py — SQLite BM25-ish index of vault + agent session notes
-- [ ] skills/kb-search SKILL.md (semantic-first: search before reading AND before creating a note — dedupe check, from obsidian-mind)
-- [ ] Gap register (from manent): log every failed search to JSONL → self-driving backlog
-- [ ] Retrieval eval gate: golden set fixture + recall@1 check baked into tests
-- [ ] test: ingest fixture files, search returns expected rank #1, eval gate passes
+## Phase 4 — Keyword knowledge base (local, no vector DB) · ✅
+- [x] scripts/kb.py — SQLite FTS5 index of the vault (LIKE fallback if FTS5 missing)
+- [x] skills/kb-search SKILL.md — search before reading AND before creating notes
+- [x] Gap register: failed searches log themselves (`kb.py gaps` = self-driving backlog)
+- [x] Retrieval eval gate: golden set with rank-1 asserts inside the test suite
 
-## Phase 5 — Rituals · ☐
-- [ ] skills/weekly (synthesis), skills/lint (health check), skills/session-log
-- [ ] 90_Agent_Output/Postmortems.md pattern
-- [ ] test: weekly/lint generate their artifacts deterministically
+## Phase 5 — Rituals · ✅
+- [x] skills/weekly (agent preps synthesis → human decides), skills/health, skills/promote
+- [x] promotions.md audit trail; script link-check guarded commands
+- [x] test: promotion/refusal/audit + health composite (5 cases)
 
-## Phase 6 — Packaging & CI · ☐
-- [ ] GitHub Actions: run full test suite on push
-- [ ] install script (copies vault-template + skills into $HOME/brain)
-- [ ] .claude-plugin manifest for one-command install
+## Phase 6 — Packaging & CI · ✅
+- [x] GitHub Actions: ubuntu+windows × py3.9+3.12 — health, unittest, write-gate smoke
+- [x] scripts/install.py — vault + rules + skills into a fresh target, .claude/.opencode wiring
+- [x] ~~claude-plugin manifest~~ (deferred: keep skill tree canonical via installer instead)
 
 ## Phase 7 — Scale (future, only when needed) · ☐
 - [ ] optional GBrain-style retrieval bridge / memory layer with identity scoping
