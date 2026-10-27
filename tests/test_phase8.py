@@ -123,6 +123,18 @@ class TestHandoffStandard(unittest.TestCase):
         self.assertEqual(stale.returncode, 2, stale.stdout)
         self.assertIn("STALE", stale.stdout)
 
+    def test_head_drift_rule(self):
+        from importlib import util as _util
+        spec = _util.spec_from_file_location("handoff_core", ROOT / "scripts" / "handoff.py")
+        handoff_core = _util.module_from_spec(spec)
+        spec.loader.exec_module(handoff_core)
+        ok = handoff_core.head_drift_ok
+        self.assertTrue(ok(["HANDOFF.md"]))
+        self.assertTrue(ok(["HANDOFF.md", "14_CANDIDATES/loop/report-2026-10-27.md"]))
+        self.assertTrue(ok([]))
+        self.assertFalse(ok(["scripts/loop.py"]))
+        self.assertFalse(ok(["HANDOFF.md", "ROADMAP.md"]))
+
     def test_shipped_handoff_shape(self):
         text = (ROOT / "HANDOFF.md").read_text(encoding="utf-8")
         for header in HANDOFF_SECTIONS:

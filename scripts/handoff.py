@@ -208,6 +208,26 @@ def refresh(root, head_override=None):
     return 0
 
 
+ALLOWED_HEAD_DRIFT_FILES = {"HANDOFF.md"}
+ALLOWED_HEAD_DRIFT_PREFIXES = ("14_CANDIDATES/loop/",)
+
+
+def head_drift_ok(changed_paths):
+    """Between the recorded head and now, only self-maintenance may have happened.
+
+    The handoff records `repo_head`; committing the handoff itself moves HEAD.
+    That (plus nightly loop reports) is sanctioned drift. Any other file change
+    means the world moved without narration -> stale.
+    """
+    for path in changed_paths:
+        if path in ALLOWED_HEAD_DRIFT_FILES:
+            continue
+        if path.startswith(ALLOWED_HEAD_DRIFT_PREFIXES):
+            continue
+        return False
+    return True
+
+
 def check(root, head_override=None):
     path = root / "HANDOFF.md"
     if not path.is_file():
@@ -221,6 +241,12 @@ def check(root, head_override=None):
         print("STALE — frontmatter missing generated/repo_head")
         return 2
     if hmatch.group(1) != current:
+        diff = _git(root, "diff", "--name-only", f"{hmatch.group(1)}..{current}")
+        paths = [line.strip() for line in (diff or "").splitlines() if line.strip()]
+        if diff is not None and head_drift_ok(paths):
+            print(f"FRESH — head drifted {hmatch.group(1)} -> {current} "
+                  f"by sanctioned files only ({len(paths)} path(s))")
+            return 0
         print(f"STALE — repo_head={hmatch.group(1)} but HEAD={current}")
         return 2
     try:
