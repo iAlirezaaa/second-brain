@@ -66,8 +66,9 @@ and by `scripts/health.py` — fails on it. Change `AGENTS.md`, then re-render:
    An empty answer (`NO_ENTRY`) is honest data, not a gap: say so and move on.
 2. Read `AGENTS.md`, then `00_START_HERE/SYSTEM_MAP.md`, `00_START_HERE/LIFECYCLE.md` and
    `00_START_HERE/ACCESS.md`. Do not load the whole vault into context.
-3. `python scripts/health.py` — five gates (links, frontmatter, candidate shelf, memory,
-   host projections). A red gate is the task; do not start new work in front of a red house.
+3. `python scripts/health.py` — every gate in one command (links, frontmatter, candidate shelf,
+   memory, host projections, the numbers in the docs). A red gate is the task; do not start new
+   work in front of a red house.
 
 ## The rules that survive every host
 
