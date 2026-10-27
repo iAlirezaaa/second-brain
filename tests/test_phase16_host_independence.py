@@ -6,8 +6,9 @@ Three claims, each judged by a test rather than by a sentence in a README:
      from that law fails the build;
   2. the door only names rooms that exist -- a pointer to a deleted file is how a
      fabricated onboarding starts;
-  3. an installed brain passes all five of its own gates with no editor, no network and
-     no plugin anywhere in the loop.
+  3. an installed brain passes every one of its own gates with no editor, no network and
+     no plugin anywhere in the loop -- and measures its own numbers instead of copying
+     the source repo's.
 """
 import re
 import shutil
@@ -21,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 from common import run_utf8  # noqa: E402
+import health  # noqa: E402  -- the gate list is the measure the assertions use
 import sync_hosts  # noqa: E402
 
 SYNC = str(SCRIPTS / "sync_hosts.py")
@@ -41,6 +43,14 @@ EXCUSE = re.compile(r"(optional|never a dependency|اختیاری|لنز|not req
 
 def sync(root, *args):
     return run_utf8([sys.executable, SYNC, "--root", str(root)] + list(args), cwd=str(ROOT))
+
+
+def installed_measure(text, row_prefix):
+    """Read the number a measured table row claims, straight off the document."""
+    for line in text.splitlines():
+        if line.startswith("| %s" % row_prefix):
+            return int(line.split("|")[-2].strip())
+    raise AssertionError("no measured row starting %r in the installed document" % row_prefix)
 
 
 class TestOneLawEveryHost(unittest.TestCase):
@@ -162,13 +172,26 @@ class TestAnInstalledBrainStandsAlone(unittest.TestCase):
     def tearDownClass(cls):
         cls._tmp.cleanup()
 
-    def test_the_installed_brain_passes_all_five_gates_with_no_editor_present(self):
+    def test_the_installed_brain_passes_every_gate_with_no_editor_present(self):
+        """The gate list, not a remembered count: a seventh gate is picked up automatically."""
         self.assertEqual(self.install.returncode, 0, self.install.stdout + self.install.stderr)
         result = run_utf8([sys.executable, HEALTH, "--vault", "."], cwd=str(self.target))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         for gate in ("broken links", "frontmatter valid", "shelf candidate",
-                     "MEMORY.md matches", "agree with AGENTS.md"):
+                     "MEMORY.md matches", "agree with AGENTS.md",
+                     "matches the state of this folder"):
             self.assertIn(gate, result.stdout, "%s did not run in the installed brain" % gate)
+        self.assertEqual(len([line for line in result.stdout.splitlines() if line.startswith("OK")]),
+                         len(health.GATES), "health ran a different number of gates than it claims")
+
+    def test_the_installed_brain_measures_itself_rather_than_copying_numbers(self):
+        """A copied README that still reports the source repo's counts is a borrowed fact."""
+        readme = (self.target / "README.md").read_text(encoding="utf-8")
+        self.assertIn("doc_report.py --write", readme)
+        self.assertEqual(installed_measure(readme, "tests collected"), 0,
+                         "the installed brain claims the source repo's test count")
+        self.assertEqual(installed_measure(readme, "active lessons"), 0,
+                         "the installed brain shipped with somebody else's memory")
 
     def test_the_installed_brain_ships_its_own_laws_doors_and_gates(self):
         for rel in ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md",

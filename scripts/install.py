@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+import common
 import memory as memory_mod
 from sync_hosts import HOSTS, render
 
@@ -55,6 +56,8 @@ def init_machine_plane(repo, target, log):
     copy_into(repo / "14_CANDIDATES" / "README.md", target / "14_CANDIDATES" / "README.md",
               "candidate shelf contract", log)
     (target / "14_CANDIDATES" / "loop").mkdir(parents=True, exist_ok=True)
+    copy_into(repo / "15_SYSTEM" / "config" / "system.json",
+              target / "15_SYSTEM" / "config" / "system.json", "zone config", log)
     memory_dir = target / "15_SYSTEM" / "memory"
     copy_into(repo / "15_SYSTEM" / "memory" / "README.md", memory_dir / "README.md",
               "memory README", log)
@@ -85,10 +88,18 @@ def main():
         copy_into(repo / "skills", target / harness / "skills", "%s skills" % harness, log)
     doors = write_doors(repo, target)
     index = init_machine_plane(repo, target, log)
+    # The copied documents carried the source repo's numbers. A brain that reports somebody
+    # else's measurements is lying on principle, so the block is re-measured here, from the
+    # installed folder, before the first session reads it.
+    remeasure = common.run_utf8(
+        [sys.executable, str(target / "scripts" / "doc_report.py"), "--root", str(target),
+         "--write"], cwd=str(target))
+    measure_line = (remeasure.stdout or remeasure.stderr).strip().splitlines()
     print(f"installed second brain at {target}")
     for line in log:
         print("note: %s" % line)
     print("agent doors written: %s" % ", ".join(doors))
+    print("documents re-measured for this home: %s" % measure_line[-1])
     print("empty memory ledger rendered to %s" % index.relative_to(target).as_posix())
     print("next (no app required — Python 3.9+ and the scripts are the whole system):")
     print("  cd %s && python scripts/health.py --vault ." % target)
