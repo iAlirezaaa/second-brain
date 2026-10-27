@@ -22,7 +22,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import DATE_RE, find_root, iter_markdown, parse_frontmatter, run_utf8
+import candidate_check
+from common import (DATE_RE, find_root, iter_markdown, load_json, parse_frontmatter,
+                    run_utf8, state_fingerprint)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -149,63 +151,288 @@ def ratchet(metrics, history_path):
 
 
 def candidates(metrics, verdicts):
+    """Typed shelf rows, not free text: dimension/cue/lesson/evidence/confidence/verdict.
+
+    Every row states the signal that produced it as evidence a reader can open, so
+    scripts/candidate_check.py can judge it and scripts/promote.py can refuse it. A row
+    the loop writes carries `verdict: proposed` -- naming a change is not measuring it.
+    """
     out = []
     for check in ("link_check", "frontmatter_check"):
         health = metrics[check]
         if health["returncode"] != 0 or health["problems"]:
-            out.append(("P1", f"{check}: {len(health['problems'])} problem(s) — fix now, this is red house",
-                        health["problems"][:3]))
+            out.append({
+                "priority": "P1", "dimension": "domain",
+                "cue": "the %s gate reports problems in the vault" % check,
+                "lesson": "fix the %d integrity problem(s) before anything else ships"
+                          % len(health["problems"]),
+                "evidence": ["vault-template"],
+                "detail": health["problems"][:3],
+                "confidence": 0.95,
+            })
     if metrics["tests"]["returncode"] not in (0, None):
-        out.append(("P1", f"tests failing: {metrics['tests']['summary']}", []))
+        out.append({
+            "priority": "P1", "dimension": "invariant",
+            "cue": "the test suite is red",
+            "lesson": "run python -m unittest discover -s tests, fix the first failure, "
+                      "re-run; never silence a test to make the house look green",
+            "evidence": ["tests/"],
+            "detail": ["probe: %s" % metrics["tests"]["summary"]],
+            "confidence": 0.9,
+        })
     if metrics["vault"]["awaiting_approval"]:
-        out.append(("P2", f"{len(metrics['vault']['awaiting_approval'])} proposal(s) waiting on the human",
-                    metrics["vault"]["awaiting_approval"][:3]))
+        waiting = metrics["vault"]["awaiting_approval"]
+        out.append({
+            "priority": "P2", "dimension": "domain",
+            "cue": "proposals are sitting in the queue with no decision on them",
+            "lesson": "ask the human for one verdict per proposal, then run scripts/promote.py "
+                      "on the approved ones",
+            "evidence": ["vault-template/90_Agent_Output/proposals/"],
+            "detail": waiting[:3],
+            "confidence": 0.7,
+        })
     if metrics["vault"]["stale_inbox"]:
-        out.append(("P3", f"{len(metrics['vault']['stale_inbox'])} inbox item(s) untouched for 14+ days",
-                    metrics["vault"]["stale_inbox"][:3]))
+        stale = metrics["vault"]["stale_inbox"]
+        out.append({
+            "priority": "P3", "dimension": "domain",
+            "cue": "inbox items have not been touched in 14+ days",
+            "lesson": "promote, merge or delete each one -- an inbox that ages is a filing "
+                      "system nobody trusts",
+            "evidence": [], "detail": stale[:3],
+            "confidence": 0.6,
+        })
     if metrics["kb_gaps"].get("open"):
-        out.append(("P2", f"{metrics['kb_gaps']['open']} unanswered search(es) = the self-driving backlog",
-                    metrics["kb_gaps"]["recent"]))
+        out.append({
+            "priority": "P2", "dimension": "domain",
+            "cue": "a search in the index returned nothing",
+            "lesson": "write the note the search asked for; an unanswered query is the "
+                      "brain telling you what it is missing",
+            "evidence": [".kb/kb.sqlite"],
+            "detail": metrics["kb_gaps"]["recent"],
+            "confidence": 0.65,
+        })
     if metrics["hygiene"]["todo_hygiene"]:
-        out.append(("P3", f"{metrics['hygiene']['todo_hygiene']} raw TODO/FIXME marker(s)",
-                    ["grep for TODO|FIXME before promising fixes — each one needs a task or deletion"]))
+        out.append({
+            "priority": "P3", "dimension": "invariant",
+            "cue": "scripts and skills carry raw TODO/FIXME markers",
+            "lesson": "each marker becomes a candidate row with a probe or gets deleted -- "
+                      "a TODO nobody can measure is a wish",
+            "evidence": ["scripts/", "skills/"],
+            "detail": ["%d marker(s) in %d file(s)" % (metrics["hygiene"]["todo_hygiene"],
+                                                       metrics["hygiene"]["files_scanned"])],
+            "confidence": 0.55,
+        })
     return out
 
 
-def write_report(root, metrics, verdicts, candidates_list, cycle):
+def open_cues(shelf):
+    """Cues already on the shelf -- proposing the same signal twice is noise, not a ratchet.
+
+    A row that was adopted or dropped stops blocking its cue; a row still being revised, or
+    answered with keep_base, does. keep_base is a standing answer, so the signal stays closed
+    until the number behind it changes.
+    """
+    cues = set()
+    events, _ = candidate_check.read_ledger(shelf)
+    closed = {"adopt", "drop"}
+    decided = {cid for cid, row in candidate_check.ledger_state(events).items()
+               if row["dispositions"] and set(row["dispositions"]) <= closed}
+    for path in sorted(shelf.glob("cand-*.md")):
+        fm, _ = parse_frontmatter(path.read_text(encoding="utf-8", errors="replace"))
+        cid = str(fm.get("id") or path.stem)
+        if cid in decided:
+            continue
+        cue = str(fm.get("cue") or "").strip()
+        if cue:
+            cues.add(cue)
+    return cues
+
+
+def row_text(cid, today, row, evidence):
+    lines = [
+        "---",
+        "id: %s" % cid,
+        "type: note",
+        "title: 'Loop candidate: %s'" % row["priority"],
+        "status: raw",
+        "owner: agent",
+        "topics: [loop, improvement]",
+        "created: %s" % today,
+        "updated: %s" % today,
+        "dimension: %s" % row["dimension"],
+        "cue: %s" % row["cue"],
+        "lesson: %s" % row["lesson"],
+        "confidence: %s" % row["confidence"],
+        "verdict: proposed",
+        "evidence:",
+    ]
+    lines += ["  - %s" % item for item in evidence]
+    lines += ["---", "", "# %s" % cid, "",
+              "**%s — %s.** %s" % (row["priority"], row["dimension"], row["lesson"]), "",
+              "Signal this row was raised from:"]
+    lines += ["- %s" % detail for detail in row.get("detail", [])]
+    rel = "14_CANDIDATES/loop/%s.md" % cid
+    lines += ["", "To take it: set `probe:` to the command that would measure this and edit the",
+              "verdict to what a real run supports, then run",
+              "`python scripts/probe.py --candidate %s`," % rel,
+              "`python scripts/candidate_check.py --file %s`," % rel,
+              "and `python scripts/promote.py` once the row is promotable.",
+              "To set it down: `python scripts/loop.py --dispose %s drop --note why`." % cid, ""]
+    return "\n".join(lines)
+
+
+def plan_ids(root, rows, today, cycle):
+    """Give each row a unique id; skip the ones already open on the shelf."""
+    shelf = root / "14_CANDIDATES" / "loop"
+    already = open_cues(shelf)
+    planned, skipped = [], []
+    for index, row in enumerate(rows, 1):
+        cid = "cand-%s-c%d-%02d" % (today, cycle, index)
+        if row["cue"] in already or (shelf / ("%s.md" % cid)).is_file():
+            skipped.append((cid, row))
+            continue
+        planned.append((cid, row))
+    return planned, skipped
+
+
+def write_rows(root, planned, report_rel, today):
+    """One file per row plus one ledger event per file -- the shelf is countable or it is prose."""
+    shelf = root / "14_CANDIDATES" / "loop"
+    shelf.mkdir(parents=True, exist_ok=True)
+    written = []
+    for cid, row in planned:
+        evidence = [report_rel] + [item for item in row["evidence"] if (root / item).exists()]
+        (shelf / ("%s.md" % cid)).write_text(row_text(cid, today, row, evidence), encoding="utf-8")
+        candidate_check.append_event(shelf, {
+            "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "id": cid, "event": "proposed", "priority": row["priority"],
+            "dimension": row["dimension"], "cue": row["cue"]})
+        written.append((cid, row))
+    return written
+
+
+def dispose(root, cid, label, note):
+    """Record a human decision against a row the ledger proposed."""
+    shelf = root / "14_CANDIDATES" / "loop"
+    events, _ = candidate_check.read_ledger(shelf)
+    state = candidate_check.ledger_state(events)
+    if label not in candidate_check.DISPOSITIONS:
+        print("REFUSED  disposition %r is not one of %s"
+              % (label, list(candidate_check.DISPOSITIONS)))
+        return 1
+    if label == "adopt":
+        print("REFUSED  adopt is not typed, it is done: python scripts/promote.py moves the row "
+              "and records the disposition itself")
+        return 1
+    row = state.get(cid)
+    if not row or not row["proposed"]:
+        print("REFUSED  the ledger never proposed %s — a decision needs a row to be about" % cid)
+        return 1
+    if row["dispositions"]:
+        print("REFUSED  %s is already %s — supersede it with a new row instead of re-deciding"
+              % (cid, "/".join(row["dispositions"])))
+        return 1
+    path = shelf / ("%s.md" % cid)
+    candidate_check.append_event(shelf, {
+        "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "id": cid, "event": "disposition", "disposition": label, "note": note or ""})
+    if label == "drop" and path.is_file():
+        path.unlink()  # dropped means off the shelf; the ledger keeps the reason
+    problems, identity = candidate_check.ledger_problems(root, shelf,
+                                                         candidate_check.shelf_candidates(
+                                                             root, "14_CANDIDATES/loop"))
+    for problem in problems:
+        print("INVALID  %s" % problem)
+    print("DISPOSED %s -> %s | proposed=%d decided=%d open=%d (adopt=%d revise=%d drop=%d "
+          "keep_base=%d)" % (cid, label, identity["proposed"], identity["decided"],
+                             identity["open"], identity["adopt"], identity["revise"],
+                             identity["drop"], identity["keep_base"]))
+    if problems:
+        return 1
+    if label in ("revise", "keep_base"):
+        print("KEPT     %s stays on the shelf — %s" % (cid, path.relative_to(root).as_posix()
+                                                       if path.is_file() else "the row is gone"))
+    return 0
+
+
+def ledger_section(shelf):
+    """The shelf's own arithmetic, printed into every report: a count the reader can re-derive."""
+    root = Path(shelf).parents[1]
+    events, broken = candidate_check.read_ledger(shelf)
+    problems, identity = candidate_check.ledger_problems(
+        root, shelf, candidate_check.shelf_candidates(root, "14_CANDIDATES/loop"))
+    lines = ["\n## Ledger (count identity)\n"]
+    lines.append("- proposed=%d = adopt=%d + revise=%d + drop=%d + keep_base=%d + open=%d"
+                 % (identity["proposed"], identity["adopt"], identity["revise"], identity["drop"],
+                    identity["keep_base"], identity["open"]))
+    lines += ["- INVALID %s" % problem for problem in problems + broken]
+    if len(lines) == 2:
+        lines.append("- every row the loop raised either has a disposition or is still on the shelf")
+    return lines
+
+
+def write_report(root, metrics, verdicts, planned, skipped, cycle):
     today = datetime.date.today().isoformat()
     loop_dir = root / "14_CANDIDATES" / "loop"
     loop_dir.mkdir(parents=True, exist_ok=True)
     suffix = "" if cycle == 1 else f"-c{cycle}"
     report_path = loop_dir / f"report-{today}{suffix}.md"
     lines = [
-        f"---\nid: cand-{today}-loop{suffix.strip('-')}",
+        "---\nid: cand-%s-loop%s" % (today, suffix.strip("-")),
         "type: note", "title: Improvement loop report",
         "status: raw", "owner: agent", "topics: [loop, improvement]",
-        f"created: {today}", f"updated: {today}", "---\n",
-        f"# Improvement loop — {today} (cycle {cycle})",
+        "created: %s" % today, "updated: %s" % today, "---\n",
+        "# Improvement loop — %s (cycle %d)" % (today, cycle),
         "*Machine candidate shelf — nothing here changed the vault. Promote or reject.*\n",
         "## Health signals\n",
-        f"- tests: {metrics['tests']['summary']} (rc={metrics['tests']['returncode']})",
-        f"- link_check: rc={metrics['link_check']['returncode']} problems={len(metrics['link_check']['problems'])}",
-        f"- frontmatter_check: rc={metrics['frontmatter_check']['returncode']} problems={len(metrics['frontmatter_check']['problems'])}",
-        f"- hygiene: {metrics['hygiene']['todo_hygiene']} TODO markers in {metrics['hygiene']['files_scanned']} files",
+        "- tests: %s (rc=%s)" % (metrics["tests"]["summary"], metrics["tests"]["returncode"]),
+        "- link_check: rc=%s problems=%s" % (metrics["link_check"]["returncode"],
+                                             len(metrics["link_check"]["problems"])),
+        "- frontmatter_check: rc=%s problems=%s" % (metrics["frontmatter_check"]["returncode"],
+                                                    len(metrics["frontmatter_check"]["problems"])),
+        "- hygiene: %s TODO markers in %s files" % (metrics["hygiene"]["todo_hygiene"],
+                                                    metrics["hygiene"]["files_scanned"]),
     ]
     lines.append("\n## Ratchet (vs previous run)\n")
     if verdicts:
-        lines += [f"- {name}: {result}" for name, result in sorted(verdicts.items())]
+        lines += ["- %s: %s" % (name, result) for name, result in sorted(verdicts.items())]
     else:
         lines.append("- first recorded run — baseline set")
-    lines.append("\n## Candidates next cycle could implement\n")
-    if candidates_list:
-        for priority, title, examples in candidates_list:
-            lines.append(f"- **{priority}** {title}")
-            for example in examples:
-                lines.append(f"  - {example}")
+    lines.append("\n## Candidate rows written this cycle\n")
+    if planned:
+        for cid, row in planned:
+            lines.append("- **%s** `%s` (%s) — %s" % (row["priority"], cid, row["dimension"],
+                                                      row["cue"]))
+            lines.append("  - lesson: %s" % row["lesson"])
+            lines.append("  - confidence: %s | verdict: proposed" % row["confidence"])
     else:
-        lines.append("- none: house is quiet. Try a harder golden query, or ship a Phase-8 idea.")
+        lines.append("- none: house is quiet, or every signal already has a row on the shelf.")
+    if skipped:
+        lines.append("\n## Already open (not proposed twice)\n")
+        lines += ["- `%s` — %s" % (cid, row["cue"]) for cid, row in skipped]
+    lines += ledger_section(loop_dir)
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return report_path
+
+
+def contract_problems(root):
+    """Judge the shelf the way health.py will, before this cycle is called done.
+
+    Returns None when the repo has no contract file (a fixture root, a partial clone):
+    the loop must not invent a failure for a fence that is simply not installed here.
+    """
+    schema_path = root / "rules" / "candidate.schema.json"
+    if not schema_path.is_file():
+        return None
+    schema = load_json(schema_path)
+    shelf = root / "14_CANDIDATES" / "loop"
+    targets = candidate_check.shelf_candidates(root, shelf.relative_to(root).as_posix())
+    digest = state_fingerprint(root)
+    problems = [problem for path in targets for problem in
+                candidate_check.check_candidate(path, schema, root, digest,
+                                                candidate_check.probe_index(root))]
+    ledger, _identity = candidate_check.ledger_problems(root, shelf, targets)
+    return problems + ledger
 
 
 def main():
@@ -213,8 +440,13 @@ def main():
     parser.add_argument("--vault", default=None)
     parser.add_argument("--root", default=None, help="repo root override (tests)")
     parser.add_argument("--no-tests", action="store_true")
+    parser.add_argument("--dispose", metavar=("CANDIDATE_ID", "LABEL"), nargs=2, default=None,
+                        help="record a decision: --dispose cand-2026-10-27-c1-01 drop --note why")
+    parser.add_argument("--note", default="", help="why, in one line")
     args = parser.parse_args()
     root = Path(args.root) if args.root else find_root(Path(__file__))
+    if args.dispose:
+        return dispose(root, args.dispose[0], args.dispose[1], args.note)
     vault = Path(args.vault) if args.vault else root / "vault-template"
     if not vault.is_dir():
         print(f"vault not found: {vault}")
@@ -232,13 +464,26 @@ def main():
             cycle = 1
     metrics = build_metrics(root, vault, not args.no_tests, proposals_glob)
     verdicts = ratchet(metrics, history_path)
-    candidates_list = candidates(metrics, verdicts)
-    report_path = write_report(root, metrics, verdicts, candidates_list, cycle)
-    hard_fail = any(priority == "P1" for priority, _, _ in candidates_list)
-    print(f"cycle {cycle} — report: {report_path.relative_to(root)}")
-    for priority, title, _ in candidates_list:
-        print(f"{priority}: {title}")
-    return 1 if hard_fail else 0
+    today = datetime.date.today().isoformat()
+    planned, skipped = plan_ids(root, candidates(metrics, verdicts), today, cycle)
+    report_path = write_report(root, metrics, verdicts, planned, skipped, cycle)
+    write_rows(root, planned, report_path.relative_to(root).as_posix(), today)
+    contract = contract_problems(root)
+    red_house = any(metrics[check]["returncode"] != 0 or metrics[check]["problems"]
+                    for check in ("link_check", "frontmatter_check"))
+    red_house = red_house or metrics["tests"]["returncode"] not in (0, None)
+    broken_contract = bool(contract)
+    print("cycle %d — report: %s" % (cycle, report_path.relative_to(root).as_posix()))
+    for cid, row in planned:
+        print("%s: %s [%s]" % (row["priority"], row["cue"], cid))
+    for skipped_cid, row in skipped:
+        print("already open: %s [%s]" % (row["cue"], skipped_cid))
+    for problem in (contract or []):
+        print("INVALID  %s" % problem)
+    if broken_contract:
+        print("REFUSED: the shelf does not meet rules/candidate.schema.json — a proposal "
+              "that cannot be judged is not a proposal")
+    return 1 if (red_house or broken_contract) else 0
 
 
 if __name__ == "__main__":

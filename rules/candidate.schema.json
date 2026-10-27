@@ -19,8 +19,9 @@
     "evidence": {"type": "string_list", "means": "paths, URLs or probe ids that a reader can open. An evidence line that points at nothing is a fabrication."},
     "confidence": {"type": "number", "min": 0, "max": 1, "means": "how much this lesson is trusted. It is not a decoration: below the floor the candidate cannot be promoted on its own."},
     "verdict": {
-      "enum": ["helped", "hurt", "no_observed_effect", "confounded", "keep_base"],
+      "enum": ["proposed", "helped", "hurt", "no_observed_effect", "confounded", "keep_base"],
       "means": {
+        "proposed": "the loop raised this and nothing has been measured yet. Legal on the shelf, never promotable: a proposal is a to-do, not a claim about behaviour.",
         "helped": "measured better after the change -- needs a fresh pass probe",
         "hurt": "measured worse -- needs a fresh failing probe",
         "no_observed_effect": "changed, measured, nothing moved -- needs a probe record",
@@ -37,16 +38,19 @@
   "probe_required_when": {
     "verdict": ["helped", "hurt", "no_observed_effect"],
     "dimension": ["invariant"],
-    "freshness": "a probe record for this candidate id whose fingerprint_at and fingerprint_after both equal the current tree fingerprint -- an old measurement describes a tree that no longer exists"
+    "except": "verdict proposed: the loop may name an apparatus change it has not measured, because naming it is the point of the cycle. Nothing unmeasured leaves the shelf -- see promote_floor.",
+    "freshness": "a probe record for this candidate id whose fingerprint_at and fingerprint_after both equal the current state fingerprint -- an old measurement describes a tree that no longer exists"
   },
   "promote_floor": {
     "confidence": 0.6,
     "confounded": "never promotable alone: the disagreement must be recorded, not resolved by deleting one side",
+    "proposed": "never promotable: run scripts/probe.py, then set a verdict the measurement supports",
     "probe": "must exist, be fresh and match the verdict before the candidate leaves the shelf"
   },
   "count_identity": {
-    "rule": "proposed == adopt + revise + drop + keep_base",
-    "means": "every candidate the loop raised must be accounted for by a disposition; a row that vanishes is a lost measurement",
-    "labels": "disposition labels are unique per report -- the same label twice means two things were conflated"
+    "rule": "proposed == adopt + revise + drop + keep_base + open",
+    "means": "every candidate the loop raised is written to 14_CANDIDATES/loop/ledger.jsonl the moment it is proposed and gets a disposition the moment a human decides. A row that vanishes without one is a lost measurement, so the ledger and the shelf are reconciled by scripts/candidate_check.py on every health run.",
+    "labels": "disposition labels are unique per row -- a second label for the same id means two things were conflated",
+    "dispositions": ["adopt", "revise", "drop", "keep_base"]
   }
 }

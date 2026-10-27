@@ -30,10 +30,17 @@ This is the machine plane's review shelf: nothing here is knowledge until a huma
    گزارش باید صریحاً بنویسد `keep_base` — نه اینکه یک تغییر اختراع کند.
 5. **ردیف روی قفسه قرارداد دارد.** `rules/candidate.schema.json` قانون است و
    `scripts/candidate_check.py` گیت: بعدِ dimension/cue/lesson/evidence/confidence/verdict،
-   شاهدِ بازِ نشدنی = جعل، و `verdict: helped` بدون probe تازه promotable نیست.
-   هر خط باید شمارش شود: `proposed == adopt + revise + drop + keep_base`.
+   شاهدِ باز نشدنی = جعل، و `verdict: helped` بدون probe تازه promotable نیست.
+   `proposed` هم ردیفی است که فقط نام برده شده؛ promotable نیست، چون نام بردنِ یک تغییر
+   با سنجیدنش یکی نیست.
    Every shelf row is judged against the contract; an evidence pointer that does not
    open is treated as a fabrication, and `NO_ENTRY` is the legal honest empty row.
+6. **قفسه شمرده می‌شود.** هر ردیف یک خط در `loop/ledger.jsonl` دارد و هویت شمارش این است:
+   `proposed == adopt + revise + drop + keep_base + open`. ردیفی که بی‌تصمیم غیب شود،
+   یک اندازه‌گیری گم‌شده است و گیت آن را گزارش می‌کند، نه نادیده.
+   تصمیم را بنویس: `python scripts/loop.py --dispose <cand-id> drop --note why`
+   (ردیف‌های دستی: `python scripts/candidate_check.py --register <file>`).
+   The ledger is append-only on purpose: a decision that can be edited out is not a record.
 
 این ناحیه در ایندکس تولیدی حساب نمی‌شود (`hades.py index` آن را کنار می‌گذارد) و برای
 زمینهٔ پیش‌فرض ایجنت مسدود است (`denied_for_default_context`).

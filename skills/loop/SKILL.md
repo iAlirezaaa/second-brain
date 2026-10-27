@@ -25,9 +25,9 @@ The cycle is also scheduled nightly as GitHub Actions `loop` — reports land in
 - **Health signals** — links, frontmatter, tests, TODO hygiene.
 - **Ratchet** — comparing *this run vs the previous*: `improved / stable /
   REGRESSED`. A REGRESSED line is the loudest item in the house.
-- **Candidates** — prioritized P1 (red house → fix now), P2 (backlog: pending
-  approvals, unanswered searches), P3 (hygiene). P1 makes the script exit 1,
-  so CI and agents cannot sleep on it.
+- **Candidates** — one typed row per signal, with an id you can dispose of. Priorities:
+  P1 (red house → fix now), P2 (backlog: pending approvals, unanswered searches),
+  P3 (hygiene). P1 makes the script exit 1, so CI and agents cannot sleep on it.
 
 ## The candidate contract
 
@@ -43,6 +43,31 @@ loop-candidate-NOTE.md` is the shape to copy):
   needs no run. `NO_ENTRY` is the legal empty row — "nothing in memory applied" is data.
 - Freshness is content-addressed: a probe records the state fingerprint and the digest of
   the claim itself, so neither a later repo change nor an edited verdict inherits old evidence.
+- `verdict: proposed` is what the loop writes. It is legal on the shelf and never
+  promotable: naming a change is not measuring it.
+
+## The ledger: the shelf is counted, not read
+
+`scripts/loop.py` writes one row per signal into `14_CANDIDATES/loop/` and one line per row
+into `14_CANDIDATES/loop/ledger.jsonl` (append-only). Every report prints the arithmetic, and
+`scripts/candidate_check.py` reconciles the shelf against the ledger:
+
+```
+proposed == adopt + revise + drop + keep_base + open
+```
+
+A row that disappears without a disposition is a lost measurement; a row proposed twice with
+the same cue is noise, so the loop skips it. Decisions:
+
+```
+python scripts/loop.py --dispose cand-2026-10-27-c1-01 drop --note superseded
+python scripts/loop.py --dispose cand-2026-10-27-c1-01 keep_base --note measured, nothing moved
+python scripts/candidate_check.py --register 14_CANDIDATES/loop/<hand-authored-row>.md
+```
+
+`adopt` is not typed — `promote.py` moves the row and records the disposition itself.
+`drop` removes the file and keeps the reason in the ledger; `revise` and `keep_base` leave
+the row on the shelf where it can still be read.
 
 ## Turning a candidate into a change (agent protocol)
 
@@ -54,6 +79,9 @@ loop-candidate-NOTE.md` is the shape to copy):
 5. Run `python scripts/health.py` + the full suite — both must be green.
 6. Propose placement with `zone_check` — agent cannot file into `20_Notes`.
    Commit only after the zone + write gates pass.
+7. Close the row: `promote.py` records `adopt` when it moves it, otherwise dispose of it.
+   A cycle that leaves rows undecided leaves the count open on purpose — open is not
+   finished.
 
 ## Stop conditions (bounded run)
 

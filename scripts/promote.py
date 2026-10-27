@@ -82,6 +82,9 @@ def candidate_gate(root, src, fm):
                    "the row belongs on the shelf, not in the vault")
     elif verdict == "confounded":
         out.append("verdict is confounded — the disagreement gets recorded, not resolved by promoting")
+    elif verdict == candidate_check.PROPOSED:
+        out.append("verdict is proposed — a proposal is a to-do, not a measurement. Run "
+                   "scripts/probe.py on the declared command and set the verdict the run supports")
     if str(fm.get("cue") or "").strip() == candidate_check.NO_ENTRY:
         out.append("cue is NO_ENTRY — nothing was learned, so there is nothing to file away")
     return out
@@ -146,6 +149,13 @@ def promote(item, proposals_path, root):
     audit.parent.mkdir(parents=True, exist_ok=True)
     audit.open("a", encoding="utf-8").write(
         f"- {today}: {item} → {destination} (reason: {match.get('reason', '-')})\n")
+    if rel_item.startswith("14_CANDIDATES/") and candidate_check.is_candidate(src_fm):
+        # a promoted row is an `adopt`: the ledger keeps the decision so the count
+        # identity survives the row leaving the shelf
+        candidate_check.append_event(src.parent, {
+            "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "id": str(src_fm.get("id") or src.stem), "event": "disposition",
+            "disposition": "adopt", "note": "promoted to %s" % destination})
     print(f"PROMOTED  {item} → {destination}")
     return 0
 

@@ -78,6 +78,10 @@ class Harness(unittest.TestCase):
     def write(self, text, name="cand-001.md"):
         path = self.shelf / name
         path.write_text(text, encoding="utf-8")
+        # the authoring flow the fence expects: a row that gets written also gets counted,
+        # so the contract tests judge the row, not the bookkeeping
+        subprocess.run([sys.executable, CHECK, "--root", str(self.tmp), "--register", str(path)],
+                       capture_output=True, text=True)
         return path
 
     def check(self, *extra):
