@@ -5,11 +5,14 @@ Blocks: model-injection phrases, zero-width/invisible characters, obvious secret
 credit-card-like numbers. Git history is forever; keep it clean.
 
 Usage: python scripts/write_gate.py [--file path | --text "..."]
-Exit 0 = clean, exit 1 = blocked.
+Exit 0 = clean, exit 1 = blocked, exit 2 = refused (the input could not be
+inspected). Refusal is never reported as clean: a gate that says "OK" about a
+file it never read is worse than no gate.
 """
 import argparse
 import re
 import sys
+from pathlib import Path
 
 INJECTION_PATTERNS = [
     r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions",
@@ -52,7 +55,18 @@ def main():
     group.add_argument("--file")
     group.add_argument("--text")
     args = parser.parse_args()
-    text = Path(args.file).read_text(encoding="utf-8", errors="replace") if args.file else args.text
+    if args.file is not None:
+        path = Path(args.file)
+        if not path.is_file():
+            print("REFUSED  not a readable file: %s" % args.file)
+            return 2
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            print("REFUSED  cannot read %s: %s" % (args.file, exc))
+            return 2
+    else:
+        text = args.text
     violations = check_text(text)
     if violations:
         for violation in violations:

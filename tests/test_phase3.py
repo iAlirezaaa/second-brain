@@ -25,6 +25,11 @@ def write_gate(text):
                            "--text", text], capture_output=True, text=True)
 
 
+def write_gate_file(path):
+    return subprocess.run([sys.executable, str(ROOT / "scripts" / "write_gate.py"),
+                           "--file", str(path)], capture_output=True, text=True)
+
+
 class TestZoneFence(unittest.TestCase):
     def test_agent_can_propose_to_inbox_and_agent_zones(self):
         result = zone_check([
@@ -82,6 +87,35 @@ class TestWriteGate(unittest.TestCase):
         result = write_gate("harmless\u200bnote")
         self.assertEqual(result.returncode, 1)
         self.assertIn("invisible-characters", result.stdout)
+
+    def test_file_mode_reads_the_file_and_blocks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            clean = Path(tmp) / "clean.md"
+            clean.write_text("A normal note about agent memory.\n", encoding="utf-8")
+            result = write_gate_file(clean)
+            self.assertEqual(result.returncode, 0, result.stdout)
+            self.assertIn("OK", result.stdout)
+
+            dirty = Path(tmp) / "dirty.md"
+            dirty.write_text("key: sk-" + "a" * 24 + "\n", encoding="utf-8")
+            result = write_gate_file(dirty)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("secret", result.stdout)
+
+    def test_file_mode_refuses_instead_of_passing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / "does-not-exist.md"
+            result = write_gate_file(missing)
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+            self.assertIn("REFUSED", result.stdout)
+            self.assertNotIn("OK", result.stdout)
+
+            directory = Path(tmp) / "folder"
+            directory.mkdir()
+            result = write_gate_file(directory)
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+            self.assertIn("REFUSED", result.stdout)
+            self.assertNotIn("OK", result.stdout)
 
 
 if __name__ == "__main__":
