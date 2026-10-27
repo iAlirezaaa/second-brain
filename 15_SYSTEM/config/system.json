@@ -23,7 +23,7 @@
     { "dir": "11_CONTROL", "plane": "machine", "registry": true },
     { "dir": "12_RUNTIME", "plane": "machine", "registry": false, "denied_for_default_context": true, "gitignore_required": true },
     { "dir": "13_LAB", "plane": "machine", "registry": false, "denied_for_default_context": true, "gitignore_required": true },
-    { "dir": "14_CANDIDATES", "plane": "machine", "registry": false, "denied_for_default_context": true, "gitignore_required": true },
+    { "dir": "14_CANDIDATES", "plane": "machine", "registry": false, "denied_for_default_context": true, "gitignore_required": true, "tracked_exception": true },
     { "dir": "15_SYSTEM", "plane": "machine", "registry": false, "generated_denied": true }
   ],
   "kinds": [
@@ -119,6 +119,7 @@
     "kinds drive the CLI; adding a kind is config, not code",
     "11_CONTROL is the only machine-plane zone under version control",
     "statuses not listed for a kind fall back to default",
-    "stale_after_days only applies to records carrying last_verified"
+    "stale_after_days only applies to records carrying last_verified",
+    "a gitignore_required machine zone may be absent from a clone by design; tracked_exception zones (14_CANDIDATES) are quarantined but partly versioned, so their absence is a defect"
   ]
 }

@@ -227,6 +227,42 @@ def zone_dirs(cfg):
     return [z["dir"] for z in cfg["zones"]]
 
 
+def zone_meta(cfg, name):
+    """The config entry for one zone dir, or {} when the dir is not declared."""
+    for z in cfg["zones"]:
+        if z["dir"] == name:
+            return z
+    return {}
+
+
+def gitignore_lines():
+    path = ROOT / ".gitignore"
+    if not path.is_file():
+        return []
+    return [l.strip() for l in path.read_text(encoding="utf-8").splitlines()
+            if l.strip() and not l.startswith("#")]
+
+
+def absent_by_boundary(cfg, name, gi):
+    """True when a zone is missing *because the documented git boundary says so*.
+
+    The machine plane (12_RUNTIME, 13_LAB) is disposable local state: .gitignore
+    excludes it on purpose, so a fresh clone can never contain it. Reporting that
+    as a defect would make doctor un-green for every user of the published repo --
+    exactly the class of claim that must be measured, not remembered. A human-plane
+    zone is never excusable; a machine zone is excused only when config AND
+    .gitignore agree that it is out of version control.
+    """
+    meta = zone_meta(cfg, name)
+    if meta.get("plane") != "machine":
+        return False
+    # 14_CANDIDATES is quarantined but its loop shelf is tracked by exception,
+    # so its absence is a real defect, not the documented boundary
+    if meta.get("tracked_exception"):
+        return False
+    return bool(meta.get("gitignore_required")) and (name + "/") in gi
+
+
 def denied_prefixes(cfg):
     out = []
     for z in cfg["zones"]:
@@ -455,18 +491,33 @@ def cmd_status(cfg):
     print("by kind: %s" % (json.dumps(bk, ensure_ascii=False, sort_keys=True) if bk else "{}"))
     print("by zone: %s" % (json.dumps(bz, ensure_ascii=False, sort_keys=True) if bz else "{}"))
     zones = zone_dirs(cfg)
+    gi = gitignore_lines()
     present = [z for z in zones if (ROOT / z).exists()]
-    print("zones present: %d/%d" % (len(present), len(zones)))
+    excused = [z for z in zones if not (ROOT / z).exists() and absent_by_boundary(cfg, z, gi)]
+    missing = [z for z in zones if not (ROOT / z).exists() and z not in excused]
+    print("zones on disk: %d/%d" % (len(present), len(zones)))
+    if excused:
+        print("absent at the documented git boundary (machine plane, never versioned): %s"
+              % ", ".join(excused))
+    if missing:
+        print("absent and NOT excused by the boundary: %s" % ", ".join(missing))
     return 0
 
 
 def cmd_doctor(cfg, sch, as_json=False):
     errors, warnings = [], []
     zones = zone_dirs(cfg)
+    gi = gitignore_lines()
+    boundary_absent = []
     for z in zones:
         d = ROOT / z
         if not d.exists():
-            errors.append("missing zone: %s" % z)
+            # the published repo cannot contain the disposable machine plane;
+            # that is the boundary, so say where it is instead of calling it a defect
+            if absent_by_boundary(cfg, z, gi):
+                boundary_absent.append(z)
+            else:
+                errors.append("missing zone: %s" % z)
             continue
         if not (d / "README.md").exists():
             errors.append("zone without README: %s" % z)
@@ -508,14 +559,14 @@ def cmd_doctor(cfg, sch, as_json=False):
             except Exception:
                 warnings.append("%s: unparseable date '%s'" % (rel(p), lv))
     # git boundary drift
-    gi = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines() if (ROOT / ".gitignore").exists() else []
-    gi = [l.strip() for l in gi if l and not l.startswith("#")]
     for need in cfg["gitignore_required_paths"]:
         if need not in gi:
             errors.append(".gitignore does not exclude %s though config requires it" % need)
     # nested repos inside the vault
+    # The vault's own .git is the vault: a published repo cloned as a vault is the
+    # normal case, not a stranded project repo. Only .git *below* the root counts.
     for g in ROOT.rglob(".git"):
-        if g.is_dir():
+        if g.is_dir() and g.parent != ROOT:
             errors.append("nested git repo inside the vault: %s" % rel(g.parent))
     # secrets and utf-8
     for p, names in scan_secrets(zones, cfg):
@@ -536,10 +587,13 @@ def cmd_doctor(cfg, sch, as_json=False):
     rec_n = len(recs)
     if as_json:
         print(json.dumps({"records": rec_n, "errors": errors, "warnings": warnings,
+                          "zones_absent_at_git_boundary": boundary_absent,
                           "flags": cfg["feature_flags"]}, ensure_ascii=False, indent=2))
     else:
         print("HADES OS v3 doctor")
         print("scanned zones: %d | registry records: %d" % (len([z for z in zones if (ROOT / z).exists()]), rec_n))
+        if boundary_absent:
+            print("absent at the documented git boundary: %s" % ", ".join(boundary_absent))
         print("errors: %d | warnings: %d" % (len(errors), len(warnings)))
         for e in errors:
             print("  ERROR %s" % e)

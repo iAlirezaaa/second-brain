@@ -272,6 +272,28 @@ def m_missing_readme(v):
     (v.root / "08_LEARNING/README.md").unlink()
 
 
+def m_drop_machine_zone(v):
+    """A fresh clone of the published repo has no 12_RUNTIME: it is gitignored
+    machine state. doctor must account for that, not call it a defect."""
+    shutil.rmtree(str(v.root / "12_RUNTIME"))
+
+
+def m_drop_human_zone(v):
+    shutil.rmtree(str(v.root / "08_LEARNING"))
+
+
+def m_drop_quarantine_zone(v):
+    """14_CANDIDATES is also gitignore_required, but its loop shelf is tracked by
+    exception -- so its absence IS a defect. The two flags must not blur."""
+    shutil.rmtree(str(v.root / "14_CANDIDATES"))
+
+
+def m_git_at_vault_root(v):
+    """The vault's own repo is the vault. Only a repo *inside* a zone is stranded."""
+    (v.root / ".git").mkdir(parents=True, exist_ok=True)
+    (v.root / ".git/HEAD").write_text("ref: refs/heads/main", encoding="utf-8")
+
+
 def m_stale_date(v):
     pp = project_path(v)
     rec = v.json_of(pp)
@@ -531,6 +553,31 @@ def t_archive():
         v.close()
 
 
+def t_status_accounts_every_zone():
+    """status must reconcile to 16: on disk + excused-by-boundary + unexcused.
+    A count that silently drops zones is how '16/16' became un-reproducible."""
+    v = Vault()
+    try:
+        shutil.rmtree(str(v.root / "12_RUNTIME"))
+        c, o = v.hades("status")
+        lines = o.splitlines()
+        disk = next((l for l in lines if l.startswith("zones on disk:")), "")
+        boundary = next((l for l in lines if l.startswith("absent at the documented")), "")
+        on_disk, total = (-1, -1)
+        nums = re.search(r"(\d+)/(\d+)", disk)
+        if nums:
+            on_disk, total = int(nums.group(1)), int(nums.group(2))
+        excused = len([z for z in ("12_RUNTIME", "13_LAB") if z in boundary])
+        check("status reconciles every declared zone (disk + boundary = declared)",
+              c == 0 and on_disk + excused == total == len(v.cfg["zones"]) and "12_RUNTIME" in boundary,
+              "disk=%s excused=%s printed=%s cfg_zones=%s | %s / %s"
+              % (on_disk, excused, total, len(v.cfg["zones"]), disk, boundary))
+        check("an excused zone is not also reported as missing",
+              "NOT excused" not in o, o.strip().replace("\n", " | ")[:160])
+    finally:
+        v.close()
+
+
 def guard(fn, *a):
     """A crash in one case must not hide the verdict of the other 40."""
     try:
@@ -560,6 +607,10 @@ def main():
         ("gitignore drift from config", m_gitignore_drift, "gitignore does not exclude", "error"),
         ("nested git repo", m_nested_git, "nested git repo", "error"),
         ("zone without README", m_missing_readme, "zone without README", "error"),
+        ("gitignored machine zone deleted", m_drop_machine_zone, "documented git boundary", "warn"),
+        ("human-plane zone deleted", m_drop_human_zone, "missing zone", "error"),
+        ("quarantine zone deleted", m_drop_quarantine_zone, "missing zone: 14_CANDIDATES", "error"),
+        ("the vault's own .git at its root", m_git_at_vault_root, "errors: 0", "warn"),
         ("stale last_verified", m_stale_date, "treat as unverified", "warn"),
         ("unparseable date", m_bad_date, "unparseable date", "warn"),
         ("CJK character inside Persian", m_cjk, "persian hygiene", "warn"),
@@ -574,6 +625,7 @@ def main():
     guard(t_refusals)
     guard(t_wiki)
     guard(t_archive)
+    guard(t_status_accounts_every_zone)
 
     ok = sum(1 for _, p, _ in RESULTS if p)
     bad = len(RESULTS) - ok
