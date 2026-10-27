@@ -18,12 +18,11 @@ import glob
 import json
 import re
 import sqlite3
-import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import DATE_RE, find_root, iter_markdown, parse_frontmatter
+from common import DATE_RE, find_root, iter_markdown, parse_frontmatter, run_utf8
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -34,16 +33,14 @@ TODO_RE = re.compile(r"\b(TODO|FIXME|XXX)\b", re.IGNORECASE)
 
 
 def run_health(script, vault_args):
-    result = subprocess.run([sys.executable, str(Path(__file__).parent / script)] + vault_args,
-                            capture_output=True, text=True)
+    result = run_utf8([sys.executable, str(Path(__file__).parent / script)] + vault_args)
     problems = [line for line in result.stdout.splitlines()
                 if line.startswith(("BROKEN", "INVALID", "missing", "bad date", "invalid "))]
     return {"script": script, "returncode": result.returncode, "problems": problems[:10]}
 
 
 def run_tests():
-    result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"],
-                            capture_output=True, text=True)
+    result = run_utf8([sys.executable, "-m", "unittest", "discover", "-s", "tests"])
     tail = result.stderr.strip().splitlines()
     summary = next((line for line in reversed(tail) if line.startswith("Ran ") or
                     line in ("OK", "FAILED")), "no summary")

@@ -7,6 +7,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+from common import run_utf8  # noqa: E402  the suite reads the gates as UTF-8 too
 
 GOOD_NOTE = """---
 id: res-2026-10-27-good
@@ -33,8 +35,7 @@ def build_fixture(tmp, files):
 
 
 def run_script(script, vault):
-    return subprocess.run([sys.executable, str(SCRIPTS / script), "--vault", str(vault)],
-                          capture_output=True, text=True)
+    return run_utf8([sys.executable, str(SCRIPTS / script), "--vault", str(vault)])
 
 
 class TestTools(unittest.TestCase):
@@ -127,6 +128,36 @@ class TestFrontmatterParser(unittest.TestCase):
             build_fixture(vault, {"00_Inbox/a.md": note})
             result = run_script("frontmatter_check.py", vault)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+class TestChildOutputIsReadAsUtf8(unittest.TestCase):
+    """The gates print em dashes and Persian. Decoded with the Windows console code
+    page that raises inside the parent, and a crashed parent looks exactly like a
+    gate that reported nothing."""
+
+    def test_run_utf8_decodes_what_a_child_prints(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            child = Path(tmp) / "noisy.py"
+            child.write_text(
+                "import sys\n"
+                "sys.stdout.reconfigure(encoding='utf-8')\n"
+                "print('OK \u2014 3 links, \u0641\u0627\u0631\u0633\u06cc')\n",
+                encoding="utf-8")
+            result = run_utf8([sys.executable, str(child)])
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("\u2014", result.stdout)                        # em dash survives
+            self.assertIn("\u0641\u0627\u0631\u0633\u06cc", result.stdout)  # and so does Persian
+
+    def test_the_locale_codec_is_not_a_safe_default_for_the_same_bytes(self):
+        """The bug in one line: reading those bytes strictly with a cp1252 codec dies."""
+        raw = "OK \u2014 \u0641\u0627\u0631\u0633\u06cc".encode("utf-8")
+        self.assertRaises(UnicodeDecodeError, lambda: raw.decode("cp1252", errors="strict"))
+        self.assertIn("\u2014", raw.decode("utf-8"))
+
+    def test_health_reads_its_children_without_dying(self):
+        result = run_utf8([sys.executable, str(SCRIPTS / "health.py")], cwd=str(ROOT))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("broken links", result.stdout)
 
 
 if __name__ == "__main__":

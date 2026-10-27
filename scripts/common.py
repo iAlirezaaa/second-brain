@@ -2,6 +2,7 @@
 import hashlib
 import json
 import re
+import subprocess
 from pathlib import Path
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -59,6 +60,18 @@ def parse_frontmatter(text):
 
 def load_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def run_utf8(argv, cwd=None):
+    """Run a child and read it as UTF-8 whatever the console code page is.
+
+    text=True alone decodes with the locale codec, and these gates print em dashes and
+    Persian -- on a cp1252 Windows console that raises inside the *parent*, and a crashed
+    parent looks exactly like a gate that produced no output. Encoding is stated, not
+    inherited.
+    """
+    return subprocess.run(argv, cwd=cwd, capture_output=True, text=True,
+                          encoding="utf-8", errors="replace")
 
 
 def iter_markdown(vault):

@@ -21,12 +21,11 @@ Usage:
 import argparse
 import datetime
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import find_root
+from common import find_root, run_utf8
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -115,8 +114,7 @@ PLACEHOLDER_BLOCK = """(none — last session ended clean; run the §7 checks to
 
 def _git(root, *args):
     try:
-        result = subprocess.run(["git", "-C", str(root)] + list(args),
-                                capture_output=True, text=True)
+        result = run_utf8(["git", "-C", str(root)] + list(args))
         return result.stdout.strip() if result.returncode == 0 else None
     except OSError:
         return None
@@ -134,8 +132,7 @@ def dirty_count(root):
 
 
 def run_tests_summary(root):
-    result = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests"],
-                            capture_output=True, text=True, cwd=str(root))
+    result = run_utf8([sys.executable, "-m", "unittest", "discover", "-s", "tests"], cwd=str(root))
     tail = [line.strip() for line in result.stderr.strip().splitlines()]
     summary = next((line for line in reversed(tail) if line.startswith("Ran ")), "no summary")
     verdict = "OK" if result.returncode == 0 else "FAILED"

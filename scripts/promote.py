@@ -15,11 +15,10 @@ import datetime
 import json
 import re
 import sys
-import subprocess
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import find_root, load_json, parse_frontmatter
+from common import find_root, load_json, parse_frontmatter, run_utf8
 from zone_check import check_zones_config
 
 try:
@@ -117,8 +116,7 @@ def main():
     root = Path(args.root) if args.root else find_root(Path(__file__))
     code = promote(args.item, Path(args.proposals), root)
     if code == 0:  # post-move health check
-        result = subprocess.run([sys.executable, str(Path(__file__).parent / "link_check.py")],
-                                capture_output=True, text=True)
+        result = run_utf8([sys.executable, str(Path(__file__).parent / "link_check.py")])
         print(result.stdout.strip())
         if result.returncode != 0:
             print("WARNING: the vault now has broken links — fix before continuing.")
