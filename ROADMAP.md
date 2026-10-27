@@ -11,34 +11,37 @@ Golden rules:
 4. Contradictions are recorded, never silently overwritten.
 5. Every feature ships with a test before the next feature starts.
 
-## Phase 0 — Repo skeleton · ☐
-- [ ] README, LICENSE (MIT), .gitignore, ROADMAP
-- [ ] git init + first commit
+## Phase 0 — Repo skeleton · ✅
+- [x] README, LICENSE (MIT), .gitignore, ROADMAP
+- [x] git init + first commit
 
-## Phase 1 — Vault template + contract layer · ☐
-- [ ] Fenced zone structure: 00_Inbox / 10_Projects / 20_Notes / 30_Resources / 90_Agent_Output
-- [ ] AGENTS.md (the contract: zones, rules, tasks) + CLAUDE.md thin shim
-- [ ] index.md ground map for both audiences
-- [ ] Frontmatter schema (REQUIRED_FIELDS) + templates for each note type
-- [ ] test: structure validator (all required files exist)
+## Phase 1 — Vault template + contract layer · ✅
+- [x] Fenced zone structure: 00_Inbox / 10_Projects / 20_Notes / 30_Resources / 90_Agent_Output
+- [x] AGENTS.md (the contract: zones, rules, tasks) + CLAUDE.md thin shim
+- [x] index.md ground map for both audiences
+- [x] Frontmatter schema (rules/schema.json) + templates folder
+- [x] test: structure validator (all required files exist)
 
-## Phase 2 — Integrity toolchain (Python, stdlib-only, py3.9+) · ☐
-- [ ] scripts/link_check.py — zero-broken-links enforcer (skips fenced agent zones reporting)
-- [ ] scripts/frontmatter_check.py — validates required fields + ISO date format
-- [ ] scripts/vault_stats.py — counts, zones, states
-- [ ] tests with unittest + sample fixtures
-- [ ] test: all three scripts run green on the shipped vault template
+## Phase 2 — Integrity toolchain (Python, stdlib-only, py3.9+) · ✅
+- [x] scripts/link_check.py — zero-broken-links enforcer
+- [x] scripts/frontmatter_check.py — validates required fields + ISO date format
+- [x] scripts/vault_stats.py — counts, zones, states (human or --json)
+- [x] tests with unittest + sample fixtures — 13 tests green
 
 ## Phase 3 — Inbox triage + permission rules · ☐
 - [ ] skills/inbox-triage SKILL.md (propose placement + one-line why; never edit human zones)
-- [ ] rules file describing fenced zones machine-readable (rules/zones.json)
-- [ ] scripts/zone_check.py — scans staging moves for cross-zone violations
-- [ ] test: zone_check rejects agent→20_Notes moves, allows agent→00_Inbox/90_Agent_Output
+- [ ] rules/zones.json is already machine-readable; enforce it
+- [ ] scripts/zone_check.py — scans proposed moves for cross-zone violations
+- [ ] Quarantine→promote pattern (from research: colopisalvatore/manent) — agent staging dir per folder, human promotes via one command
+- [ ] Injection/PII write gate (from research: manent / vault-mcp) — pre-write lint refusing model-directed text + PII
+- [ ] test: zone_check rejects agent→human-zone moves; write gate blocks injections
 
 ## Phase 4 — Keyword knowledge base (local, no vector DB) · ☐
 - [ ] scripts/kb.py — SQLite BM25-ish index of vault + agent session notes
-- [ ] skills/kb-search SKILL.md
-- [ ] test: ingest fixture files, search returns expected rank #1
+- [ ] skills/kb-search SKILL.md (semantic-first: search before reading AND before creating a note — dedupe check, from obsidian-mind)
+- [ ] Gap register (from manent): log every failed search to JSONL → self-driving backlog
+- [ ] Retrieval eval gate: golden set fixture + recall@1 check baked into tests
+- [ ] test: ingest fixture files, search returns expected rank #1, eval gate passes
 
 ## Phase 5 — Rituals · ☐
 - [ ] skills/weekly (synthesis), skills/lint (health check), skills/session-log

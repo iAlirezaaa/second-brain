@@ -1,0 +1,13 @@
+{
+  "required_fields": {
+    "id": {"type": "string"},
+    "type": {"enum": ["capture", "note", "resource", "project", "session", "review", "postmortem"]},
+    "title": {"type": "string"},
+    "status": {"enum": ["inbox", "raw", "refined", "evergreen", "archived"]},
+    "owner": {"enum": ["human", "agent"]},
+    "topics": {"type": "string_list"},
+    "created": {"type": "date"},
+    "updated": {"type": "date"}
+  },
+  "date_format": "YYYY-MM-DD"
+}

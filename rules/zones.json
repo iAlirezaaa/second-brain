@@ -1,0 +1,11 @@
+{
+  "zones": {
+    "00_Inbox": "shared",
+    "10_Projects": "human",
+    "20_Notes": "human",
+    "30_Resources": "human",
+    "90_Agent_Output": "agent"
+  },
+  "agent_create_only_in": ["00_Inbox", "90_Agent_Output"],
+  "agent_edit_never": ["02_Index", "10_Projects", "20_Notes", "30_Resources"]
+}
