@@ -30,6 +30,19 @@ def write_gate_file(path):
                            "--file", str(path)], capture_output=True, text=True)
 
 
+def zone_check_with(zones, proposals):
+    """Run the fence against an alternate zones.json — the only way to test the
+    validator itself rather than the one shipped config."""
+    with tempfile.TemporaryDirectory() as tmp:
+        zp = Path(tmp) / "zones.json"
+        pp = Path(tmp) / "proposals.json"
+        zp.write_text(json.dumps(zones), encoding="utf-8")
+        pp.write_text(json.dumps({"proposals": proposals}), encoding="utf-8")
+        return subprocess.run([sys.executable, str(ROOT / "scripts" / "zone_check.py"),
+                               "--proposals", str(pp), "--zones", str(zp)],
+                              capture_output=True, text=True)
+
+
 class TestZoneFence(unittest.TestCase):
     def test_agent_can_propose_to_inbox_and_agent_zones(self):
         result = zone_check([
@@ -60,6 +73,72 @@ class TestZoneFence(unittest.TestCase):
         self.assertIn("inbox-triage", skill)
         config = json.loads(ZONES)
         self.assertIn("00_Inbox", config["agent_create_only_in"])
+
+
+FENCE = {
+    "zones": {"00_Inbox": "shared", "20_Notes": "human", "90_Agent_Output": "agent"},
+    "agent_create_only_in": ["00_Inbox", "90_Agent_Output"],
+    "agent_edit_never": ["20_Notes"],
+}
+
+
+class TestFenceIsValidItself(unittest.TestCase):
+    """A rule naming a zone that does not exist cannot be obeyed, and silently
+    protects nothing. The fence is judged before anything is proposed."""
+
+    def test_shipped_fence_passes_its_own_validator(self):
+        result = zone_check([{"capture": "a.md", "target": "00_Inbox"}])
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("BAD FENCE", result.stdout)
+
+    def test_phantom_zone_in_the_fence_is_rejected(self):
+        broken = json.loads(json.dumps(FENCE))
+        broken["agent_edit_never"].append("02_Index")  # the bug this file used to ship
+        result = zone_check_with(broken, [{"capture": "a.md", "target": "00_Inbox"}])
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("BAD FENCE", result.stdout)
+        self.assertIn("02_Index", result.stdout)
+
+    def test_unprotected_human_zone_is_rejected(self):
+        broken = json.loads(json.dumps(FENCE))
+        broken["agent_edit_never"] = []
+        result = zone_check_with(broken, [{"capture": "a.md", "target": "00_Inbox"}])
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("missing from agent_edit_never", result.stdout)
+
+    def test_agent_zone_listed_as_off_limits_is_rejected(self):
+        broken = json.loads(json.dumps(FENCE))
+        broken["agent_edit_never"].append("90_Agent_Output")
+        result = zone_check_with(broken, [{"capture": "a.md", "target": "00_Inbox"}])
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("agent_edit_never", result.stdout)
+
+    def test_no_landing_zone_for_an_agent_is_rejected(self):
+        broken = json.loads(json.dumps(FENCE))
+        broken["agent_create_only_in"] = []
+        result = zone_check_with(broken, [{"capture": "a.md", "target": "00_Inbox"}])
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("agent_create_only_in is empty", result.stdout)
+
+
+class TestEditVersusCreate(unittest.TestCase):
+    """Creating with approval is legal; rewriting human content never is."""
+
+    def test_edit_into_a_never_zone_is_refused_even_when_approved(self):
+        result = zone_check_with(FENCE, [
+            {"capture": "a.md", "target": "20_Notes", "action": "edit", "approved": True}])
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("never allowed", result.stdout)
+
+    def test_create_into_a_human_zone_is_legal_with_approval(self):
+        result = zone_check_with(FENCE, [
+            {"capture": "a.md", "target": "20_Notes", "approved": True}])
+        self.assertEqual(result.returncode, 0, result.stdout)
+
+    def test_agent_may_edit_its_own_zone(self):
+        result = zone_check_with(FENCE, [
+            {"capture": "a.md", "target": "90_Agent_Output", "action": "edit"}])
+        self.assertEqual(result.returncode, 0, result.stdout)
 
 
 class TestWriteGate(unittest.TestCase):

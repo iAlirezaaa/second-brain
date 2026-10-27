@@ -4,8 +4,11 @@
 Usage:
   python scripts/promote.py --proposals P.json --item 00_Inbox/clip.md
 
-Refuses unless the matching proposal is approved. Updates frontmatter, keeps an
-audit trail in 90_Agent_Output/proposals/promotions.md, then re-checks links.
+Refuses unless the matching proposal is approved. Refuses a destination that
+already exists inside a zone listed in agent_edit_never — promoting onto human
+content is an edit, and edits there are not the agent's to make. Validates the
+fence first, then updates frontmatter, keeps an audit trail in
+90_Agent_Output/proposals/promotions.md, then re-checks links.
 """
 import argparse
 import datetime
@@ -17,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from common import find_root, load_json, parse_frontmatter
+from zone_check import check_zones_config
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -53,12 +57,18 @@ def patch_top_level_text(text, updates):
 def promote(item, proposals_path, root):
     proposals = load_json(proposals_path)["proposals"]
     config = load_json(root / "rules" / "zones.json")
+    fence = check_zones_config(config)
+    if fence:
+        for problem in fence:
+            print(f"BAD FENCE: {problem}")
+        return 1
     match = next((p for p in proposals if p.get("capture") == item), None)
     if not match:
         print(f"REFUSED: no proposal for {item}")
         return 1
     target = match.get("target", "")
     create_only = set(config.get("agent_create_only_in", []))
+    never = set(config.get("agent_edit_never", []))
     if target not in set(k for k in config["zones"].keys()):
         print(f"REFUSED: unknown zone {target}")
         return 1
@@ -72,6 +82,11 @@ def promote(item, proposals_path, root):
         return 1
     destination = match.get("destination") or f"{target}/{src.name}"
     dest = vault / destination
+    if dest.exists() and target in never:
+        print(f"REFUSED: {destination} already exists and {target} is in agent_edit_never — "
+              f"promoting there would overwrite human content. Pick a new destination and let "
+              f"the human merge.")
+        return 1
     dest.parent.mkdir(parents=True, exist_ok=True)
     text = src.read_text(encoding="utf-8")
     fm, _body = parse_frontmatter(text)

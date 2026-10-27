@@ -68,6 +68,35 @@ class TestPromote(unittest.TestCase):
 
 
 class TestPromoteRefusals(unittest.TestCase):
+    def test_promotion_never_overwrites_human_content(self):
+        """20_Notes is in agent_edit_never, so a destination that already exists
+        there is a rewrite of human content wearing a promotion's clothes."""
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            proposals = build_minisite(tmp)
+            vault = tmp / "vault-template"
+            (vault / "20_Notes" / "clipped-idea.md").write_text(
+                "---\nid: human-note\ntitle: Mine\n---\nThe human wrote this.\n", encoding="utf-8")
+            result = run_promote(tmp, proposals)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("agent_edit_never", result.stdout)
+            kept = (vault / "20_Notes" / "clipped-idea.md").read_text(encoding="utf-8")
+            self.assertIn("The human wrote this.", kept)
+            self.assertTrue((vault / "00_Inbox" / "clip.md").is_file(),
+                            "the refusal destroyed the capture it refused to move")
+
+    def test_broken_fence_blocks_promotion(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp = Path(tmp_dir)
+            proposals = build_minisite(tmp)
+            import json
+            broken = json.loads((tmp / "rules" / "zones.json").read_text(encoding="utf-8"))
+            broken["agent_edit_never"] = ["02_Index"]  # phantom zone, human notes unprotected
+            (tmp / "rules" / "zones.json").write_text(json.dumps(broken), encoding="utf-8")
+            result = run_promote(tmp, proposals)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("BAD FENCE", result.stdout)
+
     def test_unapproved_move_refused(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp = Path(tmp_dir)

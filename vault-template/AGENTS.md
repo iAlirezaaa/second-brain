@@ -13,6 +13,13 @@ version of the zones; `rules/schema.json` defines required frontmatter.
 | `30_Resources/` | human | read-only; propose via Inbox |
 | `90_Agent_Output/` | agent | write freely (sessions, reviews, postmortems, drafts) |
 
+The fence is enforced by `scripts/zone_check.py`, which judges `rules/zones.json`
+itself before judging any proposal: a rule naming a zone that does not exist, or
+leaving a human zone unprotected, exits non-zero. A proposal marked
+`"action": "edit"` into a human zone is rejected even when approved, and
+`scripts/promote.py` refuses a destination that already exists there. The legal
+path for changing human content is a capture in `00_Inbox/` that a human merges.
+
 You are a worker, not the curator. The human decides what deserves to exist,
 where taxonomy lines are drawn, and what is worth keeping. You execute
 those choices at scale.

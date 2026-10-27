@@ -7,5 +7,6 @@
     "90_Agent_Output": "agent"
   },
   "agent_create_only_in": ["00_Inbox", "90_Agent_Output"],
-  "agent_edit_never": ["02_Index", "10_Projects", "20_Notes", "30_Resources"]
+  "agent_edit_never": ["10_Projects", "20_Notes", "30_Resources"],
+  "_note": "agent_create_only_in: an agent may land new items here, and into a human zone only with a human approval. agent_edit_never: an agent may not rewrite content in these zones at all, approved or not -- the legal path is a new note in 00_Inbox that a human merges. zone_check.py validates this file: a rule naming a zone that does not exist, or leaving a human zone unprotected, is rejected before any proposal is judged."
 }
