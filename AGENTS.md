@@ -32,6 +32,16 @@ instead of pointing at local state.
 ## The one rule that explains the layout
 `00`–`10` is the **human plane**: readable, citable, canonical. `11` and above is the **machine plane**: definitions in `11_CONTROL`, disposable state in `12_RUNTIME`, quarantine in `13_LAB`, your review shelf in `14_CANDIDATES`, infrastructure in `15_SYSTEM`. Anything the machine produces that is worth keeping must be **promoted** into the human plane with an ID and evidence — never left living only in harness memory.
 
+## The way back is a mechanism, not an intention
+A change that measures worse is not something you note and leave in the tree: fall back to the
+last known good state. `scripts/base.py --save` records that state only when every health gate
+is green — a red house is not a base — and `--recover` restores those bytes, re-proves the
+fingerprint, and writes `fell_back: true` to `14_CANDIDATES/loop/recovery.jsonl`. `keep_base`
+is an output, not a failure: deciding to change nothing needs no run. Recovery reverts the
+**brain**, never the paperwork: rows and lessons filed after the base survive it, and files
+added since are named and left where they are instead of being deleted by a script that was
+asked to go backwards.
+
 ## Windows / encoding
 Run every script as `py -3.10 <script>` (PowerShell: `py -3.10`). Plain `python` on this machine is 3.9 with a `cp1252` stdout, which raises `UnicodeEncodeError` on Persian text. Scripts reconfigure their own stdout, but a subprocess or shell redirect can still break — do not trust an exit code 0 with no output as success.
 

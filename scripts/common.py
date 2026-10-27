@@ -120,7 +120,10 @@ FINGERPRINT_SKIP_PATHS = ("14_CANDIDATES/loop/probes",)
 # inside the identity, every gate would demand a re-probe after ordinary filing and the
 # discipline would get switched off. The candidate's own digest is checked separately, so
 # excluding the shelf cannot be used to rewrite a claim after it was measured.
-PAPERWORK_SKIP_PATHS = ("14_CANDIDATES/", "12_RUNTIME/",
+# The backups folder joins it for a reason worth stating: recording a known good base is
+# an act of paperwork, and a snapshot that changed the identity it just recorded would make
+# `--save` invalidate its own evidence.
+PAPERWORK_SKIP_PATHS = ("14_CANDIDATES/", "12_RUNTIME/", "15_SYSTEM/backups/",
                         "vault-template/90_Agent_Output/proposals/")
 
 # The documented git boundary, restated for one question: could a reader who cloned this
