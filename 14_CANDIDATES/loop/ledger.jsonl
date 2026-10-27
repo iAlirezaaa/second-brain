@@ -1,0 +1,2 @@
+{"cue": "a search in the index returned nothing", "date": "2026-10-27T16:31:03Z", "dimension": "domain", "event": "proposed", "id": "cand-2026-10-27-c3-01", "priority": "P2"}
+{"cue": "scripts and skills carry raw TODO/FIXME markers", "date": "2026-10-27T16:31:03Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-27-c3-02", "priority": "P3"}
