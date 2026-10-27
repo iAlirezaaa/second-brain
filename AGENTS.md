@@ -76,3 +76,10 @@ the bytes it was written against; if the record moved since, `apply` refuses it 
 than overwriting work it never saw. Every accepted amendment appends to the record's own
 `amendments` trail (field, from, to, when, plan) — the audit trail lives in the definition, not
 in a chat log.
+
+**Retiring a definition is a verdict the index has to honour.** `link --id NEW --rel supersedes
+--to OLD` means OLD leaves the active index: `index` lists it under `superseded` together with the
+record that retired it, `doctor` counts active records and names the retirements, and a record that
+supersedes itself is an error. Nothing is deleted — `list` still enumerates every record on disk, so
+the history stays readable. A sentence in `system.json` that no gate enforces is worse than no
+sentence: it lets one thing keep two definitions while printing `errors: 0`.

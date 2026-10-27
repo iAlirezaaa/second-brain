@@ -510,9 +510,13 @@ def counts_by(records):
 # ---------------------------------------------------------------- commands
 def cmd_status(cfg):
     recs = list(iter_records(cfg))
+    retired = superseded_by(recs)
     bk, bz = counts_by(recs)
     print("HADES OS v3 | root %s" % ROOT)
     print("registry records: %d" % len(recs))
+    if retired:
+        print("superseded (retired from the active index): %d of %d -- %s"
+              % (len(retired), len(recs), ", ".join(sorted(retired))))
     print("by kind: %s" % (json.dumps(bk, ensure_ascii=False, sort_keys=True) if bk else "{}"))
     print("by zone: %s" % (json.dumps(bz, ensure_ascii=False, sort_keys=True) if bz else "{}"))
     zones = zone_dirs(cfg)
@@ -638,14 +642,28 @@ def cmd_doctor(cfg, sch, as_json=False):
     fa = scan_fa(fa_doc_files())
     for p, hits in fa:
         warnings.append("%s: persian hygiene %s" % (p, json.dumps(hits, ensure_ascii=False)))
-    rec_n = len(recs)
+    # retirement is a verdict about a record, and a verdict the index ignores is a second
+    # definition of the same thing that nobody has to answer for
+    retired = superseded_by(recs)
+    for p, r in recs:
+        targets = (r.get("relations") or {}).get("supersedes") or []
+        if isinstance(targets, str):
+            targets = [targets]
+        if r.get("id") in [t for t in targets if isinstance(t, str)]:
+            errors.append("%s: supersedes itself -- a record cannot retire its own identity; "
+                          "file the replacement and link that one" % rel(p))
+    rec_n = len([1 for _p, r in recs if r.get("id") not in retired])
     if as_json:
-        print(json.dumps({"records": rec_n, "errors": errors, "warnings": warnings,
+        print(json.dumps({"records": rec_n, "superseded": sorted(retired),
+                          "errors": errors, "warnings": warnings,
                           "zones_absent_at_git_boundary": boundary_absent,
                           "flags": cfg["feature_flags"]}, ensure_ascii=False, indent=2))
     else:
         print("HADES OS v3 doctor")
         print("scanned zones: %d | registry records: %d" % (len([z for z in zones if (ROOT / z).exists()]), rec_n))
+        if retired:
+            print("superseded (retired from the active index): %s" % ", ".join(
+                "%s by %s" % (k, retired[k]) for k in sorted(retired)))
         if boundary_absent:
             print("absent at the documented git boundary: %s" % ", ".join(boundary_absent))
         print("errors: %d | warnings: %d" % (len(errors), len(warnings)))
@@ -658,25 +676,57 @@ def cmd_doctor(cfg, sch, as_json=False):
     return 1 if errors else 0
 
 
+def superseded_by(recs):
+    """{retired id: the record that retires it} -- what `supersedes` is declared to mean.
+
+    system.json says a superseding record "replaces a record; superseded leaves the active
+    index". Until the index and the gate read the relation, that sentence was a comment and
+    the plane kept two definitions of one thing while printing `errors: 0` (issue #12).
+    """
+    out = {}
+    for _p, r in recs:
+        targets = (r.get("relations") or {}).get("supersedes") or []
+        if isinstance(targets, str):
+            targets = [targets]
+        for target in targets:
+            if isinstance(target, str) and target != r.get("id"):
+                out.setdefault(target, r.get("id"))
+    return out
+
+
 def cmd_index(cfg):
     recs = list(iter_records(cfg))
-    items, bad = [], 0
+    retired = superseded_by(recs)
+    items, retired_items, bad = [], [], 0
     for p, r in recs:
         if "_parse_error" in r:
             bad += 1
             continue
-        items.append({"id": r.get("id"), "kind": r.get("kind"), "name": r.get("name"),
-                      "status": r.get("status"), "classification": r.get("classification"),
-                      "path": rel(p), "zone": rel(p).split("/")[0],
-                      "plane": "human" if zone_num(rel(p).split("/")[0]) <= HUMAN_MAX else "machine",
-                      "last_verified": r.get("last_verified") or r.get("observed_at")})
+        item = {"id": r.get("id"), "kind": r.get("kind"), "name": r.get("name"),
+                "status": r.get("status"), "classification": r.get("classification"),
+                "path": rel(p), "zone": rel(p).split("/")[0],
+                "plane": "human" if zone_num(rel(p).split("/")[0]) <= HUMAN_MAX else "machine",
+                "last_verified": r.get("last_verified") or r.get("observed_at")}
+        if r.get("id") in retired:
+            item["superseded_by"] = retired[r.get("id")]
+            retired_items.append(item)
+            continue
+        items.append(item)
     GEN.mkdir(parents=True, exist_ok=True)
     PLANS.mkdir(parents=True, exist_ok=True)
     out = {"schema_version": cfg["schema_version"], "generated_at_utc": now(),
-           "scope": "canonical metadata; excludes 12_RUNTIME, 13_LAB, 14_CANDIDATES",
-           "count": len(items), "unreadable": bad, "records": sorted(items, key=lambda x: str(x["id"]))}
+           "scope": "canonical metadata; excludes 12_RUNTIME, 13_LAB, 14_CANDIDATES and every "
+                    "record another record supersedes",
+           "count": len(items), "unreadable": bad,
+           "superseded_count": len(retired_items),
+           "superseded": sorted(retired_items, key=lambda x: str(x["id"])),
+           "records": sorted(items, key=lambda x: str(x["id"]))}
     dump_json(GEN / "catalog.json", out)
     print("indexed %d records (%d unreadable) -> %s" % (len(items), bad, rel(GEN / "catalog.json")))
+    if retired_items:
+        print("superseded, left the active index: %s" % ", ".join(
+            "%s (by %s)" % (i["id"], i["superseded_by"]) for i in sorted(
+                retired_items, key=lambda x: str(x["id"]))))
     return 0
 
 

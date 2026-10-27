@@ -68,6 +68,14 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   before a byte moves, a plan whose record moved since it was written is refused as stale,
   and every accepted amendment appends `field, from, to, when, plan` to the record's own
   `amendments` trail. `tests/test_phase22_amend_a_record.py` is red without it.
+- **Retirement that the index honours** (issue #12) — `supersedes` was declared in
+  `15_SYSTEM/config/system.json` as "replaces a record; superseded leaves the active index"
+  and `link` accepted it, while `index` listed both records and `doctor` printed `errors: 0`
+  (measured: 12 before the link, 12 after). Now `cmd_index` moves a superseded record into a
+  `superseded` block that names who retired it, `cmd_doctor` counts active records, prints the
+  retirements and errors when a record supersedes itself, and `cmd_status` reports the split.
+  Nothing is deleted — `list` still enumerates every record on disk; retirement is a verdict,
+  not a shredder. `tests/test_phase23_superseded_leaves_the_index.py` is red without it.
 
 ### Changed
 - `scripts/loop.py` exports the unanswered-search register it read from the local
