@@ -78,6 +78,10 @@ python scripts/handoff.py --check      # this handoff is fresh vs repo head
 
 Operational gotchas (human-owned, keep short):
 - `.kb/` is disposable state: `test_phase4` deletes and regenerates it — never commit it
+- before a change that could measure worse, record where you started:
+  `python scripts/base.py --save --note why`; `--recover` is the way back and writes
+  `fell_back: true`. The bytes live in the gitignored `15_SYSTEM/backups/`, the record of
+  them lives in `14_CANDIDATES/loop/` — a base is local, its journal is not
 - Python 3.9 compatible only in `scripts/`: no `match`, no PEP 604 unions
 - Windows stdout: scripts call `sys.stdout.reconfigure(encoding="utf-8")` — keep that
 - after any structural change run `python scripts/doc_report.py --write`, then this script;
@@ -208,7 +212,7 @@ def refresh(root, head_override=None):
     model = extract_model_block(existing)
     state = build_state(root, head_of(root, head_override))
     # §1 is the only place a number about this repo is allowed to live, and it is written
-    # by the same measurement the sixth gate checks -- handoff and doc_report cannot drift.
+    # by the same measurement the numbers gate checks -- handoff and doc_report cannot drift.
     path.write_text(render(path, state, model, doc_report.block(root)) + "\n", encoding="utf-8")
     print(f"handoff refreshed (head={state['head']}, dirty={state['dirty']}, tests={state['tests']})")
     return 0

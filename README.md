@@ -27,7 +27,10 @@ Three properties this repo is built to keep:
 2. **It learns from its mistakes.** A claim about behaviour is believed only after a real
    execution probed it (`scripts/probe.py`); candidates wait on a quarantine shelf
    (`14_CANDIDATES/`) and reach the human plane only through a gated promotion, with the
-   ledger's count identity checked against the folder.
+   ledger's count identity checked against the folder. And when a change measures worse there
+   is a way back that is a mechanism, not an intention: `python scripts/base.py --save` records
+   the last state that passed every gate, `--recover` returns to it, proves the fingerprint, and
+   writes `fell_back: true` to `14_CANDIDATES/loop/recovery.jsonl`.
 3. **An agent can start from the URL alone.** Hand this repository's address to any agent:
    it reads `AGENTS.md` — or the generated door for its host — and follows
    `skills/first-session/SKILL.md`: orient, prove the house is healthy, take one bounded task,
@@ -75,12 +78,12 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 195 |
+| tests collected (`python -m unittest discover -s tests`) | 209 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 12 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 16 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 17 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 2 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |

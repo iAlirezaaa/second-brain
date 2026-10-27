@@ -14,12 +14,12 @@
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 195 |
+| tests collected (`python -m unittest discover -s tests`) | 209 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 12 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 16 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 17 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 2 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
@@ -94,6 +94,21 @@ py -3.10 15_SYSTEM\scripts\hades.py promote --id CAND-XXXXXXXX --to production -
 `human_approved` و وجود واقعی فایل‌های `evidence_paths` روی دیسک. هر کدام نباشد،
 دستور رد می‌شود و فهرست کمبودها را چاپ می‌کند. داده آموزشی و checkpoint کپی
 نمی‌شوند.
+
+بازگشت هم راه‌بر دارد، نه خاطره. پیش از دست زدن به چیزی:
+
+```powershell
+py -3.10 scripts\base.py --save --note "پیش از تغییر"
+py -3.10 scripts\base.py --status
+```
+
+`--save` فقط وقتی ثبت می‌کند که همهٔ گیت‌ها سبز باشند؛ خانهٔ قرمز پایه نمی‌شود، چون
+پایه‌ای که نشود به آن اعتماد کرد دو بار کار را خراب می‌کند. بعد از تغییری که اندازه‌گیری‌اش
+بد شد: `py -3.10 scripts\base.py --recover --candidate 14_CANDIDATES/loop/cand-x.md`
+همان بایت‌ها را برمی‌گرداند، اثرانگشت را دوباره اثبات می‌کند و `fell_back: true` را در
+`14_CANDIDATES/loop/recovery.jsonl` می‌نویسد. برگشت مغز را برمی‌گرداند و کاغذها را نه:
+ردیف‌های قفسه و درس‌هایی که بعد از پایه ثبت شده‌اند می‌مانند، و فایلی که بعد از پایه
+افزوده شده نام برده می‌شود و حذف نمی‌شود.
 
 ## ۶) اسکیل را به هارنس بده
 

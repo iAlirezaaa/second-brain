@@ -47,6 +47,11 @@ drop + keep_base + open`), so an ignored finding stays visible instead of quietl
 
 ## 4. Fix test-first, one theme per commit
 
+Record where you started before you start: `python scripts/base.py --save --note "pre-audit"`.
+It refuses unless every gate is green, which is the same preflight the audit wants anyway, and
+it gives a fix that measures worse somewhere to go back to — `python scripts/base.py --recover`
+restores those bytes, re-proves the fingerprint and writes `fell_back: true`.
+
 Write the test that reproduces the finding, watch it fail, fix, watch it pass, commit that
 one theme. A monolithic commit hides which change was load-bearing. Then close the issue
 with the commit that fixed it, and if the finding taught a transferable lesson
