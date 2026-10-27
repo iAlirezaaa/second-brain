@@ -64,10 +64,18 @@ def green_master():
 def green_root():
     """A private copy of that replica: `--save` refuses a red house, so the fixture has to be
     a house that can be saved, and the only honest way to get one is to build the clone and
-    run the gates inside it. Each test mutates its own copy, never the master."""
+    run the gates inside it. Each test mutates its own copy, never the master.
+
+    The copy starts with no bases and no recoveries recorded: a clone may legitimately carry
+    this machine's journals, and a test about "nothing has been measured yet" has to mean it.
+    """
     holder = Path(tempfile.mkdtemp())
     destination = holder / "repo"
     shutil.copytree(str(green_master()), str(destination))
+    for name in (BASES_JOURNAL, RECOVERY_JOURNAL):
+        stale = destination / name
+        if stale.is_file():
+            stale.unlink()
     _SNAPSHOT_CACHE.append(holder)
     return destination
 
