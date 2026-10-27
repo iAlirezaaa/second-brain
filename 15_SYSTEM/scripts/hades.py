@@ -135,6 +135,15 @@ def ascii_slug(name):
 
 # ---------------------------------------------------------------- discovery
 MANIFEST_NAMES = None
+REGISTRY_KINDS = None
+
+
+def registry_kinds(cfg):
+    """The kind names the contract declares -- a markdown file is a record only as one of these."""
+    global REGISTRY_KINDS
+    if REGISTRY_KINDS is None:
+        REGISTRY_KINDS = {k["kind"] for k in cfg["kinds"]}
+    return REGISTRY_KINDS
 
 
 def manifest_names(cfg):
@@ -179,9 +188,14 @@ def iter_records(cfg):
                 continue
             if isinstance(obj, dict) and obj.get("id"):
                 yield p, obj
-        elif p.name.endswith(".md") and p.stem == "note":
+        elif p.suffix == ".md":
+            # A markdown record is found by its content, not by one filename: file-layout
+            # kinds are written as `<ID>-<slug>.md`, so a `stem == "note"` match made every
+            # news and wiki_note record `apply` writes invisible to every gate (issue #13).
+            # A body (OVERVIEW.md, SKILL.md) carries its record's id with `type: note` and no
+            # `kind`, so requiring a declared kind keeps a body from becoming a second record.
             fm = frontmatter(p)
-            if fm and "id" in fm:
+            if fm and ID_RE_STRICT.match(str(fm.get("id") or "")) and fm.get("kind") in registry_kinds(cfg):
                 yield p, fm
 
 
@@ -211,6 +225,14 @@ def frontmatter(path):
 
 
 def parse_scalar(v):
+    if (v.startswith("[") and v.endswith("]")) or (v.startswith("{") and v.endswith("}")):
+        # A record's relations and amendments are JSON: what one script writes, another has
+        # to be able to read back, or the field is decoration. Hand-written YAML flow lists
+        # are not valid JSON, so the splitter below still gets them.
+        try:
+            return json.loads(v)
+        except ValueError:
+            pass
     if v.startswith("[") and v.endswith("]"):
         inner = v[1:-1].strip()
         return [parse_scalar(x.strip()) for x in inner.split(",") if x.strip()] if inner else []
@@ -817,7 +839,7 @@ def cmd_apply(cfg, sch, args):
 def to_markdown(obj):
     body = {k: v for k, v in obj.items()}
     front = ["---"]
-    for k in ("id", "kind", "name", "status", "classification", "created_at", "last_verified", "source_url", "observed_at", "topic", "tags"):
+    for k in ("id", "kind", "name", "status", "classification", "created_at", "last_verified", "source_url", "observed_at", "topic", "tags", "relations", "amendments"):
         if k in body:
             v = body[k]
             front.append("%s: %s" % (k, json.dumps(v, ensure_ascii=False)))

@@ -58,3 +58,11 @@ Run every script as `py -3.10 <script>` (PowerShell: `py -3.10`). Plain `python`
 
 ## Structural changes
 Creating or reclassifying a project, skill, agent, model or registry item goes through plan → review → `apply --approve`. The applied stamp is written **before** any console output, so a printing failure can never leave an orphan record. Then `doctor` + `index` to verify. Publishing anything outward goes through the audit gate and needs your explicit approval; the vault is never published as a whole.
+
+**What `apply` writes, `iter_records` must read.** A record is only governed if the scan that
+finds records finds it, so enumeration is by content — a markdown file is a registry record when
+its frontmatter carries a registry-shaped `id` **and** a declared `kind` — never by one filename.
+Naming after `note.md` made every `news` and `wiki_note` record invisible to `doctor`, `index`,
+`link` and `promote`: the tool created it, then answered `NOT FOUND`, and still printed
+`errors: 0`. A silent gate is worse than a red one. A body (`OVERVIEW.md`, `SKILL.md`) carries
+its record's id with `type: note` and no `kind`, so it stays a body instead of becoming a twin.

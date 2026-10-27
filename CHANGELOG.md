@@ -72,6 +72,13 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   was replaced by what is actually in the folder.
 
 ### Fixed
+- A markdown record was created invisible (issue #13): `news` and `wiki_note` land as
+  `<ID>-<slug>.md`, while `iter_records` admitted a markdown record only when its stem was
+  exactly `note`. `apply` wrote the record, then `show`, `list`, `index` and `doctor` answered
+  that nothing existed — and `doctor` printed `errors: 0`, which is a silent gate, not a clean
+  house. Enumeration is now by content (a registry-shaped `id` **and** a declared `kind`), a
+  body (`OVERVIEW.md`, `SKILL.md`) stays a body, and `link` round-trips relations through the
+  markdown writer instead of dropping them on the floor.
 - CI was red on all four matrices while every local gate printed OK. The shelf row
   `cand-2026-10-27-c3-01` blamed a gap count held in `.kb/kb.sqlite`, a file that is
   gitignored by design: it existed on the machine that wrote the claim and nowhere
