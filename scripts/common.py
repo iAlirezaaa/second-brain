@@ -33,7 +33,13 @@ def parse_frontmatter(text):
         line = lines[i]
         stripped = line.strip()
         if stripped.startswith("- ") and current_key:
-            fm.setdefault(current_key, []).append(stripped[2:].strip())
+            existing = fm.get(current_key)
+            if existing is None:
+                existing = []                     # a bare "key:" followed by block items
+            elif not isinstance(existing, list):
+                existing = [str(existing)]        # "key: value" then items: keep both
+            existing.append(stripped[2:].strip())
+            fm[current_key] = existing
         elif ":" in line:
             key, _, value = line.partition(":")
             key = key.strip()

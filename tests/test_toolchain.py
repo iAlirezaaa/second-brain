@@ -100,5 +100,34 @@ class TestTools(unittest.TestCase):
             self.assertEqual(result.returncode, 0, f"{script}: {result.stdout}")
 
 
+class TestFrontmatterParser(unittest.TestCase):
+    """The contract writes evidence as block items; that shape used to crash the shared
+    frontmatter parser, which took probe.py, candidate_check.py and promote.py down."""
+
+    def setUp(self):
+        sys.path.insert(0, str(SCRIPTS))
+
+    def test_bare_key_then_block_items(self):
+        from common import parse_frontmatter
+        fm, body = parse_frontmatter(
+            "---\nid: x\nevidence:\n  - a.md\n  - b.md\ntopics: [loop]\n---\nbody\n")
+        self.assertEqual(fm["evidence"], ["a.md", "b.md"])
+        self.assertEqual(fm["topics"], ["loop"])
+        self.assertEqual(body.strip(), "body")
+
+    def test_scalar_then_items_keeps_both(self):
+        from common import parse_frontmatter
+        fm, _body = parse_frontmatter("---\nid: x\nevidence: a.md\n  - b.md\n---\n")
+        self.assertEqual(fm["evidence"], ["a.md", "b.md"])
+
+    def test_the_gates_still_run_on_a_note_written_that_way(self):
+        note = GOOD_NOTE.replace("topics: [testing]", "topics:\n  - testing\n  - fixtures")
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp)
+            build_fixture(vault, {"00_Inbox/a.md": note})
+            result = run_script("frontmatter_check.py", vault)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()
