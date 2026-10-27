@@ -53,6 +53,14 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   material, databases) with the one exception the shelf keeps (`14_CANDIDATES/loop/`),
   `candidate_check.py` refuses a row whose evidence sits behind it, and the law is
   written in `AGENTS.md` so every host projection carries it.
+- **The way back as a mechanism** — `scripts/base.py`: `--save` records the last known
+  good state only when every health gate is green, `--status` compares base to current
+  by fingerprint, and `--recover` restores those bytes, re-proves the fingerprint and
+  writes `fell_back: true` to the tracked journal `14_CANDIDATES/loop/recovery.jsonl`.
+  A snapshot covers the same inventory as `state_fingerprint` — `15_SYSTEM/backups/` is
+  now paperwork, so recording a base cannot invalidate the state it just recorded —
+  and recovery reverts the brain, never the shelf. This is the `keep_base` piece of the
+  harness2 spine: falling back is an output, not a failure.
 
 ### Changed
 - `scripts/loop.py` exports the unanswered-search register it read from the local

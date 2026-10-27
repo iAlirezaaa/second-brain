@@ -130,8 +130,13 @@ keep-base fallback). The rows are in build order; every checked row has a test.*
       `candidate_check` refuses a row citing behind it, the loop exports the gap register as a
       tracked snapshot, and the law is written in `AGENTS.md` so every host inherits it
       (found as red CI on all four matrices, not as a local failure)
-- [ ] **M** `keep_base` + `--recover` — fall back to the last known good snapshot when the
-      probe regresses, mark it `fell_back: true`, and let the next run resume from it
+- [x] **M** `keep_base` + `--recover` — `scripts/base.py` records a base only from a green
+      house, restores those bytes on request, re-proves the fingerprint, and writes
+      `fell_back: true` to `14_CANDIDATES/loop/recovery.jsonl`; `keep_base` keeps its cue closed
+      so the ratchet does not re-propose what was measured worse
+- [ ] **S** recovery on the probe's own initiative — today a `hurt` verdict tells the agent to
+      fall back; `scripts/probe.py` does not run `base.py --recover` for it, because reverting a
+      tree from an unattended measurement is a bigger permission than naming one
 - [ ] **S** `hades.py edit`/`set` — the registry is create-only today, so a record can be
       filed and never amended
 - [x] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit — `.github/workflows/ci.yml`
