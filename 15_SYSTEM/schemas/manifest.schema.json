@@ -1,0 +1,134 @@
+{
+  "$comment": "HADES OS v3 manifest contract. Enforced by hades.py (a subset of JSON Schema: required, type, enum, id pattern, one-level properties). Loaded from disk at every run -- if this file and the code disagree, doctor reports it.",
+  "id_pattern": "^[A-Z]{2,6}-[0-9A-F]{8}$",
+  "common_required": ["id", "kind", "name", "status", "classification", "created_at"],
+  "common_types": {
+    "id": "string",
+    "kind": "string",
+    "name": "string",
+    "status": "string",
+    "classification": "string",
+    "created_at": "string",
+    "updated_at": "string",
+    "tags": "array",
+    "relations": "object",
+    "last_verified": "string",
+    "source_urls": "array",
+    "evidence_paths": "array",
+    "secret_ref": "string",
+    "notes": "string"
+  },
+  "by_kind": {
+    "project": {
+      "required": ["type"],
+      "types": { "type": "string", "repo": "object", "parent_ids": "array", "depends_on": "array" }
+    },
+    "organization": { "required": [], "types": { "official_url": "string", "products": "array" } },
+    "model": {
+      "required": ["category"],
+      "types": { "category": "string", "organization_id": "string", "versions": "array" }
+    },
+    "model_version": {
+      "required": ["model_id", "version"],
+      "types": { "model_id": "string", "version": "string", "pricing": "object", "runtime": "object" }
+    },
+    "news": {
+      "required": ["source_url", "observed_at"],
+      "types": { "source_url": "string", "observed_at": "string", "claim": "string" }
+    },
+    "benchmark": {
+      "required": ["model_version_id", "metric"],
+      "types": { "model_version_id": "string", "metric": "string", "score": "float", "protocol": "string" }
+    },
+    "prompt": { "required": ["body_path"], "types": { "body_path": "string", "target_model_ids": "array" } },
+    "workflow": { "required": ["engine"], "types": { "engine": "string", "body_path": "string" } },
+    "asset": {
+      "required": ["path_ref"],
+      "types": { "path_ref": "string", "sha256": "string", "size_bytes": "int", "license": "string" }
+    },
+    "deliverable": {
+      "required": ["project_id", "produced_by"],
+      "types": { "project_id": "string", "produced_by": "string", "uses_model_ids": "array", "uses_prompt_ids": "array" },
+      "comment": "provenance is mandatory: a final without a reproducible chain is only a lucky file"
+    },
+    "channel": { "required": ["platform"], "types": { "platform": "string", "secret_ref": "string" } },
+    "episode": { "required": ["channel_id"], "types": { "channel_id": "string", "published_at": "string" } },
+    "campaign": { "required": ["channel_ids", "starts"], "types": { "channel_ids": "array", "starts": "string" } },
+    "app": { "required": ["app_type"], "types": { "app_type": "string", "repo": "object" } },
+    "tutorial": { "required": ["topic"], "types": { "topic": "string" } },
+    "task": { "required": [], "types": { "due": "string", "project_id": "string" } },
+    "decision": { "required": ["decision", "decided_on"], "types": { "decision": "string", "decided_on": "string", "reversible": "bool" } },
+    "wiki_note": { "required": ["topic"], "types": { "topic": "string", "cites_ids": "array" } },
+    "agent": {
+      "required": ["capabilities", "read_scope", "write_scope"],
+      "types": {
+        "capabilities": "array",
+        "read_scope": "array",
+        "write_scope": "array",
+        "tool_allowlist": "array",
+        "memory_policy": "string",
+        "approved_for_harness_ids": "array"
+      }
+    },
+    "subagent": {
+      "required": ["parent_agent_id", "capabilities"],
+      "types": { "parent_agent_id": "string", "capabilities": "array", "tool_allowlist": "array" }
+    },
+    "skill": {
+      "required": ["entrypoint", "description"],
+      "types": { "entrypoint": "string", "description": "string", "approved_for_harness_ids": "array" }
+    },
+    "mcp": {
+      "required": ["transport", "endpoint_or_command"],
+      "types": { "transport": "string", "endpoint_or_command": "string", "tools_exposed": "array" }
+    },
+    "hook": {
+      "required": ["event", "action"],
+      "types": { "event": "string", "action": "string", "enabled": "bool" }
+    },
+    "command": { "required": ["invocation", "effect"], "types": { "invocation": "string", "effect": "string" } },
+    "mode": {
+      "required": ["read_scope", "write_scope", "approval_policy"],
+      "types": { "read_scope": "array", "write_scope": "array", "approval_policy": "string" }
+    },
+    "loop": {
+      "required": ["schedule", "action"],
+      "types": { "schedule": "string", "action": "string", "mode_id": "string", "budget": "object" }
+    },
+    "harness": {
+      "required": ["runtime_name", "memory_paths", "config_paths"],
+      "types": {
+        "runtime_name": "string",
+        "memory_paths": "array",
+        "config_paths": "array",
+        "skills_dir": "string",
+        "supports": "array"
+      },
+      "comment": "runtime_name of 'other' is allowed -- an unverified adapter is a claim, not a working integration"
+    },
+    "plugin": { "required": ["provides"], "types": { "provides": "array" } },
+    "template": { "required": ["applies_to_kind"], "types": { "applies_to_kind": "string" } },
+    "policy": { "required": ["applies_to", "rule"], "types": { "applies_to": "array", "rule": "string" } },
+    "sandbox": {
+      "required": ["isolation"],
+      "types": { "isolation": "string", "credentials": "string", "network": "string" },
+      "comment": "isolation must be container|vm|separate_user|none. A folder is not a sandbox; 'none' is the honest default until one exists."
+    },
+    "experiment": {
+      "required": ["goal", "isolation"],
+      "types": { "goal": "string", "isolation": "string", "evaluation": "object" },
+      "comment": "no production scope, ever"
+    },
+    "candidate": {
+      "required": ["source_experiment_id", "evaluation", "safety_review", "human_approved", "evidence_paths"],
+      "types": {
+        "source_experiment_id": "string",
+        "evaluation": "object",
+        "safety_review": "object",
+        "human_approved": "bool",
+        "evidence_paths": "array"
+      },
+      "evidence_paths_must_exist": true
+    }
+  }
+}
