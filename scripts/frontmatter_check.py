@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import DATE_RE, find_root, iter_markdown, load_json, parse_frontmatter
+from common import DATE_RE, find_root, iter_notes, load_json, parse_frontmatter
 
 
 def validate_file(path, schema):
@@ -43,9 +43,7 @@ def main():
     vault = Path(args.vault) if args.vault else root / "vault-template"
     schema = load_json(root / "rules" / "schema.json")
     failures = 0
-    for path in iter_markdown(vault):
-        if path.name in ("AGENTS.md", "CLAUDE.md", "index.md"):
-            continue  # contract files are prose, not notes
+    for path in iter_notes(vault):
         problems = validate_file(path, schema)
         if problems:
             failures += 1

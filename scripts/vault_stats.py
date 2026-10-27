@@ -2,7 +2,9 @@
 """Vault statistics for both audiences.
 
 Usage: python scripts/vault_stats.py [--vault path]
-Prints notes per zone, status and owner distribution.
+Prints notes per zone, status and owner distribution. Prose (contracts, generated
+indexes, doc folders) is not counted: a README is not a note, and counting it would make
+every number in this output a claim nobody can check against the fence.
 """
 import argparse
 import json
@@ -11,9 +13,7 @@ from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import find_root, iter_markdown, load_json, parse_frontmatter
-
-CONTRACT_FILES = {"AGENTS.md", "CLAUDE.md", "index.md"}
+from common import find_root, iter_notes, load_json, parse_frontmatter
 
 
 def zone_of(rel_path, zones):
@@ -30,9 +30,7 @@ def stats(vault):
     per_status = Counter()
     per_owner = Counter()
     notes = 0
-    for path in iter_markdown(vault):
-        if path.name in CONTRACT_FILES:
-            continue
+    for path in iter_notes(vault):
         notes += 1
         per_zone[zone_of(path.relative_to(vault).as_posix(), zones)] += 1
         fm, _ = parse_frontmatter(path.read_text(encoding="utf-8", errors="replace"))

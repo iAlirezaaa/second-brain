@@ -79,6 +79,37 @@ def iter_markdown(vault):
         yield path
 
 
+# Prose is not a note. Contract files, generated indexes, agent-host doors and doc folders
+# quote example links ([[target]]) and carry a frontmatter shape of their own; judging them
+# by the note schema produces a false alarm, and a gate that cries wolf gets switched off.
+# Each of these has its own judge instead: memory.py --check for MEMORY.md,
+# candidate_check.py for the shelf, sync_hosts.py --check/--lint for the doors.
+# The list only ever covered files outside the scanned vault; an installed brain puts them
+# inside the vault root, so the exemption is by name and by folder, not by position.
+PROSE_NAMES = {"AGENTS.md", "CLAUDE.md", "GEMINI.md", "copilot-instructions.md",
+               "agents.mdc", "README.md", "MEMORY.md", "ROADMAP.md", "HANDOFF.md",
+               "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "CODE_OF_CONDUCT.md",
+               "AUTHORS.md", "SKILL.md", "index.md"}
+PROSE_DIRS = {"00_START_HERE", "skills", "rules", "docs", "scripts", "14_CANDIDATES",
+              "15_SYSTEM", ".cursor", ".windsurf", ".github", ".claude", ".opencode"}
+
+
+def is_prose(path):
+    """True when this markdown is documentation rather than knowledge."""
+    path = Path(path)
+    if any(part in PROSE_DIRS for part in path.parts[:-1]):
+        return True
+    return path.name in PROSE_NAMES
+
+
+def iter_notes(vault):
+    """The markdown under a folder that the note schema and the link fence own."""
+    vault = Path(vault)
+    for path in iter_markdown(vault):
+        if not is_prose(path.relative_to(vault)):
+            yield path
+
+
 # Volatile names that must never enter a content fingerprint: caches, VCS internals,
 # and the probe shelf itself (a probe writes there, so including it would make every
 # probe report "the probe mutated the vault").

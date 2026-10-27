@@ -9,11 +9,11 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import WIKILINK_RE, find_root, iter_markdown
+from common import WIKILINK_RE, find_root, iter_markdown, iter_notes
 
 
 # prose contract files are not notes; their example links are documentation, not data
-CONTRACT_FILES = {"AGENTS.md", "CLAUDE.md"}
+# the name list lives in common.is_prose so both vault gates agree on what a note is
 
 
 def resolve_target(target, files_by_stem, files_by_rel):
@@ -30,11 +30,12 @@ def resolve_target(target, files_by_stem, files_by_rel):
 
 
 def check_vault(vault):
-    files = [p for p in iter_markdown(vault) if p.name not in CONTRACT_FILES]
-    files_by_stem = {p.stem.lower(): p for p in files}
-    files_by_rel = {p.relative_to(vault).as_posix().lower(): p for p in files}
+    # every markdown file is a possible link target, prose included; only notes are judged
+    targets = list(iter_markdown(vault))
+    files_by_stem = {p.stem.lower(): p for p in targets}
+    files_by_rel = {p.relative_to(vault).as_posix().lower(): p for p in targets}
     broken = []
-    for path in files:
+    for path in iter_notes(vault):
         text = path.read_text(encoding="utf-8", errors="replace")
         for match in WIKILINK_RE.finditer(text):
             target = match.group(1).split("|")[0].strip()
