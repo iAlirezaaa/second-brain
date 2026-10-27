@@ -64,7 +64,10 @@ status: active
 - GitHub: issues #3–#11 are closed, each with the command output that proves the fix; #11 is the
   clone-portability finding filed from the red run and closed by the commits that fixed it.
   #12 (create-only registry + unenforced `supersedes`) and #13 (invisible markdown record) were
-  filed from a fresh replica in that order and closed by the phases that fixed them.
+  filed from a fresh replica in that order and closed by the phases that fixed them. #14 (two
+  contracts claiming one file) was found while closing #13's fix and written up after the fact:
+  the order was issue-then-fix for #12/#13 and fix-then-issue for #14, and the issue body says so
+  instead of pretending the discipline held.
   Branch protection on `main` requires the four `test (...)` contexts and blocks force push and
   deletion, which is what the "main branch isn't protected" warning was asking for.
 
@@ -157,9 +160,11 @@ status: active
       or keep it out of the way (see §4) — the index is settled, the reading surface is not
 - [ ] give the registry a real retirement in production: nothing in `11_CONTROL` is superseded
       today, so the new path is proven by tests and a scratch vault, not by this repo's own data
-- [ ] close #12 and #13 with the evidence comment each one owes — the command output that showed
+- [x] close #12 and #13 with the evidence comment each one owes — the command output that showed
       the wrong behaviour, the test file that is red without the fix, and the CI run that proves
-      the green
+      the green (`40581248547` on `5cc0d9e9`, 4/4 success). The two-contract collision was found
+      after its own fix, so it was written up and closed as #14 rather than left as an untracked
+      anecdote in this document.
 - [ ] decide the per-kind status vocabularies (see §4): 20 of 33 kinds fall back to
       `draft|tested|approved|deprecated`, which is a default standing in for a thought not yet
       thought

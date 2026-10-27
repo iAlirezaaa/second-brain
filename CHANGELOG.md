@@ -93,7 +93,7 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   was replaced by what is actually in the folder.
 
 ### Fixed
-- A registry record in a human zone was judged as a broken note. `apply` writes a `wiki_note` as
+- A registry record in a human zone was judged as a broken note (issue #14). `apply` writes a `wiki_note` as
   markdown into `02_WIKI`, and an installed brain scans its own root (`health.py --vault .`), so
   the first decision record this repo filed came back `INVALID: missing field: type … invalid
   status: 'draft'` — the note contract and the registry contract both claiming one file. The

@@ -150,7 +150,7 @@ keep-base fallback). The rows are in build order; every checked row has a test.*
       `note.md`, so a record created through the sanctioned path answered `NOT FOUND` and the
       gate still printed `errors: 0`; prose, relations and the amendment trail now round-trip
       through the markdown writer (`tests/test_phase21_records_are_visible.py`)
-- [x] **S** one file, one contract — a record `apply` writes into a human zone (`02_WIKI`,
+- [x] **S** one file, one contract (#14) — a record `apply` writes into a human zone (`02_WIKI`,
       `04_INTELLIGENCE`) was judged by the note schema and came back `invalid status: 'draft'`;
       `frontmatter_check.py` now selects the contract from the file's content, using the
       recognizer the registry already uses, and reads the record's required fields and status
