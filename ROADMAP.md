@@ -28,13 +28,12 @@ Golden rules:
 - [x] scripts/vault_stats.py — counts, zones, states (human or --json)
 - [x] tests with unittest + sample fixtures — 13 tests green
 
-## Phase 3 — Inbox triage + permission rules · ☐
-- [ ] skills/inbox-triage SKILL.md (propose placement + one-line why; never edit human zones)
-- [ ] rules/zones.json is already machine-readable; enforce it
-- [ ] scripts/zone_check.py — scans proposed moves for cross-zone violations
-- [ ] Quarantine→promote pattern (from research: colopisalvatore/manent) — agent staging dir per folder, human promotes via one command
-- [ ] Injection/PII write gate (from research: manent / vault-mcp) — pre-write lint refusing model-directed text + PII
-- [ ] test: zone_check rejects agent→human-zone moves; write gate blocks injections
+## Phase 3 — Inbox triage + permission rules · ✅
+- [x] skills/inbox-triage SKILL.md (propose placement + one-line why; never edit human zones)
+- [x] rules/zones.json is already machine-readable; enforced by zone_check.py
+- [x] scripts/zone_check.py — rejects human-zone moves without `approved: true`
+- [x] scripts/write_gate.py — blocks injections, zero-width chars, leaked secrets
+- [ ] Quarantine→promote promote-command (proposal JSON exists; promote helper pending)
 
 ## Phase 4 — Keyword knowledge base (local, no vector DB) · ☐
 - [ ] scripts/kb.py — SQLite BM25-ish index of vault + agent session notes
