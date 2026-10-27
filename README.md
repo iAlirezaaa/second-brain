@@ -1,5 +1,13 @@
 # HADES OS v0.01
 
+[![CI](https://github.com/iAlirezaaa/second-brain/actions/workflows/ci.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain/actions/workflows/ci.yml)
+[![loop](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml)
+[![version](https://img.shields.io/badge/engine-v0.0.3-blue)](https://github.com/iAlirezaaa/second-brain/releases)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![tests](https://img.shields.io/badge/tests-39%20green-brightgreen)](https://github.com/iAlirezaaa/second-brain/actions)
+
+**📋 نقشهٔ عمومی راه / Public roadmap (با چیپ وضعیت و تیک پیوسته): [ROADMAP.md](ROADMAP.md)**
+
 یک محفظه محلی برای دانش، پروژه‌ها و ایجنت‌ها. صفحه انسان ۰۰ تا ۱۰، صفحه ماشین ۱۱ به بعد.
 
 **اول اینها را به همین ترتیب بخوان:**

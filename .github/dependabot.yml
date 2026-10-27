@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # the repo itself is stdlib-only (no pip dependencies) — keep the CI matrix from
+  # rotting by bumping workflow action versions, nothing else
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
