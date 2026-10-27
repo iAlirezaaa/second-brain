@@ -5,7 +5,8 @@ A handoff is transient working memory; AGENTS.md is durable contract. It never
 replaces the other and never appends to a log — it refreshes in place.
 
 Sections:
-  §1  State Snapshot          machine-generated (git head, dirty, tests, loop)
+  §1  State Snapshot          machine-generated (git head, dirty, tests, loop,
+                              the measured table from scripts/doc_report.py)
   §2  In-Flight Work          model-written, rewritten at session end
   §3  Decisions & Rejected    model-written (one line each)
   §4  Blockers & Open Qs      model-written (mandatory — prevents rosy reports)
@@ -25,6 +26,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+import doc_report
 from common import find_root, run_utf8
 
 try:
@@ -54,6 +56,8 @@ TEMPLATE = """{frontmatter}
 - tests: {tests}
 - loop: last report = {loop_report}
 
+{measured}
+
 {model_block}
 
 {env_block}
@@ -66,16 +70,18 @@ ENV_BLOCK = """## 7. Environment & Verification
 Run, in order (all green = the handoff environment is healthy):
 
 ```text
-python -m unittest discover -s tests   # full suite (39+ tests)
-python scripts/health.py               # zero broken links + valid frontmatter
+python -m unittest discover -s tests   # full suite — §1 carries the count and the verdict
+python scripts/health.py               # every gate: links, frontmatter, shelf, memory, doors, numbers
 python scripts/loop.py --no-tests      # improvement-loop cycle (writes 14_CANDIDATES/loop)
 python scripts/handoff.py --check      # this handoff is fresh vs repo head
 ```
 
 Operational gotchas (human-owned, keep short):
-- remove `.kb/` before isolated test runs — test_phase4's loader regenerates it
+- `.kb/` is disposable state: `test_phase4` deletes and regenerates it — never commit it
 - Python 3.9 compatible only in `scripts/`: no `match`, no PEP 604 unions
 - Windows stdout: scripts call `sys.stdout.reconfigure(encoding="utf-8")` — keep that
+- after any structural change run `python scripts/doc_report.py --write`, then this script;
+  the numbers in §1 are a measurement, and a measurement goes out of date by design
 """
 
 RULES_BLOCK = """## 8. Handoff Rules
@@ -181,7 +187,7 @@ def extract_model_block(text):
     return PLACEHOLDER_BLOCK
 
 
-def render(path, state, model_block):
+def render(path, state, model_block, measured):
     now = datetime.datetime.utcnow()
     body = model_block.strip()
     if not body.startswith(H["inflight"]):
@@ -191,6 +197,7 @@ def render(path, state, model_block):
         title=TITLE,
         head=state["head"], branch=state["branch"], dirty=state["dirty"],
         tests=state["tests"], loop_report=state["loop_report"],
+        measured=measured,
         model_block=body,
         env_block=ENV_BLOCK.strip(), rules_block=RULES_BLOCK.strip())
 
@@ -200,7 +207,9 @@ def refresh(root, head_override=None):
     existing = path.read_text(encoding="utf-8") if path.is_file() else ""
     model = extract_model_block(existing)
     state = build_state(root, head_of(root, head_override))
-    path.write_text(render(path, state, model) + "\n", encoding="utf-8")
+    # §1 is the only place a number about this repo is allowed to live, and it is written
+    # by the same measurement the sixth gate checks -- handoff and doc_report cannot drift.
+    path.write_text(render(path, state, model, doc_report.block(root)) + "\n", encoding="utf-8")
     print(f"handoff refreshed (head={state['head']}, dirty={state['dirty']}, tests={state['tests']})")
     return 0
 
