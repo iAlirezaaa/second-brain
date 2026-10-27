@@ -125,7 +125,11 @@ keep-base fallback). The rows are in build order; every checked row has a test.*
 - [x] **M** control plane populated — registry records for the pack's own skills and agents,
       create-only-through-plan, entrypoint resolution enforced by doctor
 - [x] **S** measured documents (#4, #10) — `scripts/doc_report.py` owns the block between the
-      markers in README / HANDOFF / START; a stale number is the sixth failing gate
+      markers in README / HANDOFF / START; a stale number is a failing health gate
+- [x] **S** evidence that survives a clone — `common.clone_readable()` names the git boundary,
+      `candidate_check` refuses a row citing behind it, the loop exports the gap register as a
+      tracked snapshot, and the law is written in `AGENTS.md` so every host inherits it
+      (found as red CI on all four matrices, not as a local failure)
 - [ ] **M** `keep_base` + `--recover` — fall back to the last known good snapshot when the
       probe regresses, mark it `fell_back: true`, and let the next run resume from it
 - [ ] **S** `hades.py edit`/`set` — the registry is create-only today, so a record can be

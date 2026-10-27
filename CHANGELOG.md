@@ -48,14 +48,28 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   instead of keeping a copy that can drift.
 - Cold-start procedures as skills: `skills/first-session` (what to do when all you
   were given is the repo URL), `skills/memory`, `skills/self-audit`.
+- **Evidence portability law** — `common.clone_readable()` names the documented git
+  boundary (`.kb/`, `12_RUNTIME/`, `13_LAB/`, most of `14_CANDIDATES/`, caches, key
+  material, databases) with the one exception the shelf keeps (`14_CANDIDATES/loop/`),
+  `candidate_check.py` refuses a row whose evidence sits behind it, and the law is
+  written in `AGENTS.md` so every host projection carries it.
 
 ### Changed
+- `scripts/loop.py` exports the unanswered-search register it read from the local
+  SQLite index as a tracked snapshot (`14_CANDIDATES/loop/gaps.jsonl`) and cites the
+  snapshot, not the index, in the candidate it raises.
 - `scripts/health.py` grew from two gates to six and exposes `GATES` as the measure
   that `doc_report.py` counts rather than a number someone remembers.
 - README no longer asserts an app-dependent workflow; the "empty skeleton" claim
   was replaced by what is actually in the folder.
 
 ### Fixed
+- CI was red on all four matrices while every local gate printed OK. The shelf row
+  `cand-2026-10-27-c3-01` blamed a gap count held in `.kb/kb.sqlite`, a file that is
+  gitignored by design: it existed on the machine that wrote the claim and nowhere
+  else, so the evidence gate correctly refused it in a fresh clone. The row now cites
+  the exported snapshot, the loop cannot write such a row again, and a test rebuilds
+  the clone from `git ls-files` and runs the gate there.
 - The zone/git-boundary law: `12_RUNTIME` and `13_LAB` are declared but gitignored,
   and the toolchain now says so at the boundary instead of reporting a missing zone
   as damage.
