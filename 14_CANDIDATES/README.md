@@ -28,6 +28,12 @@ This is the machine plane's review shelf: nothing here is knowledge until a huma
    (`docs: ROADMAP.md → Phase 9.5`, borrowed from google-research/harness²).
 4. **ردّ هم یک خروجی است.** اگر چرخهٔ جدید چیزی بهتر از وضعیت فعلی نساخت،
    گزارش باید صریحاً بنویسد `keep_base` — نه اینکه یک تغییر اختراع کند.
+5. **ردیف روی قفسه قرارداد دارد.** `rules/candidate.schema.json` قانون است و
+   `scripts/candidate_check.py` گیت: بعدِ dimension/cue/lesson/evidence/confidence/verdict،
+   شاهدِ بازِ نشدنی = جعل، و `verdict: helped` بدون probe تازه promotable نیست.
+   هر خط باید شمارش شود: `proposed == adopt + revise + drop + keep_base`.
+   Every shelf row is judged against the contract; an evidence pointer that does not
+   open is treated as a fabrication, and `NO_ENTRY` is the legal honest empty row.
 
 این ناحیه در ایندکس تولیدی حساب نمی‌شود (`hades.py index` آن را کنار می‌گذارد) و برای
 زمینهٔ پیش‌فرض ایجنت مسدود است (`denied_for_default_context`).

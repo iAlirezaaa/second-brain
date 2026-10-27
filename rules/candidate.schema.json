@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "applies_to": ["14_CANDIDATES/loop/"],
+  "why": "A candidate is a claim that something should change. harness2's rule, kept here in stdlib form: a claim about behaviour is only evidence if something was executed and its output was looked at. This file is the contract; scripts/candidate_check.py is the enforcer. Nothing here is decorative -- every key is read by the script.",
+  "frontmatter_required": ["id", "type", "title", "status", "owner", "created", "updated"],
+  "required": {
+    "dimension": {
+      "enum": ["invariant", "domain"],
+      "means": {
+        "invariant": "the candidate would change the measuring apparatus (rules/, scripts/, tests/, this file). The bar is a real run, always.",
+        "domain": "the candidate would change content (the vault, notes, docs). A run is required when the claim is about behaviour."
+      }
+    },
+    "cue": {
+      "type": "string",
+      "means": "the situation the lesson applies to, in one line. NO_ENTRY is a legal value: it says honestly that nothing in memory applied, which is data, not a gap."
+    },
+    "lesson": {"type": "string", "means": "what to do next time, phrased so a different agent could follow it."},
+    "evidence": {"type": "string_list", "means": "paths, URLs or probe ids that a reader can open. An evidence line that points at nothing is a fabrication."},
+    "confidence": {"type": "number", "min": 0, "max": 1, "means": "how much this lesson is trusted. It is not a decoration: below the floor the candidate cannot be promoted on its own."},
+    "verdict": {
+      "enum": ["helped", "hurt", "no_observed_effect", "confounded", "keep_base"],
+      "means": {
+        "helped": "measured better after the change -- needs a fresh pass probe",
+        "hurt": "measured worse -- needs a fresh failing probe",
+        "no_observed_effect": "changed, measured, nothing moved -- needs a probe record",
+        "confounded": "the measurement cannot be trusted -- needs evidence explaining why, and cannot be promoted alone",
+        "keep_base": "the honest answer is to change nothing. This is an output, not a failure, and needs no probe."
+      }
+    }
+  },
+  "no_entry": {
+    "cue": "NO_ENTRY",
+    "frees": ["lesson", "evidence", "confidence", "verdict"],
+    "forbids": "claiming a lesson at the same time: a NO_ENTRY row that also teaches something is not a NO_ENTRY"
+  },
+  "probe_required_when": {
+    "verdict": ["helped", "hurt", "no_observed_effect"],
+    "dimension": ["invariant"],
+    "freshness": "a probe record for this candidate id whose fingerprint_at and fingerprint_after both equal the current tree fingerprint -- an old measurement describes a tree that no longer exists"
+  },
+  "promote_floor": {
+    "confidence": 0.6,
+    "confounded": "never promotable alone: the disagreement must be recorded, not resolved by deleting one side",
+    "probe": "must exist, be fresh and match the verdict before the candidate leaves the shelf"
+  },
+  "count_identity": {
+    "rule": "proposed == adopt + revise + drop + keep_base",
+    "means": "every candidate the loop raised must be accounted for by a disposition; a row that vanishes is a lost measurement",
+    "labels": "disposition labels are unique per report -- the same label twice means two things were conflated"
+  }
+}

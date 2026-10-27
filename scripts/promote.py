@@ -18,7 +18,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import find_root, load_json, parse_frontmatter, run_utf8
+import candidate_check
+from common import find_root, load_json, parse_frontmatter, run_utf8, state_fingerprint
 from zone_check import check_zones_config
 
 try:
@@ -53,6 +54,39 @@ def patch_top_level_text(text, updates):
     return "\n".join(out) + ("\n" if not text.endswith("\n") else ""), None
 
 
+def candidate_gate(root, src, fm):
+    """A shelf row is a claim, and a claim must be measured on the current tree.
+
+    This is the part the old gate faked: `evaluation.passed` was a hand-written
+    boolean, and a checkbox is not a measurement. Returns refusals; empty means
+    the row may leave the shelf.
+    """
+    schema_path = root / "rules" / "candidate.schema.json"
+    if not schema_path.is_file():
+        return ["rules/candidate.schema.json is missing — the candidate contract cannot be checked"]
+    schema = load_json(schema_path)
+    problems = candidate_check.check_candidate(
+        src, schema, root, state_fingerprint(root), candidate_check.probe_index(root))
+    out = ["candidate fails its contract: %s" % problem for problem in problems]
+    floor = float((schema.get("promote_floor") or {}).get("confidence", 0.6))
+    verdict = str(fm.get("verdict") or "")
+    try:
+        confidence = float(fm.get("confidence"))
+    except (TypeError, ValueError):
+        out.append("confidence is missing or not a number — nothing decides how much to trust this")
+        confidence = None
+    if confidence is not None and confidence < floor:
+        out.append("confidence %s is below the promote floor %s" % (confidence, floor))
+    if verdict == "keep_base":
+        out.append("verdict is keep_base — the honest outcome is to change nothing; "
+                   "the row belongs on the shelf, not in the vault")
+    elif verdict == "confounded":
+        out.append("verdict is confounded — the disagreement gets recorded, not resolved by promoting")
+    if str(fm.get("cue") or "").strip() == candidate_check.NO_ENTRY:
+        out.append("cue is NO_ENTRY — nothing was learned, so there is nothing to file away")
+    return out
+
+
 def promote(item, proposals_path, root):
     proposals = load_json(proposals_path)["proposals"]
     config = load_json(root / "rules" / "zones.json")
@@ -75,10 +109,19 @@ def promote(item, proposals_path, root):
         print(f"REFUSED: {target} is human-owned and the proposal is not approved.")
         return 1
     vault = root / "vault-template"
-    src = vault / item
+    rel_item = str(item).replace("\\", "/")
+    # a capture lives inside the vault; a loop candidate lives on the repo-level shelf
+    src = (root if rel_item.startswith("14_CANDIDATES/") else vault) / rel_item
     if not src.is_file():
         print(f"REFUSED: {item} not found in the vault")
         return 1
+    src_fm, _src_body = parse_frontmatter(src.read_text(encoding="utf-8", errors="replace"))
+    if candidate_check.is_candidate(src_fm):
+        problems = candidate_gate(root, src, src_fm)
+        if problems:
+            for problem in problems:
+                print(f"REFUSED: {problem}")
+            return 1
     destination = match.get("destination") or f"{target}/{src.name}"
     dest = vault / destination
     if dest.exists() and target in never:
