@@ -9,6 +9,7 @@ Three claims, each judged by a test rather than by a sentence in a README:
   3. an installed brain passes all five of its own gates with no editor, no network and
      no plugin anywhere in the loop.
 """
+import re
 import shutil
 import subprocess
 import sys
@@ -23,6 +24,19 @@ from common import run_utf8  # noqa: E402
 import sync_hosts  # noqa: E402
 
 SYNC = str(SCRIPTS / "sync_hosts.py")
+INSTALL = str(SCRIPTS / "install.py")
+HEALTH = str(SCRIPTS / "health.py")
+
+# An instruction that makes an app a step of the workflow. Optional lenses are allowed --
+# what is not allowed is a document that turns a lens into a dependency.
+FORBIDDEN = (
+    re.compile(r"\bopen\s+[^.\n]{0,40}\b(obsidian|vs ?code|cursor|windsurf|zed|idea)\b", re.I),
+    re.compile(r"\b(requires?|needs?|must (?:have|install))\s+(obsidian|an editor|a plugin|the app)\b", re.I),
+    re.compile(r"install (obsidian|the plugin)\b", re.I),
+    re.compile(r"(در\s+obsidian\s+باز کنید|به obsidian نیاز|obsidian الزامی)", re.I),
+)
+# lines that say the opposite: the app is a choice, not a condition
+EXCUSE = re.compile(r"(optional|never a dependency|اختیاری|لنز|not required|example)", re.I)
 
 
 def sync(root, *args):
@@ -104,6 +118,90 @@ class TestDoorsPointAtRealRooms(unittest.TestCase):
             self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
             self.assertIn("points at nothing", result.stdout)
             self.assertFalse((root / "CLAUDE.md").exists(), "no door may be laid on a broken map")
+
+
+class TestNoAppIsARequirement(unittest.TestCase):
+    def files(self):
+        """Everything an agent reads at the door: canon, doors, start docs, skills, gates."""
+        shipped = [ROOT / "README.md", ROOT / "AGENTS.md", ROOT / "HANDOFF.md",
+                   ROOT / "MEMORY.md", ROOT / "ROADMAP.md"]
+        shipped += [ROOT / rel for _k, _n, rel, _m in sync_hosts.HOSTS]
+        shipped += list((ROOT / "00_START_HERE").glob("*.md"))
+        shipped += list((ROOT / "skills").glob("*/SKILL.md"))
+        shipped += list(SCRIPTS.glob("*.py"))
+        return [path for path in shipped if path.is_file()]
+
+    def test_no_shipped_instruction_turns_an_editor_into_a_dependency(self):
+        offenders = []
+        for path in self.files():
+            for lineno, line in enumerate(path.read_text(encoding="utf-8",
+                                                        errors="replace").splitlines(), 1):
+                if any(pattern.search(line) for pattern in FORBIDDEN) and not EXCUSE.search(line):
+                    offenders.append("%s:%d %s" % (path.name, lineno, line.strip()[:90]))
+        self.assertEqual(offenders, [], "an app is a lens here, not a step:\n" +
+                         "\n".join(offenders))
+
+    def test_the_installer_does_not_send_the_user_to_an_app(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "brain"
+            result = run_utf8([sys.executable, INSTALL, "--target", str(target)], cwd=str(ROOT))
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertNotRegex(result.stdout, FORBIDDEN[0])
+            self.assertIn("no app required", result.stdout)
+
+
+class TestAnInstalledBrainStandsAlone(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.target = Path(cls._tmp.name) / "brain"
+        cls.install = run_utf8([sys.executable, INSTALL, "--target", str(cls.target)],
+                               cwd=str(ROOT))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_the_installed_brain_passes_all_five_gates_with_no_editor_present(self):
+        self.assertEqual(self.install.returncode, 0, self.install.stdout + self.install.stderr)
+        result = run_utf8([sys.executable, HEALTH, "--vault", "."], cwd=str(self.target))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for gate in ("broken links", "frontmatter valid", "shelf candidate",
+                     "MEMORY.md matches", "agree with AGENTS.md"):
+            self.assertIn(gate, result.stdout, "%s did not run in the installed brain" % gate)
+
+    def test_the_installed_brain_ships_its_own_laws_doors_and_gates(self):
+        for rel in ("AGENTS.md", "CLAUDE.md", "GEMINI.md", ".github/copilot-instructions.md",
+                    ".cursor/rules/agents.mdc", ".windsurf/rules/agents.md",
+                    "scripts/health.py", "scripts/sync_hosts.py", "scripts/memory.py",
+                    "rules/candidate.schema.json", "rules/memory.schema.json",
+                    "14_CANDIDATES/README.md", "15_SYSTEM/memory/README.md",
+                    "00_START_HERE/START.md", "skills/loop/SKILL.md"):
+            self.assertTrue((self.target / rel).is_file(), "%s is not in the installed brain" % rel)
+
+    def test_a_fresh_brain_answers_honestly_rather_than_with_borrowed_lessons(self):
+        """The upstream lessons stay upstream: the installed memory starts at NO_ENTRY."""
+        result = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target),
+                           "--recall", "first session"], cwd=str(self.target))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("NO_ENTRY", result.stdout)
+        self.assertNotIn("mem-child-output-encoding", result.stdout)
+
+    def test_a_fresh_brain_can_learn_a_lesson_and_retrieve_it(self):
+        proof = self.target / "00_Inbox" / "proof.md"
+        proof.write_text("# proof\n", encoding="utf-8")
+        added = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target),
+                         "--add", "--id", "mem-installed", "--cue", "the gate printed nothing",
+                         "--lesson", "print the row and the reason", "--evidence",
+                         "00_Inbox/proof.md", "--confidence", "0.9", "--verdict", "helped"],
+                         cwd=str(self.target))
+        self.assertEqual(added.returncode, 0, added.stdout + added.stderr)
+        recalled = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target),
+                            "--recall", "gate printed nothing"], cwd=str(self.target))
+        self.assertIn("mem-installed", recalled.stdout)
+        checked = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target)],
+                           cwd=str(self.target))
+        self.assertEqual(checked.returncode, 0, checked.stdout)
 
 
 def build_root(root):
