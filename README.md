@@ -4,11 +4,40 @@
 [![loop](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml)
 [![version](https://img.shields.io/badge/engine-v0.0.3-blue)](https://github.com/iAlirezaaa/second-brain/releases)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![tests](https://img.shields.io/badge/tests-39%20green-brightgreen)](https://github.com/iAlirezaaa/second-brain/actions)
 
 **📋 نقشهٔ عمومی راه / Public roadmap (با چیپ وضعیت و تیک پیوسته): [ROADMAP.md](ROADMAP.md)**
 
+## What this is
+
 یک محفظه محلی برای دانش، پروژه‌ها و ایجنت‌ها. صفحه انسان ۰۰ تا ۱۰، صفحه ماشین ۱۱ به بعد.
+قانون‌ها را اسکریپت اجرا می‌کند، نه تذکر دوستانه: هر تخلف از قرارداد، یک گیتِ قرمز است.
+
+EN — A local, plain-markdown second brain for one human curator and many AI agents: knowledge,
+projects and agents live in numbered zones, and the rules are enforced by scripts instead of by
+good intentions. **No app is required.** Python 3.9+ standard library and markdown files are the
+whole system; Obsidian, VS Code, Cursor, Claude Code, Codex, Zed or `notepad` are optional lenses
+on the same folder.
+
+Three properties this repo is built to keep:
+
+1. **It gets smarter.** Every lesson the repo learns is appended to
+   `15_SYSTEM/memory/lessons.jsonl` with a verdict, evidence and a confidence;
+   `python scripts/memory.py --recall "<question>"` answers it, and `NO_ENTRY` is a legal answer.
+   The root `MEMORY.md` is generated from that ledger — it is never typed by hand.
+2. **It learns from its mistakes.** A claim about behaviour is believed only after a real
+   execution probed it (`scripts/probe.py`); candidates wait on a quarantine shelf
+   (`14_CANDIDATES/`) and reach the human plane only through a gated promotion, with the
+   ledger's count identity checked against the folder.
+3. **An agent can start from the URL alone.** Hand this repository's address to any agent:
+   it reads `AGENTS.md` — or the generated door for its host — and follows
+   `skills/first-session/SKILL.md`: orient, prove the house is healthy, take one bounded task,
+   leave a handoff.
+
+```text
+python scripts/health.py                   # every gate in one command, incl. the numbers below
+python -m unittest discover -s tests       # the suite — its size is in the measured table below
+python 15_SYSTEM/scripts/hades.py doctor   # the HADES plane: zones, manifests, relations
+```
 
 **اول اینها را به همین ترتیب بخوان:**
 
@@ -30,19 +59,34 @@ py -3.10 15_SYSTEM/scripts/wiki.py build
 
 `py -3.10` را جدی بگیر: روی این سیستم `python` پیش‌فرض نسخه ۳.۹ است و با stdout ویندوز، متن فارسی را می‌شکند. `start.bat` همین را برایت انجام می‌دهد.
 
-## وضعیت فعلی (از `doctor` و `status` خوانده می‌شود، نه از این فایل)
+## وضعیت فعلی / Current state
 
-این بسته **اسکلت خالی** است: ناحیه‌ها، قراردادها، الگوها و اسکریپت‌های آزمودنی. هیچ پروژه، مدل، خبر یا اسکیل واقعی داخلش نیست و هیچ‌کدام با داده نمونه پر نشده‌اند. رجیستری موجودی را با `hades.py status` بخوان؛ عددی که در این README نباشد، عددی است که کسی اثباتش نکرده.
+این بسته **اسکلت است، نه نمونه‌کار**: ناحیه‌ها، قراردادها، الگوها و اسکریپت‌های آزمودنی. هیچ پروژهٔ شخصی، مدل، خبر یا دادهٔ نمونه‌ای داخلش نیست و هیچ‌چیز با پرکنندهٔ ساختگی انباشته نشده. آنچه پر است، خودِ قانون است: رجیستری کنترل‌پلین (اسکیل‌ها و ایجنت‌هایی که این بسته واقعاً دارد) و حافظهٔ ریپو. موجودی را با `hades.py status` و جدول پایین بخوان؛ عددی که اندازه‌گیری نشده باشد، عددی است که کسی اثباتش نکرده.
 
-تأییدهای انجام‌شده روی همین پوشه، با اجرای زنده:
+EN — This package is a skeleton, not a portfolio: no personal projects, models, news or sample data, and nothing padded with filler. What *is* populated is the law itself — the control-plane registry (the skills and agents this pack really ships) and the repo's own memory. Read the inventory from `hades.py status` and the table below.
 
-```
-hades.py status   -> zones present: 16/16 | registry records: 0
-hades.py doctor   -> errors: 0 | warnings: 0
-hades.py qc       -> persian hygiene: clean
-init_structure.py --check -> OK
-test_hades.py     -> failed: 0   (شمارش_checks را خود اجرا چاپ می‌کند)
-```
+هر عدد زیر همین الان از همین پوشه خوانده شده و `python scripts/doc_report.py --write` آن را
+می‌نویسد. اگر بعد از یک تغییر دستی قدیمی بماند، گیتِ «اعدادِ اسناد» در `python scripts/health.py`
+قرمز می‌شود — یک عددِ تایپی در سند، ادعاست، نه اندازه‌گیری.
+
+EN — Every number below is read from this folder by `python scripts/doc_report.py --write`. A
+stale number fails the numbers gate in `python scripts/health.py` rather than becoming lore.
+
+<!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
+| measure | now |
+| --- | --- |
+| tests collected (`python -m unittest discover -s tests`) | 183 |
+| health gates (`python scripts/health.py`) | 6 |
+| registry records (`11_CONTROL/**/*.json`) | 12 |
+| skills in the pack (`skills/*/SKILL.md`) | 10 |
+| agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 15 |
+| candidate rows on the shelf (`14_CANDIDATES/loop`) | 2 |
+| kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
+| relation types in the contract | 13 |
+| zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 14 / 16 |
+| python floor | 3.9 (standard library only) |
+<!-- END measured -->
 
 اسکریپت‌ها: `hades.py` (رجیستری و گیت‌ها)، `init_structure.py` (ساخت ناحیه‌ها،
 idempotent)، `wiki.py` (سایت ناحیه انسان)، `test_hades.py` (تست‌های مثبت و منفی روی
