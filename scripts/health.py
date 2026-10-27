@@ -2,9 +2,10 @@
 """Composite health check — the one command to run before anything ships.
 
 Usage: python scripts/health.py [--vault path]
-Runs: link_check + frontmatter_check + candidate_check + memory. Exit 0 only if all green.
-The last two judge the machine plane (the quarantine shelf, the lesson ledger) rather than
-the vault, so they take the repo root and stay quiet while those files are empty.
+Runs: link_check + frontmatter_check + candidate_check + memory + sync_hosts. Exit 0 only
+if all green. The last three judge the machine plane (the quarantine shelf, the lesson
+ledger, the agent-host projections) rather than the vault, so they take the repo root and
+stay quiet while those files are empty.
 """
 import sys
 import argparse
@@ -20,7 +21,8 @@ except AttributeError:
 
 
 # vault gates take --vault; the machine-plane gates take the repo root instead
-ROOT_ONLY_GATES = {"candidate_check.py": [], "memory.py": ["--check"]}
+ROOT_ONLY_GATES = {"candidate_check.py": [], "memory.py": ["--check"],
+                   "sync_hosts.py": ["--check"]}
 
 
 def gate_argv(script, vault_args):
@@ -37,7 +39,8 @@ def main():
     root = find_root(Path(__file__))
     vault_args = ["--vault", args.vault] if args.vault else []
     codes = []
-    for script in ["link_check.py", "frontmatter_check.py", "candidate_check.py", "memory.py"]:
+    for script in ["link_check.py", "frontmatter_check.py", "candidate_check.py",
+                   "memory.py", "sync_hosts.py"]:
         result = run_utf8(gate_argv(script, vault_args), cwd=str(root))
         print(result.stdout.strip())
         if result.stderr.strip():
