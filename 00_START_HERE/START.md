@@ -5,6 +5,28 @@
 خروجی فارسی را می‌شکند. `start.bat` هم نسخه ۳.۱۰ را صدا می‌زند و خودش فقط ASCII
 است.
 
+## ۰) اندازه‌های امروز (خودکار، نه تایپی)
+
+هر عدد در جدول زیر همین الان از همین پوشه خوانده شده. `python scripts/doc_report.py --write`
+نویسندهٔ آن است و `--check` همان گیتِ «اعدادِ اسناد» در سلامت است: اگر بعد از یک تغییر، عددی
+قدیمی بماند، سبز نمی‌شود. هیچ‌چیز در این فایل با عددِ حافظه‌ای پر نمی‌شود.
+
+<!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
+| measure | now |
+| --- | --- |
+| tests collected (`python -m unittest discover -s tests`) | 183 |
+| health gates (`python scripts/health.py`) | 6 |
+| registry records (`11_CONTROL/**/*.json`) | 12 |
+| skills in the pack (`skills/*/SKILL.md`) | 10 |
+| agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 15 |
+| candidate rows on the shelf (`14_CANDIDATES/loop`) | 2 |
+| kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
+| relation types in the contract | 13 |
+| zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 14 / 16 |
+| python floor | 3.9 (standard library only) |
+<!-- END measured -->
+
 ## ۱) اول بررسی کن که سالم است
 
 ```powershell
@@ -107,9 +129,9 @@ visibility را از GitHub دوباره می‌خواند؛ اگر PRIVATE نب
 
 ## ۹) راهنمای کامل
 
-این فایل فقط دستورهای روزمره است. برای توضیح کامل ناحیه‌ها، سی‌وسه نوع رکورد،
-سیزده رابطه، فهرست گیت‌ها، عیب‌یابی پیام‌به‌پیام و بخش انگلیسی،
-`00_START_HERE/GUIDE_FA_EN.md` را بخوان.
+این فایل فقط دستورهای روزمره است. برای توضیح کامل ناحیه‌ها، انواع رکورد و رابطه‌های
+تعریف‌شده در قرارداد (عددشان را در جدول بخش ۰ همین فایل بخوان، نه از حافظه)، فهرست گیت‌ها،
+عیب‌یابی پیام‌به‌پیام و بخش انگلیسی، `00_START_HERE/GUIDE_FA_EN.md` را بخوان.
 
 ## ۱۰) تست گیت‌ها
 
