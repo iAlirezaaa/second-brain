@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-15EE69D8",
+  "name": "inbox-triage",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-27",
+  "tags": [],
+  "relations": {},
+  "notes": "registered skill pack body",
+  "entrypoint": "skills/inbox-triage/SKILL.md",
+  "description": "registered skill pack body",
+  "approved_for_harness_ids": []
+}

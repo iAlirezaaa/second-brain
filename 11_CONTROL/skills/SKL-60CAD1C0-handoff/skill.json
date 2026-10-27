@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-60CAD1C0",
+  "name": "handoff",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-27",
+  "tags": [],
+  "relations": {},
+  "notes": "registered skill pack body",
+  "entrypoint": "skills/handoff/SKILL.md",
+  "description": "registered skill pack body",
+  "approved_for_harness_ids": []
+}

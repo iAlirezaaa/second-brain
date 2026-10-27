@@ -504,6 +504,31 @@ def cmd_status(cfg):
     return 0
 
 
+def skill_entrypoint(name):
+    """Where a skill's body actually lives, so the record cannot be born pointing at nothing.
+
+    The definition stays in 11_CONTROL (that is the plane of laws) and the prose body stays
+    in skills/<name>/SKILL.md (that is what every agent host reads). One of the two has to
+    be a pointer, and a pointer that has not been checked is how a registry starts lying.
+    """
+    slug = re.sub(r"[^a-z0-9]+", "-", str(name).lower()).strip("-")
+    candidate = ROOT / "skills" / slug / "SKILL.md"
+    return "skills/%s/SKILL.md" % slug if candidate.is_file() else "SKILL.md"
+
+
+def check_entrypoints(path, rec):
+    """Every file an agent is told to open has to exist -- record-local or vault-relative."""
+    entry = str(rec.get("entrypoint") or "").strip()
+    if not entry:
+        return []
+    local, from_root = path.parent / entry, ROOT / entry
+    if local.is_file() or from_root.is_file():
+        return []
+    return ["entrypoint '%s' does not exist (looked for %s and %s) -- a definition whose "
+            "body is missing is a promise, not a capability" %
+            (entry, rel(local), rel(from_root))]
+
+
 def cmd_doctor(cfg, sch, as_json=False):
     errors, warnings = [], []
     zones = zone_dirs(cfg)
@@ -532,6 +557,10 @@ def cmd_doctor(cfg, sch, as_json=False):
             errors.append("%s: %s" % (rel(p), prob))
     for p, prob in check_relations(recs, cfg):
         errors.append("%s: %s" % (rel(p), prob))
+    # a record that points at a file which is not there is not a definition, it is a rumour
+    for p, r in recs:
+        for prob in check_entrypoints(p, r):
+            errors.append("%s: %s" % (rel(p), prob))
     # registry manifests inside the disposable plane = knowledge stranded in machine
     # state; 12_RUNTIME is never enumerated as a registry, so scan it directly
     names = set(manifest_names(cfg))
@@ -672,7 +701,8 @@ def make_obj(cfg, kind, name, args, ident):
                                      "write_scope": [], "tool_allowlist": [], "memory_policy": "promote-only",
                                      "approved_for_harness_ids": []}),
         "subagent": lambda: obj.update({"parent_agent_id": args.agent or "", "capabilities": [], "tool_allowlist": []}),
-        "skill": lambda: obj.update({"entrypoint": "SKILL.md", "description": args.description or "",
+        "skill": lambda: obj.update({"entrypoint": skill_entrypoint(name),
+                                     "description": args.description or "",
                                      "approved_for_harness_ids": []}),
         "mcp": lambda: obj.update({"transport": args.transport or "stdio", "endpoint_or_command": args.endpoint or "", "tools_exposed": []}),
         "hook": lambda: obj.update({"event": args.event or "on_save", "action": args.action or "", "enabled": False}),
@@ -764,13 +794,15 @@ def cmd_apply(cfg, sch, args):
     else:
         dump_json(tp, obj)
     if kc["kind"] == "skill":
-        (tp.parent / "SKILL.md").write_text(skill_md(obj), encoding="utf-8")
+        if obj.get("entrypoint") == "SKILL.md":
+            # a scaffold body only for a skill that has no prose yet: when the pack already
+            # holds skills/<name>/SKILL.md the record points at it, and a second body in the
+            # record folder is a parallel truth waiting to disagree
+            (tp.parent / "SKILL.md").write_text(skill_md(obj), encoding="utf-8")
         for sub in ("scripts", "references", "tests"):
             (tp.parent / sub).mkdir(exist_ok=True)
     if kc["kind"] in ("project", "agent", "subagent"):
-        (tp.parent / "OVERVIEW.md").write_text(
-            "# %s\n\n> %s\n\nوضعیت: %s | شناسه: %s\n\n## بعدی\n\n- [ ] هدف و محدودیت را بنویس\n- [ ] رابطه‌ها را وصل کن\n" %
-            (obj["name"], obj.get("notes", ""), obj["status"], obj["id"]), encoding="utf-8")
+        (tp.parent / "OVERVIEW.md").write_text(overview_md(obj), encoding="utf-8")
     # THE ORDER MATTERS: stamp applied first, then print. v2 printed first and a
     # console encoding failure left an unmarked plan plus a duplicate project.
     plan["applied"] = True
@@ -797,6 +829,25 @@ def to_markdown(obj):
     text += "## وضعیت\n\n`%s` | مشاهده در `%s` | آخرین بررسی: `%s`\n" % (
         obj.get("status"), obj.get("observed_at", ""), obj.get("last_verified", ""))
     return text
+
+
+def overview_md(obj):
+    """A record's summary is a note, so it carries note frontmatter like every other note.
+
+    Files the scripts write are judged by the same gates as files the human writes. A bare
+    markdown summary passes in the repo -- the vault gates scan the template -- and fails in
+    an installed brain, where 11_CONTROL sits inside the scanned root. Same bytes either way
+    is the only version nobody has to remember.
+    """
+    stamp = str(obj.get("created_at") or today())
+    kind = "project" if obj.get("kind") == "project" else "note"
+    topics = obj.get("tags") or [str(obj.get("kind") or "record")]
+    return ('---\nid: %s\ntype: %s\ntitle: "OVERVIEW — %s"\nstatus: raw\nowner: agent\n'
+            'topics: [%s]\ncreated: %s\nupdated: %s\n---\n\n# %s\n\n> %s\n\n'
+            "وضعیت رکورد: %s | شناسه: %s\n\n## بعدی\n\n"
+            "- [ ] هدف و محدودیت را بنویس\n- [ ] رابطه‌ها را وصل کن\n") % (
+        obj["id"], kind, obj["name"], ", ".join(str(t) for t in topics), stamp, stamp,
+        obj["name"], obj.get("notes", ""), obj["status"], obj["id"])
 
 
 def skill_md(obj):
@@ -1032,6 +1083,11 @@ def cmd_sync(cfg, args):
         if dst.exists():
             shutil.rmtree(dst)
         shutil.copytree(src, dst, ignore=shutil.ignore_patterns("__pycache__", "*.tmp-*"))
+        # the record is the law; the prose body may live in the pack the hosts read.
+        # a mirror that copies the pointer but not what it points at ships an empty skill
+        body = ROOT / str(r.get("entrypoint") or "")
+        if r.get("entrypoint") and body.is_file() and body.parent != src:
+            shutil.copy2(str(body), str(dst / Path(r["entrypoint"]).name))
         synced.add(name)
         print("synced %s (%s)" % (name, r.get("name")))
     pruned = 0

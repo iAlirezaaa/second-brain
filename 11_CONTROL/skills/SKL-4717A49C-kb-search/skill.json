@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-4717A49C",
+  "name": "kb-search",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-27",
+  "tags": [],
+  "relations": {},
+  "notes": "registered skill pack body",
+  "entrypoint": "skills/kb-search/SKILL.md",
+  "description": "registered skill pack body",
+  "approved_for_harness_ids": []
+}

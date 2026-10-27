@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-652F1151",
+  "name": "self-audit",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-27",
+  "tags": [],
+  "relations": {},
+  "notes": "registered skill pack body",
+  "entrypoint": "skills/self-audit/SKILL.md",
+  "description": "registered skill pack body",
+  "approved_for_harness_ids": []
+}

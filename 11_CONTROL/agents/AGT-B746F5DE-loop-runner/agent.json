@@ -1,0 +1,34 @@
+{
+  "kind": "agent",
+  "id": "AGT-B746F5DE",
+  "name": "loop-runner",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-27",
+  "tags": [],
+  "relations": {},
+  "notes": "Runs one bounded improvement cycle and leaves the shelf counted",
+  "capabilities": [
+    "loop",
+    "memory",
+    "health",
+    "promote"
+  ],
+  "read_scope": [
+    "00_START_HERE",
+    "01_INBOX",
+    "02_WIKI",
+    "03_PROJECTS",
+    "04_INTELLIGENCE",
+    "05_WORKS",
+    "06_CHANNELS",
+    "07_PRODUCTS",
+    "08_LEARNING",
+    "09_OPERATIONS",
+    "10_ARCHIVE"
+  ],
+  "write_scope": [],
+  "tool_allowlist": [],
+  "memory_policy": "promote-only",
+  "approved_for_harness_ids": []
+}

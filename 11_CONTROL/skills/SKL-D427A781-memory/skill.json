@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-D427A781",
+  "name": "memory",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-27",
+  "tags": [],
+  "relations": {},
+  "notes": "registered skill pack body",
+  "entrypoint": "skills/memory/SKILL.md",
+  "description": "registered skill pack body",
+  "approved_for_harness_ids": []
+}
