@@ -78,13 +78,13 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 221 |
+| tests collected (`python -m unittest discover -s tests`) | 233 |
 | health gates (`python scripts/health.py`) | 6 |
-| registry records (`11_CONTROL/**/*.json`) | 12 |
+| registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 19 |
-| candidate rows on the shelf (`14_CANDIDATES/loop`) | 3 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 21 |
+| candidate rows on the shelf (`14_CANDIDATES/loop`) | 4 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
 | zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 14 / 16 |
@@ -95,9 +95,27 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 idempotent)، `wiki.py` (سایت ناحیه انسان)، `test_hades.py` (تست‌های مثبت و منفی روی
 یک والت موقت). الگوها در `15_SYSTEM/templates`‌اند و فقط قالب‌اند؛ داده نمونه نیستند.
 
+## پل هارنس / The harness bridge
+
+بک‌اندی که ایجنت‌ها صدا می‌زنند، پروتکلی است که هارنس‌ها همین حالا حرف می‌زنند:
+`15_SYSTEM/scripts/mcp_server.py` — سرور MCP روی stdio، فقط کتابخانهٔ استاندارد، بدون
+پورت و کلید و دیمن. ابزارهای خواندن بازند (`vault_search`، `memory_recall`،
+`registry_list`، `registry_show`، `doctor_status`) و تنها ابزار نوشتن `candidate_propose`
+است که یک ردیف ثبت‌شده روی قفسهٔ قرنطینه می‌گذارد — ایجنت پیشنهاد می‌دهد، انسان تصمیم
+می‌گیرد. نمونهٔ اتصال برای OpenCode و Claude Desktop در `15_SYSTEM/integrations/` است.
+
+EN — The backend agents call is the protocol harnesses already speak:
+`15_SYSTEM/scripts/mcp_server.py`, a Model Context Protocol server over stdio,
+stdlib-only, no port, no keys, no daemon. Read tools are open; the single write tool,
+`candidate_propose`, files a registered row on the quarantine shelf — agents propose,
+humans decide. Client examples: `15_SYSTEM/integrations/`. Agent runs are a separate
+disposable ledger (`15_SYSTEM/scripts/runs.py` → `12_RUNTIME/agent_runs/`): the registry
+keeps who the actor is, the run keeps what it did, and both die at the git boundary —
+evidence is promoted, never stranded.
+
 ## آنچه اینجا نیست
 
-Orchestrator زنده، صف کارِ اجراکننده، RBAC یا ACL فایل‌سیستم، سندباکس واقعی، MCP Server مرکزی، جست‌وجوی سمانتیک و Vector DB، همگام‌سازی خودکار GitHub، سرویس بکاپ زمان‌دار و داشبورد آنلاین. برای هر کدام اسلات رزرو شده، ولی سرویس ساخته نشده.
+Orchestrator زنده، صف کارِ اجراکننده، RBAC یا ACL فایل‌سیستم، سندباکس واقعی، جست‌وجوی سمانتیک و Vector DB، همگام‌سازی خودکار GitHub، سرویس بکاپ زمان‌دار و داشبورد آنلاین. برای هر کدام اسلات رزرو شده، ولی سرویس ساخته نشده.
 
 ---
 
