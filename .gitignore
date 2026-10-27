@@ -1,5 +1,59 @@
+# HADES OS v3 -- version control boundary
+# The human plane (00..10) and 11_CONTROL are tracked. The machine plane is not.
+# hades.py doctor cross-checks this list against 15_SYSTEM/config/system.json,
+# so the documented boundary and the actual boundary cannot drift apart.
+
+# --- machine plane: state, quarantine, review shelf ---
+12_RUNTIME/
+13_LAB/
+14_CANDIDATES/
+
+# --- generated infrastructure output (rebuilt, never hand-edited) ---
+15_SYSTEM/generated/
+15_SYSTEM/backups/
+15_SYSTEM/logs/
+
+# --- credentials: never here, only secret_ref ---
+.env
+.env.*
+*.pem
+*.key
+*.token
+*credentials*.json
+.secrets/
+**/secrets/
+
+# --- large binaries and media live outside the vault ---
+*.safetensors
+*.ckpt
+*.gguf
+*.onnx
+*.psd
+*.blend1
+*.mp4
+*.mov
+*.mkv
+*.wav
+*.exr
+*.zip
+*.rar
+
+# --- python / editor / OS noise ---
 __pycache__/
 *.pyc
+.DS_Store
+Thumbs.db
+Desktop.ini
 .obsidian/workspace*
-.kb/
+.obsidian/cache
+
+# --- databases ---
 *.sqlite
+*.sqlite3
+*.db
+
+# --- nested repos: a project keeps its own repo OUTSIDE the vault ---
+**/.git/
+
+# --- second-brain engine (v0.0.3) additions ---
+.kb/

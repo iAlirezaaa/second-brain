@@ -1,67 +1,59 @@
-# second-brain · نسخه / v0.0.3
+# HADES OS v3
 
-An AI-augmented second brain: a plain-markdown vault that a human curates and AI agents maintain.
+یک محفظه محلی برای دانش، پروژه‌ها و ایجنت‌ها. صفحه انسان ۰۰ تا ۱۰، صفحه ماشین ۱۱ به بعد.
 
-- **Plain markdown you own** — Obsidian-compatible (`[[wikilinks]]`, frontmatter). No database, no lock-in.
-- **Fenced zones** — the agent writes freely only in its zones; your notes (`20_Notes`) need approval.
-- **Integrity toolchain** — zero broken links, validated frontmatter, vault stats. Every rule is a script, not a suggestion.
-- **Skills, not prompts** — each workflow is a written protocol an agent can follow deterministically.
+**اول اینها را به همین ترتیب بخوان:**
 
-See [ROADMAP.md](ROADMAP.md) for the build plan and status.
+1. [راهنمای جامع](00_START_HERE/GUIDE_FA_EN.md) — همه‌چیز در یک سند: ناحیه‌ها، شناسه، انواع، دستورها، گیت‌ها، عیب‌یابی (فارسی و انگلیسی)
+2. [سند طراحی](00_START_HERE/DESIGN_v3.md) — چرا این شکل، ناحیه‌ها، و آنچه عمداً ساخته نشده
+3. [راهنمای شروع](00_START_HERE/START.md) — دستورات روزمره
+4. [نقشه سیستم](00_START_HERE/SYSTEM_MAP.md) — ناحیه‌ها، شناسه‌ها، رابطه‌ها
+5. [چرخه حیات و ارتقا](00_START_HERE/LIFECYCLE.md) — از ورودی تا تولیدی
+6. [دسترسی و رازها](00_START_HERE/ACCESS.md) — مرز دو صفحه، Git، رمز
 
-## Quickstart
+**پژوهش مرتبط:** [قالب دومغزی دو‌صفحه‌ای](00_START_HERE/SECOND_BRAIN_TEMPLATE.md) — مقایسه قالب‌های موجود، الگوی پیشنهادی و نگاشت آن به همین ساختار.
 
-```bash
-git clone https://github.com/iAlirezaaa/second-brain.git
-cd second-brain
-python -m unittest discover -s tests -v   # everything green = vault is healthy
+```powershell
+py -3.10 15_SYSTEM/scripts/hades.py doctor
+py -3.10 15_SYSTEM/scripts/hades.py index
+py -3.10 15_SYSTEM/scripts/hades.py status
+py -3.10 15_SYSTEM/scripts/wiki.py build
 ```
 
-Open `vault-template/` as an Obsidian vault, and point your agent (Claude Code / OpenCode) at the repo — it reads `AGENTS.md` first.
+`py -3.10` را جدی بگیر: روی این سیستم `python` پیش‌فرض نسخه ۳.۹ است و با stdout ویندوز، متن فارسی را می‌شکند. `start.bat` همین را برایت انجام می‌دهد.
 
-## The two audiences
+## وضعیت فعلی (از `doctor` و `status` خوانده می‌شود، نه از این فایل)
 
-| You (human) | Your agent |
-|---|---|
-| Reads `index.md`, browses the map | Reads `AGENTS.md` + `rules/zones.json` on session start |
-| Curates `20_Notes`, makes judgment calls | Triages `00_Inbox`, proposes placements with a one-line why |
-| Writes rules, audits diffs in git | Writes freely in `90_Agent_Output`, never edits `20_Notes` |
+این بسته **اسکلت خالی** است: ناحیه‌ها، قراردادها، الگوها و اسکریپت‌های آزمودنی. هیچ پروژه، مدل، خبر یا اسکیل واقعی داخلش نیست و هیچ‌کدام با داده نمونه پر نشده‌اند. رجیستری موجودی را با `hades.py status` بخوان؛ عددی که در این README نباشد، عددی است که کسی اثباتش نکرده.
 
-## License
+تأییدهای انجام‌شده روی همین پوشه، با اجرای زنده:
 
-MIT
+```
+hades.py status   -> zones present: 16/16 | registry records: 0
+hades.py doctor   -> errors: 0 | warnings: 0
+hades.py qc       -> persian hygiene: clean
+init_structure.py --check -> OK
+test_hades.py     -> failed: 0   (شمارش_checks را خود اجرا چاپ می‌کند)
+```
+
+اسکریپت‌ها: `hades.py` (رجیستری و گیت‌ها)، `init_structure.py` (ساخت ناحیه‌ها،
+idempotent)، `wiki.py` (سایت ناحیه انسان)، `test_hades.py` (تست‌های مثبت و منفی روی
+یک والت موقت). الگوها در `15_SYSTEM/templates`‌اند و فقط قالب‌اند؛ داده نمونه نیستند.
+
+## آنچه اینجا نیست
+
+Orchestrator زنده، صف کارِ اجراکننده، RBAC یا ACL فایل‌سیستم، سندباکس واقعی، MCP Server مرکزی، جست‌وجوی سمانتیک و Vector DB، همگام‌سازی خودکار GitHub، سرویس بکاپ زمان‌دار و داشبورد آنلاین. برای هر کدام اسلات رزرو شده، ولی سرویس ساخته نشده.
 
 ---
 
-## نسخهٔ فارسی
+Owner: Hades 3rd ([@iAlirezaaa](https://github.com/iAlirezaaa))
 
-یک سکند برین مبتنی بر هوش مصنوعی: والتی از فایل‌های مارک‌داون ساده که انسان آن را سرپرستی می‌کند و ایجنت‌ها نگه‌داری‌اش می‌کنند.
+---
 
-- **مارک‌داون ساده، مالکیت کامل** — سازگار با Obsidian (`لینک‌های [[]]` و فرانت‌متر). بدون دیتابیس، بدون وابستگی به ابزار خاص.
-- **زون‌های حصارکشی‌شده** — ایجنت فقط در زون خودش آزادانه می‌نویسد؛ نوت‌های شما (`20_Notes`) بدون تأیید شما دست‌نخورده می‌مانند.
-- **ابزارهای سلامت** — صفر لینک شکسته، فرانت‌متر معتبر، آمار ولت. هر قاعده یک اسکریپت است، نه یک جملهٔ توصیه‌ای.
-- **Skill نه prompt** — هر گردش کار یک پروتکل مکتوب است که ایجنت به‌صورت قطعی اجرا می‌کند.
+## Engine addendum — second-brain engine v0.0.3 · پیوست موتور
 
-نقشهٔ راه و وضعیت: [ROADMAP.md](ROADMAP.md).
-
-### شروع سریع
-
-```bash
-git clone https://github.com/iAlirezaaa/second-brain.git
-cd second-brain
-python -m unittest discover -s tests -v   # سبز = ولت سالم است
-```
-
-پوشهٔ `vault-template/` را به‌عنوان Vault در Obsidian باز کنید و ایجنت (Claude Code / OpenCode) را به همین ریپو نشانه بروید — او اول `AGENTS.md` را می‌خواند.
-
-### دو مخاطب
-
-| شما (انسان) | ایجنت شما |
-|---|---|
-| `index.md` را می‌خواند، نقشه را مرور می‌کند | شروع هر سشن اول `AGENTS.md` + `rules/zones.json` را می‌خواند |
-| نوت‌های خودش را کیوریت می‌کند، قضاوت با اوست | صندوق ورودی (`00_Inbox`) را تریاژ می‌کند و «کجا بجای این نوت + دلیل در یک خط» پیشنهاد می‌دهد |
-| قوانین را می‌نویسد، دیف‌های git را بازبینی می‌کند | در `90_Agent_Output` آزاد است و هرگز `20_Notes` را ویرایش نمی‌کند |
-
-### مجوز
-
-MIT
+> **EN —** Alongside the HADES plane structure, this repo now ships the **second-brain engine v0.0.3**: an agent harness toolkit that enforces the same philosophy as scripts. `vault-template/` holds a fenced-zone starter vault (00_Inbox…90_Agent_Output) the agent reads via `vault-template/AGENTS.md`; `rules/` and the tests are machine-readable; every capability is test-gated. Run the suite with `python -m unittest discover -s tests` and the health check with `python scripts/health.py`. Install into a fresh home with `python scripts/install.py`. The engine inherited the quarantine→promote, gap-register and write-gate patterns — direct implementations of the promotion and safety gates this design already specified.
+>
+> **FA —** در کنار ساختار صفحاتِ HADES، این ریپو از این به بعد **موتورِ سکند برین نسخهٔ 0.0.3** را هم دارد: کیت ابزارِ هارنسِ ایجنت که همان فلسفه را با اسکریپت اجرا می‌کند، نه با توصیه. `vault-template/` والتی استارتر با زون‌های حصارکشی‌شده است که ایجنت از `vault-template/AGENTS.md` می‌خواند؛ `rules/` و تست‌ها قابل خواندن ماشین هستند و هر قابلیت با تست محافظت می‌شود. سوت را با `python -m unittest discover -s tests` و سلامت ولت را با `python scripts/health.py` صدا بزنید؛ نصب در خانهٔ نو: `python scripts/install.py`. موتور الگوهای قرنطینه→ارتقا، ثبت‌شکاف جست‌وجو و گیتِ نوشتار را هم دقیق همان جاهایی پیاده کرده که این طراحی خواسته بود.
+>
+> **Maps / نگاشت:** `00_Inbox` ≈ `01_INBOX`، `20_Notes`+`30_Resources` ≈ `02_WIKI`+`15_SYSTEM/templates`، `90_Agent_Output` ≈ `13_LAB`+`14_CANDIDATES`، `promote` ≈ ارتقای `13/14` به صفحهٔ انسان. Two vocabularies, one philosophy: **nothing reaches the human plane un-promoted, nothing breaks a link un-checked.** · دو گویش، یک فلسفه: **هیچ‌چیز بدون ارتقا به صفحهٔ انسان نمی‌رسد، هیچ‌چیز بدون چک لینک نمی‌شکند.**
