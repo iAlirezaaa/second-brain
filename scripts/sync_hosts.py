@@ -92,7 +92,9 @@ and by `scripts/health.py` — fails on it. Change `AGENTS.md`, then re-render:
 ## Where to look next
 
 `README.md` (what this repo is) · `00_START_HERE/START.md` (first session) ·
-`skills/loop/SKILL.md` (the improvement cycle) · `15_SYSTEM/memory/README.md` (memory) ·
+`skills/first-session/SKILL.md` (you were handed only the repo URL) ·
+`skills/loop/SKILL.md` (the improvement cycle) · `skills/memory/SKILL.md` and
+`15_SYSTEM/memory/README.md` (memory) · `skills/self-audit/SKILL.md` (find the next defect) ·
 `MEMORY.md` (what was learned, rendered) · `ROADMAP.md` (what is planned).
 
 Hosts that read `AGENTS.md` natively need no file like this one: {native}.

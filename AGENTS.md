@@ -8,7 +8,8 @@
 **First move:** `python scripts/memory.py --recall "<what you are about to do>"`. The repo
 keeps its own lessons with evidence; read them before repeating a mistake. Then check the
 house: `python scripts/health.py` (links, frontmatter, candidate shelf, memory, host
-projections). A red gate is the task.
+projections). A red gate is the task. If all you were given is this repo's URL, work through
+`skills/first-session/SKILL.md` — it is the orientation, not a suggestion.
 
 **Read before acting:** (1) `README.md`, (2) `00_START_HERE/SYSTEM_MAP.md`, (3) `00_START_HERE/LIFECYCLE.md`, (4) `00_START_HERE/ACCESS.md`, (5) `15_SYSTEM/generated/catalog.json` if present, (6) the target project's `project.json`. Do **not** recursively load the vault into context.
 
