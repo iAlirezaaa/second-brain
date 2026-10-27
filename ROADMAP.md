@@ -57,7 +57,8 @@ standard; the ecosystem converges on a root `HANDOFF.md`, machine-state + refres
 
 - [x] SECURITY.md (scope + private advisory channel) · CONTRIBUTING.md (golden rules as PR gates)
 - [x] CODE_OF_CONDUCT.md (Contributor Covenant 2.1) · issue templates + PR template · dependabot for Actions
-- [x] README badges (CI / loop / version / license / tests) + public-roadmap link
+- [x] README badges (CI / loop / version / license) + public-roadmap link — the hand-typed
+      "tests: 39 green" badge was deleted, not refreshed: see Phase 12 and issues #4/#10
 - [x] CHANGELOG.md — Keep a Changelog; nightly loop commits stay out of it (noise discipline)
 - [x] **HANDOFF standard** — `scripts/handoff.py` + `skills/handoff`:
       machine-written §1 State Snapshot (head/dirty/tests/loop), model-owned §2–§6
@@ -99,6 +100,37 @@ the half that makes a vault a living system, not a filing cabinet. All stdlib-co
 - [ ] **S/M** GitHub Pages from `wiki.py` output (docs site without a second docs stack; mkdocs deliberately deferred — content, not tooling, is the bottleneck)
 - [ ] **S** OpenSSF Scorecard badge once Phases 8–10 land
 - [ ] **L**, only with eval evidence: semantic (embedding) layer for the KB — stays refused while keyword + gap register suffice
+
+---
+
+## Phase 12 — A system that gets smarter: memory, probes, one law · 🟡
+*Triggered by re-reading the repo from scratch, filing every finding as an issue (#3–#10), and
+by the logic of `google-research/harness2` (Propose → Probe → Compose, typed dimensions,
+keep-base fallback). The rows are in build order; every checked row has a test.*
+
+- [x] **S** zone/git-boundary law corrected — the machine plane's disposable folders are
+      declared and ignored, and the toolchain reports them as a boundary, not as damage
+- [x] **M** evidence schema + probe with real execution — `rules/candidate.schema.json`,
+      `scripts/probe.py`, `dimension: invariant|domain`, one execution per behaviour claim,
+      and `verdict: proposed` legal on the shelf yet never promotable (#3, #9)
+- [x] **S** ledger count identity — `proposed == adopt + revise + drop + keep_base + open`,
+      checked against the folder by `scripts/candidate_check.py`
+- [x] **S** SHA-1 state fingerprint + freshness — paperwork (quarantine, runtime, proposals)
+      stays out of the identity, so ordinary filing never invalidates a measurement
+- [x] **M** repo memory (#7) — `scripts/memory.py`: lesson ledger, generated `MEMORY.md`,
+      `--recall` with a legal `NO_ENTRY`, retirement by `--supersedes`, a gate on drift
+- [x] **L** independence from any app, one law per host (#8) — `AGENTS.md` is the canon,
+      `scripts/sync_hosts.py` projects it with `--lint`/`--check`, prose is separated from
+      notes, and the installer produces a brain that is green with no editor or network
+- [x] **M** control plane populated — registry records for the pack's own skills and agents,
+      create-only-through-plan, entrypoint resolution enforced by doctor
+- [x] **S** measured documents (#4, #10) — `scripts/doc_report.py` owns the block between the
+      markers in README / HANDOFF / START; a stale number is the sixth failing gate
+- [ ] **M** `keep_base` + `--recover` — fall back to the last known good snapshot when the
+      probe regresses, mark it `fell_back: true`, and let the next run resume from it
+- [ ] **S** `hades.py edit`/`set` — the registry is create-only today, so a record can be
+      filed and never amended
+- [ ] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit
 
 ---
 
