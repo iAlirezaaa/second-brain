@@ -14,8 +14,8 @@
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 373 |
-| health gates (`python scripts/health.py`) | 7 |
+| tests collected (`python -m unittest discover -s tests`) | 395 |
+| health gates (`python scripts/health.py`) | 8 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |

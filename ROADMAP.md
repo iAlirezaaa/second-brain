@@ -120,14 +120,19 @@ math — two clocks exist (nightly loop + backend schedules); one should tell th
       (`{"every_minutes": 10080}`) governing the weekly ritual. The Actions cron is the alarm;
       the record is the rule. `tests/test_phase28_schedule_seam.py` adds 14 tests (373 total).
 
-## Phase 29 — Semantic layer, only behind a flag and only with evidence · ⛔ today
+## Phase 29 — Semantic layer, only behind a flag and only with evidence · 🟢 seam shipped, ⛔ activation
 
 *Source: charter §1's smarter-over-time promise vs. the standing owner decision.*
 
-- [ ] **S** behind `vector_search: false`: an optional embedding seam (interface + a
-      deterministic test double) so the day it is enabled it plugs into the same gates.
-      **Refused by default:** no embedder dependency, no network call, no activation without a
-      golden-set eval that beats BM25 and the owner's explicit approval (charter §2).
+- [x] **S** behind `vector_search: false`: `backend/vector.py` ships one `Embedder`
+      interface, `cosine`/`rank` as pure functions, and `HashingEmbedder` — a sha256
+      bag-of-words double, deterministic across processes, with `production = False`.
+      `scripts/vector.py status|probe` shows the seam running offline; `scripts/vector_check.py`
+      is the eighth health gate. `11_CONTROL/vector/activation.json` is the evidence door
+      (verdict, BM25/candidate rates, positive margin, ≥5 cases with a case-set digest,
+      approver and date). **Refused by default:** no embedder dependency, no socket, and
+      activation stays shut even with perfect evidence while no production embedder is
+      registered. 22 tests in `tests/test_phase29_vector_seam.py` (395 total).
 
 ## Phase 30 — Registry hardening leftovers · 🔵
 

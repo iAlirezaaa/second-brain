@@ -7,6 +7,18 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **The embedding seam, inert by default** (phase 29, charter §2) — `backend/vector.py` ships
+  one `Embedder` interface, `cosine`/`rank` as pure functions, and `HashingEmbedder`: a
+  sha256 bag-of-words double, deterministic across processes, marked
+  `production = False`. No model, no dependency, no socket — a test patches `socket` to
+  prove it. `scripts/vector.py status|probe` reports OFF/REFUSED/ACTIVE and demonstrates the
+  double on a fixed corpus; `scripts/vector_check.py` is the eighth health gate. Activation
+  needs `feature_flags.vector_search: true`, a shape-checked evidence file
+  (`11_CONTROL/vector/activation.json`: `verdict: beats_bm25`, BM25/candidate rates, a
+  positive margin that equals their difference, ≥5 cases with a 64-hex case-set digest,
+  `approved_by`, `approved_at`), and a registered production embedder. The last door cannot
+  open today, so perfect evidence still refuses — installing a model is the owner's act.
+  Twenty-two tests; the double's lexical overlap is not evidence for semantics.
 - **One clock for the rituals** (phase 28, charter §6) — a first-class `schedule` registry kind
   (`11_CONTROL/schedules/*.json`) holds the spec objects the backend already knows how to read,
   so the nightly loop (`SCH-0D1E2F3A`, `{"daily_at": "02:00"}` UTC, target `scripts/loop.py`)

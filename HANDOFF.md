@@ -21,8 +21,8 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 373 |
-| health gates (`python scripts/health.py`) | 7 |
+| tests collected (`python -m unittest discover -s tests`) | 395 |
+| health gates (`python scripts/health.py`) | 8 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
@@ -36,6 +36,16 @@ status: active
 
 ## 2. In-Flight Work
 
+- **Phase 29 shipped on `phase/29-vector-seam`**: the semantic layer has a seam and no model.
+  `backend/vector.py` holds one `Embedder` interface, pure `cosine`/`rank`, and a sha256
+  bag-of-words double (`production = False`) that is deterministic across processes; a test
+  patches `socket` to prove nothing dials out. `scripts/vector.py status|probe` prints
+  OFF/REFUSED/ACTIVE and runs the double on five fixed docs (measured: `bm25 ranking` →
+  `ranking.md` 0.213, `schedule due` → 0.535, `یادگیری حافظه` → 0.535; repeat identical);
+  `scripts/vector_check.py` is the eighth health gate. The flag stays `false`. Activation
+  requires the flag, a shape-checked `11_CONTROL/vector/activation.json`, and a production
+  embedder — the last is unregistered, so even perfect evidence refuses. 22 tests
+  (`tests/test_phase29_vector_seam.py`).
 - **Phase 28 shipped on `phase/28-scheduler-seam`**: the rituals now have one clock. The
   `schedule` kind (34 in the contract) holds the spec objects `backend/schedules.py` already
   reads: `SCH-0D1E2F3A` = nightly loop, `{"daily_at": "02:00"}` UTC, target
@@ -263,6 +273,13 @@ status: active
   is invisible to `--due`. The weekly check derives its last run from
   `git log --grep='ritual(weekly)'`, so a cycle announced in another message reads as overdue.
   `--due` is arithmetic on UTC — a local-time expectation is wrong by the offset, not by a bug.
+- **The vector gate checks the shape of evidence, not its honesty.** No production embedder
+  exists, so activation is refused today by construction; a future session that wants to
+  enable it must install a model (owner's approval) and register it with
+  `production = True`. The hashing double measures lexical overlap that BM25 already
+  measures, so its scores are a seam test, never a semantic claim; nothing in `kb.py`,
+  `sources.py` or the MCP door calls `vector.rank`, and the gate is what keeps it that way.
+  `11_CONTROL/vector/activation.json` is unwritten — no evaluation has been run to fill it.
 - **A fresh install fails `plane_check`, and the phase-16 test cannot see it** (#27).
   `install.py` copies the dev `15_SYSTEM/config/system.json` — which maps `02_WIKI`,
   `03_PROJECTS`, `09_OPERATIONS`, `11_CONTROL` and `tests/` — into a template-shaped folder set,
