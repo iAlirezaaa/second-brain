@@ -87,6 +87,13 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   `15_SYSTEM/integrations/` and the first real record `MCP-E1807E50` was created and
   amended through the sanctioned door itself. `doctor` now refuses an `mcp` record whose
   `.py` endpoint does not exist — a server definition whose body is missing is a rumour.
+- **Runs promote to evidence; the door sees the runs** — `15_SYSTEM/scripts/runs.py promote`
+  exports a finished run's append-only feed into a **registered** shelf row: the feed is
+  embedded because the run directory lives behind the git boundary — evidence is exported,
+  never cited across it (a run still running, an empty feed, and a second promotion of the
+  same run are all refused). The harness door grew two read tools, `runs_list` and
+  `runs_show` (eight tools total; `MCP-E1807E50` amended through the plan door again), so
+  a harness can see what its actors did without leaving the protocol.
 - **Agent runs in the disposable plane** — `15_SYSTEM/scripts/runs.py` borrows SuperAGI's
   `AgentExecution` model at git scale: `12_RUNTIME/agent_runs/<RUN-*/>` with `run.json`
   plus an append-only `steps.jsonl` feed, `start` (refuses actors the registry has never

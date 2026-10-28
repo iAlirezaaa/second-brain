@@ -16,7 +16,9 @@
     "registry_list",
     "registry_show",
     "doctor_status",
+    "runs_list",
+    "runs_show",
     "candidate_propose"
   ],
-  "updated_at": "2026-10-27T21:16:31Z"
+  "updated_at": "2026-10-28T00:33:20Z"
 }

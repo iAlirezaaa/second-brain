@@ -40,7 +40,10 @@ proposes, the human decides. Client registration examples live in `15_SYSTEM/int
 What an agent *did* is a separate disposable ledger: `15_SYSTEM/scripts/runs.py` writes
 `12_RUNTIME/agent_runs/<RUN>/` (a run plus an append-only step feed), refuses actors the
 registry has never heard of, and dies at the git boundary by design — evidence that matters
-is promoted to the shelf or the human plane, never stranded in machine state.
+is promoted to the shelf or the human plane, never stranded in machine state. A run that
+learned something exits the disposable plane with `runs.py promote`, which exports the feed
+into a registered shelf row: the run directory itself never becomes evidence (it lives
+behind the git boundary), so the row embeds the feed and cites only tracked files.
 
 ## The one rule that explains the layout
 `00`–`10` is the **human plane**: readable, citable, canonical. `11` and above is the **machine plane**: definitions in `11_CONTROL`, disposable state in `12_RUNTIME`, quarantine in `13_LAB`, your review shelf in `14_CANDIDATES`, infrastructure in `15_SYSTEM`. Anything the machine produces that is worth keeping must be **promoted** into the human plane with an ID and evidence — never left living only in harness memory.
