@@ -9,16 +9,20 @@
 
 ## What this is
 
-یک محفظه محلی برای دانش، پروژه‌ها و ایجنت‌ها. صفحه انسان ۰۰ تا ۱۰، صفحه ماشین ۱۱ به بعد.
+یک محفظهٔ محلی برای دانش، پروژه‌ها و ایجنت‌ها — که هارنس‌ها از طریق پروتکلی که همین حالا
+حرف می‌زنند (MCP روی stdio) به آن وصل می‌شوند و هر اجرای ایجنت هم ثبت می‌شود.
+صفحهٔ انسان ۰۰ تا ۱۰، صفحهٔ ماشین ۱۱ به بعد.
 قانون‌ها را اسکریپت اجرا می‌کند، نه تذکر دوستانه: هر تخلف از قرارداد، یک گیتِ قرمز است.
 
 EN — A local, plain-markdown second brain for one human curator and many AI agents: knowledge,
 projects and agents live in numbered zones, and the rules are enforced by scripts instead of by
-good intentions. **No app is required.** Python 3.9+ standard library and markdown files are the
-whole system; Obsidian, VS Code, Cursor, Claude Code, Codex, Zed or `notepad` are optional lenses
-on the same folder.
+good intentions. Harnesses reach it through the protocol they already speak — an MCP server over
+stdio, no server farm — and every agent run is recorded in a disposable ledger whose evidence can
+be promoted to the shelf. **No app is required.** Python 3.9+ standard library and markdown files
+are the whole system; Obsidian, VS Code, Cursor, Claude Code, Codex, Zed or `notepad` are
+optional lenses on the same folder.
 
-Three properties this repo is built to keep:
+Four properties this repo is built to keep:
 
 1. **It gets smarter.** Every lesson the repo learns is appended to
    `15_SYSTEM/memory/lessons.jsonl` with a verdict, evidence and a confidence;
@@ -35,6 +39,17 @@ Three properties this repo is built to keep:
    it reads `AGENTS.md` — or the generated door for its host — and follows
    `skills/first-session/SKILL.md`: orient, prove the house is healthy, take one bounded task,
    leave a handoff.
+4. **The brain is callable, and its agents are accountable.** The backend agents call is
+   `15_SYSTEM/scripts/mcp_server.py` — a Model Context Protocol server over stdio, stdlib-only,
+   no port, no keys; OpenCode, Claude Desktop and friends register it natively
+   (`15_SYSTEM/integrations/`). Read tools are open (`vault_search`, `memory_recall`, the
+   registry, `doctor_status`, the run ledger); the single write tool, `candidate_propose`,
+   files a registered row on the quarantine shelf — agents propose, humans decide. Agent runs
+   are a disposable ledger (`15_SYSTEM/scripts/runs.py` → `12_RUNTIME/agent_runs/`) that
+   refuses actors the registry has never heard of, and `runs.py promote` exports a finished
+   run's feed into a registered shelf row — the run dir never becomes evidence, it lives behind
+   the git boundary. The full reverse-engineering map behind these choices:
+   `02_WIKI/reference_maps/superagi-to-hades-map.md`.
 
 ```text
 python scripts/health.py                   # every gate in one command, incl. the numbers below
@@ -78,12 +93,12 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 233 |
+| tests collected (`python -m unittest discover -s tests`) | 235 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 21 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 22 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 4 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
