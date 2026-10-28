@@ -8,6 +8,72 @@
     "human": "00..10 - read and edited by a person; canonical knowledge",
     "machine": "11..15 - agent-facing; only 11_CONTROL is versioned, 12/13/14 are disposable or quarantined"
   },
+  "memory_planes": {
+    "project": {
+      "tracked_store": ["03_PROJECTS"],
+      "disposable_store": [],
+      "kind": "project",
+      "reader_script": "15_SYSTEM/scripts/hades.py",
+      "test": "tests/test_phase21_records_are_visible.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    },
+    "repository": {
+      "tracked_store": ["HANDOFF.md", "CHANGELOG.md", "MEMORY.md"],
+      "disposable_store": [],
+      "kind": null,
+      "reader_doc": "AGENTS.md",
+      "test": "tests/test_phase18_measured_docs.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    },
+    "agent": {
+      "tracked_store": ["11_CONTROL/agents"],
+      "disposable_store": [".kb/ltm.sqlite"],
+      "kind": "agent",
+      "reader_script": "15_SYSTEM/scripts/hades.py",
+      "test": "tests/test_phase17_control_plane.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    },
+    "task": {
+      "tracked_store": ["09_OPERATIONS/tasks"],
+      "disposable_store": ["12_RUNTIME/agent_runs"],
+      "kind": "task",
+      "reader_script": "15_SYSTEM/scripts/runs.py",
+      "test": "tests/test_phase22_harness_bridge.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    },
+    "error": {
+      "tracked_store": ["15_SYSTEM/memory/lessons.jsonl"],
+      "disposable_store": [],
+      "kind": null,
+      "reader_script": "scripts/memory.py",
+      "test": "tests/test_phase15_repo_memory.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    },
+    "decision": {
+      "tracked_store": ["02_WIKI/decisions", "09_OPERATIONS/decisions"],
+      "disposable_store": [],
+      "kind": "decision",
+      "reader_script": "15_SYSTEM/scripts/hades.py",
+      "test": "tests/test_phase22_amend_a_record.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    },
+    "knowledge": {
+      "tracked_store": ["02_WIKI", "skills"],
+      "disposable_store": [".kb/kb.sqlite"],
+      "kind": "wiki_note",
+      "reader_script": "15_SYSTEM/scripts/hades.py",
+      "test": "tests/test_retrieval_golden.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    },
+    "conversation": {
+      "tracked_store": ["15_SYSTEM/integrations/local-sources.md"],
+      "disposable_store": [".brain-data"],
+      "kind": null,
+      "reader_script": "15_SYSTEM/scripts/sources.py",
+      "test": "tests/test_sources.py",
+      "map": "02_WIKI/reference_maps/eight-memory-planes.md"
+    }
+  },
   "zones": [
     { "dir": "00_START_HERE", "plane": "human" },
     { "dir": "01_INBOX", "plane": "human", "registry": false },

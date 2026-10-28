@@ -36,6 +36,15 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   tool-level path guard, not OS access control or a secret scanner.
 - MCP door grows from 8 to 12 tools: `source_search`, `lesson_propose`, `lesson_recall`,
   `capabilities`. Write tools remain proposal-only; approval stays local.
+- **The eight memory planes, mapped and gated** (phase 26, charter §5) — `system.json` →
+  `memory_planes` declares per plane the tracked store a clone must open, the disposable store
+  that may be absent by design, the reader, the proving test and the map row;
+  `02_WIKI/reference_maps/eight-memory-planes.md` is the human map with a measured inventory of
+  what the clone can open today; `scripts/plane_check.py` is the seventh health gate and refuses
+  a dropped plane, a missing tracked store, an empty folder without `.gitkeep`, or a
+  reader/test/map that no longer exists. Disposable stores (`12_RUNTIME/`, `.brain-data/`,
+  `.kb/`) are reported, never required. Gaps filed as #24 (no contradiction detection), #25
+  (lessons carry no plane field); #20 keeps the conversation-extraction path and `kb.py` open.
 - Phase 7 — continuous improvement loop: `scripts/loop.py` (one-cycle ratchet:
   integrity/test/inbox/gap/hygiene signals → candidate report → prev-run compare;
   REGRESSED verdicts are loud, P1 exits non-zero), `skills/loop`, and a nightly
