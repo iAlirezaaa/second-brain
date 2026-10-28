@@ -23,11 +23,12 @@ except AttributeError:
 
 # vault gates take --vault; the machine-plane gates take the repo root instead
 ROOT_ONLY_GATES = {"plane_check.py": [], "candidate_check.py": [], "memory.py": ["--check"],
-                   "sync_hosts.py": ["--check"], "doc_report.py": ["--check"]}
+                   "sync_hosts.py": ["--check"], "doc_report.py": ["--check"],
+                   "vector_check.py": []}
 
 # the gate list is a measure: doc_report.py counts it instead of typing a number
 GATES = ["link_check.py", "frontmatter_check.py", "plane_check.py", "candidate_check.py",
-         "memory.py", "sync_hosts.py", "doc_report.py"]
+         "memory.py", "sync_hosts.py", "doc_report.py", "vector_check.py"]
 
 
 def gate_argv(script, vault_args):
