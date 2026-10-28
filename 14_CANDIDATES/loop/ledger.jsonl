@@ -2,3 +2,5 @@
 {"cue": "scripts and skills carry raw TODO/FIXME markers", "date": "2026-10-27T16:31:03Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-27-c3-02", "priority": "P3"}
 {"cue": "a registry record that is already applied turns out to be wrong", "date": "2026-10-27T20:11:22Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-27-i12-01", "priority": "hand"}
 {"cue": "an agent harness needs a way into the brain, and agents need a place to record what they did", "date": "2026-10-27T21:14:26Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-28-har-01", "priority": "hand"}
+{"cue": "an agent searches or reads files through the backend or MCP resources", "date": "2026-10-28T09:07:15Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-28-access-01", "priority": "hand"}
+{"cue": "a source import is interrupted before its metadata is written", "date": "2026-10-28T09:35:10Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-28-source-01", "priority": "hand"}
