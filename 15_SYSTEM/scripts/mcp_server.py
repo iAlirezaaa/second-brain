@@ -168,10 +168,14 @@ def tool_registry_list(root, args):
         rid = str(r.get("id"))
         if kind and r.get("kind") != kind:
             continue
-        rows.append({"id": rid, "kind": r.get("kind"), "name": r.get("name"),
-                     "status": r.get("status"), "path": HADES.rel(p),
-                     "active": rid not in sup})
-    return text_result(json.dumps({"count": len(rows), "records": rows},
+        row = {"id": rid, "kind": r.get("kind"), "name": r.get("name"),
+               "status": r.get("status"), "path": HADES.rel(p),
+               "active": rid not in sup}
+        if rid in sup:
+            row["superseded_by"] = sup[rid]
+        rows.append(row)
+    retired = sum(1 for row in rows if not row["active"])
+    return text_result(json.dumps({"count": len(rows), "retired": retired, "records": rows},
                                   ensure_ascii=False, indent=1))
 
 
@@ -180,10 +184,15 @@ def tool_registry_show(root, args):
     if not rid:
         raise ToolRefused("registry_show needs an id")
     cfg = HADES.config()
-    for p, r in HADES.iter_records(cfg):
+    recs = list(HADES.iter_records(cfg))
+    sup = HADES.superseded_by(recs)
+    for p, r in recs:
         if str(r.get("id")) == rid:
             body = json.dumps(r, ensure_ascii=False, indent=1, sort_keys=True)
-            return text_result("%s\npath: %s" % (body, HADES.rel(p)))
+            text = "%s\npath: %s" % (body, HADES.rel(p))
+            if rid in sup:
+                text += "\nretired by: %s" % sup[rid]
+            return text_result(text)
     raise ToolRefused("no record %s -- registry_show only sees what the registry enumerates" % rid)
 
 
