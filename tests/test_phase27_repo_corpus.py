@@ -116,6 +116,28 @@ class InstalledHome(unittest.TestCase):
             self.assertEqual("20_Notes/a.md", kb.find(tmp, "backup", 1)[0]["path"])
 
 
+class RelevanceOutranksRecency(unittest.TestCase):
+    """Measured before any ranker was written, then refused (2026-10-28).
+
+    Date coverage: 3 of 43 corpus notes declare `updated:`; the other 40 fall back to their
+    file mtime, and in a fresh clone every mtime is the checkout day (one distinct date).
+    Golden set: a recency-aware re-rank moved recall@1 and MRR by 0.000 at every weight from
+    0.05 to 1.0. The boost had no signal to use and no case could judge it, so the ranker
+    stays relevance-only. This test pins that decision's visible contract.
+    """
+
+    def test_an_older_stronger_match_outranks_a_newer_weaker_one(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            note(tmp, "20_Notes/2020-strong.md",
+                 "---\nupdated: 2020-01-01\n---\n# Backup\nbackup restore backup restore\n")
+            note(tmp, "20_Notes/2026-weak.md",
+                 "---\nupdated: 2026-10-28\n---\n# Note\nrestore once and backup once\n")
+            kb.ingest(tmp)
+            hits = kb.find(tmp, "backup restore", 3)
+            self.assertEqual(2, len(hits), hits)
+            self.assertEqual("20_Notes/2020-strong.md", hits[0]["path"])
+
+
 class SharedGoldenSet(unittest.TestCase):
     """The same fixture the measured source engine is judged by, run through the KB."""
 

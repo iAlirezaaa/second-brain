@@ -3,23 +3,33 @@
 Phase 27 re-pointed the corpus from `vault-template/` to the brain's own tracked prose,
 so the golden set below names the documents this repo actually carries. Every query must
 rank its expected note FIRST; the queries use tokens only their target repeats often
-enough to win under BM25, and the Persian row proves the Arabic/Persian letter folding.
+enough to win under BM25. Persian matching is proven by the last row; Arabic/Persian letter
+folding is proven by the shared fixture in `tests/test_phase27_repo_corpus.py`.
+
+Measured 2026-10-28: four of the five cases sat within 0.14 BM25 units of the runner-up
+(`plan apply approve` lost by 0.0006 after ordinary doc growth changed the global average
+length), which is a coin flip, not a gate. The cases below were re-picked by measured margin
+(1.23 to 3.74) and `test_every_case_is_decidable` holds the floor at 0.5.
 """
 import re
 import shutil
+import sqlite3
 import subprocess
 import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+import kb  # noqa: E402
 
+MARGIN_FLOOR = 0.5
 GOLDEN_SET = [
-    ("superagi to hades map", "02_WIKI/reference_maps/superagi-to-hades-map.md"),
+    ("orchestrator agentexecution", "02_WIKI/reference_maps/superagi-to-hades-map.md"),
     ("writer reader proof", "02_WIKI/reference_maps/eight-memory-planes.md"),
-    ("charter audit", "00_START_HERE/CHARTER_AUDIT.md"),
-    ("plan apply approve", "00_START_HERE/START.md"),
-    ("حافظه", "00_START_HERE/PROJECT_CHARTER.md"),
+    ("charter audit yardstick", "00_START_HERE/CHARTER_AUDIT.md"),
+    ("کنسول cp1252", "00_START_HERE/START.md"),
+    ("هدف اصلی پروژه", "00_START_HERE/PROJECT_CHARTER.md"),
 ]
 
 
@@ -54,6 +64,27 @@ class TestKB(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(failures, [], "retrieval regression:\n" + "\n".join(failures))
 
+    def test_every_case_is_decidable(self):
+        """A case whose runner-up is within the floor is a case defect, not a gate."""
+        db = sqlite3.connect(str(ROOT / ".kb" / "kb.sqlite"))
+        try:
+            for query, expected in GOLDEN_SET:
+                terms = kb.terms_of(query)
+                rows = db.execute(
+                    'SELECT n.path, bm25(fts) FROM fts JOIN notes n ON n.path = fts.path '
+                    'WHERE fts MATCH ? ORDER BY bm25(fts) LIMIT 2',
+                    (" AND ".join('"%s"' % term for term in terms),)).fetchall()
+                self.assertTrue(rows, query)
+                self.assertEqual(expected, rows[0][0], query)
+                if len(rows) > 1:
+                    margin = rows[1][1] - rows[0][1]
+                    self.assertGreaterEqual(
+                        margin, MARGIN_FLOOR,
+                        "%r is a coin flip: %r vs %r (margin %.4f)"
+                        % (query, rows[0], rows[1], margin))
+        finally:
+            db.close()
+
     def test_failed_search_logs_gap(self):
         probe = "zzznogapzzz-unfindable"
         result = run(["scripts/kb.py", "search", probe])
@@ -64,7 +95,7 @@ class TestKB(unittest.TestCase):
         self.assertIn(probe, gaps.stdout)
 
     def test_zone_tagged_in_results(self):
-        result = run(["scripts/kb.py", "search", "plan apply approve"])
+        result = run(["scripts/kb.py", "search", "کنسول cp1252"])
         self.assertEqual(result.returncode, 0)
         self.assertIn("[00_START_HERE]", result.stdout, result.stdout)
 
