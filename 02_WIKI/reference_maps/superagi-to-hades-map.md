@@ -33,11 +33,11 @@ protocol harnesses already speak (MCP over stdio), not a FastAPI service.
 | Celery + Redis workers | queues for long agent jobs | **refuse** — no daemon; the nightly `loop` + GitHub Actions are the scheduler | `loop` kind (already modeled) |
 | Next.js GUI | dashboard over the DB | **refuse** — the human plane *is* the dashboard (markdown + generated catalog) | `00`–`10` + `15_SYSTEM/generated/catalog.json` |
 | `Agent` + `AgentConfiguration` | DB row: goal, tools, model, constraints, max_iterations | **already modeled, better** — registry records with evidence, owner, provenance, immutability | `11_CONTROL/agents` (AGT-*) |
-| `AgentExecution` (RUNNING/COMPLETED/…) + steps + feed | per-run DB rows + feed events | **adopt** — the one thing genuinely missing here | `12_RUNTIME/agent_runs/<RUN-*>/run.json` + `steps.jsonl` via `15_SYSTEM/scripts/runs.py` |
-| Toolkits / Tools | Python tool bundles installed from a marketplace | **already modeled** — `skill`/`command`/`hook` records + `approved_for_harness_ids`; a marketplace is network + trust debt | `11_CONTROL/skills`, `11_CONTROL/commands` |
-| Vector memory (Pinecone/Chroma/Qdrant + LlamaIndex) | embeddings behind a paid/remote DB | **defer behind the flag** — `vector_search: false`; keyword FTS5/BM25 is the honest floor today; embeddings are an adapter away, never a dependency | `scripts/kb.py` (FTS5), `scripts/memory.py` (recall) |
+| `AgentExecution` (RUNNING/COMPLETED/…) + steps + feed | per-run DB rows + feed events | **adopted** — phase 1: the disposable run ledger; phase 2: the engine itself (`backend/engine.py` walks declarative steps through the toolkit) | `12_RUNTIME/agent_runs/<RUN-*>/` via `runs.py`; `15_SYSTEM/scripts/backend/engine.py` |
+| Toolkits / Tools | Python tool bundles installed from a marketplace | **adopted (the contract, not the marketplace)** — `backend/tools_kit.py`: BaseTool tuple, registry, and the AgentConfig `tools` list as the actor's real `tool_allowlist` (double write-gate: `--approve` AND the list) | `15_SYSTEM/scripts/backend/tools_kit.py` |
+| Vector memory (Pinecone/Chroma/Qdrant + LlamaIndex) | embeddings behind a paid/remote DB | **logic adopted, vectors deferred** — `backend/ltm.py` keeps the LTM store/fetch seam over SQLite FTS5; embeddings stay behind `vector_search: false` (an owner decision, never a silent dependency) | `15_SYSTEM/scripts/backend/ltm.py`, `scripts/kb.py`, `scripts/memory.py` |
 | Knowledge indexing / Resource manager | ingest docs for the agent to read | **adopt later** — same search seam, `kb.py` gains a repo-corpus ingest | phase 2 |
-| Schedules / cron | DB rows + a scheduler worker | **already modeled** — `loop` kind with schedule; nightly loop writes the gap register | `11_CONTROL/loops`, `scripts/loop.py` |
+| Schedules / cron | DB rows + a scheduler worker | **logic adopted** — the nightly `loop` remains the scheduler; `backend/schedules.py` ports the due-math (`every_minutes` / `daily_at`) as pure functions | `11_CONTROL/loops`, `scripts/loop.py`, `15_SYSTEM/scripts/backend/schedules.py` |
 | Marketplace (toolkits/knowledge packs) | install third-party bundles | **refuse** — the shelf + probes are the internal exchange; no network | `14_CANDIDATES/loop` |
 | Telemetry / analytics | LLM-call/token events in a DB | **already here in its strongest form** — measured numbers re-derived by `doc_report.py`, quoted in docs, gated in CI | `scripts/doc_report.py` |
 | Organisation → Project → Agent | multi-tenant SaaS scoping | **refuse** — the zones are the workspace; one owner, no tenancy | `00`–`15` zones |
@@ -74,6 +74,32 @@ boundary **by design**: the registry keeps who the actor is, the runtime keeps w
 and evidence that matters is promoted to the shelf or the human plane — never stranded in
 machine state.
 
+## The backend package (phase 2, implemented)
+
+`15_SYSTEM/scripts/backend/` — SuperAGI's backend *logic* as a stdlib package, dropping the
+farm and keeping the patterns:
+
+- `engine.py` — the AgentExecution state machine (`created/running/paused/completed/failed/
+  terminated`, guarded transitions) and the step loop: declarative steps walked through a
+  tool registry, `max_steps` guard, `done`/`fail` steps, feed events to the caller.
+- `tools_kit.py` — the BaseTool contract (`name`/`description`/`args_schema`/`writes`/`run`),
+  a registry, `Context` (actor + approval), and the core toolkit: `core.fs_read`
+  (traversal-guarded), `core.vault_search` (the shared search index), `core.registry_list`,
+  `core.registry_show`, `core.ltm_fetch`, `core.ltm_store` (writes).
+- `workflows.py` — the AgentWorkflow/AgentWorkflowStep model declarative: `validate` is the
+  single gate; step types cut to what a deterministic engine can execute (`tool_call`,
+  `done`, `fail`) — a model step is NOT a type: it is a human decision.
+- `schedules.py` — pure due-math (`every_minutes`, `daily_at`, UTC), no daemon.
+- `ltm.py` — the LTM store/fetch seam over SQLite FTS5 in `.kb/ltm.sqlite` (disposable).
+- `search.py` — the BM25 index moved out of `mcp_server.py`: one source for the door and
+  the toolkit.
+
+Driver: `15_SYSTEM/scripts/orchestrator.py` (`workflow validate|run`, `tool list|call`,
+`schedule due`, `ltm store|fetch`). A workflow run opens a run in the disposable ledger,
+feeds every engine event into its append-only transcript, and closes it completed|failed.
+Demo: the `workflow` record `WFL-6ACDE232` ("standup scan") whose `body_path` points at
+`steps.json` beside it — record through the door, executable body beside the record.
+
 ## Doctor law learned from this
 
 `check_entrypoints` now also fires for `kind == "mcp"`: an `endpoint_or_command` that ends
@@ -87,18 +113,26 @@ in SuperAGI's model justifies renumbering it. Every new piece lands *inside* an 
 zone:
 
 ```
-00_START_HERE … 10_ARCHIVE      human plane — untouched
+00_START_HERE … 10_ARCHIVE      human plane — untouched (05_WORKS gained the demo workflow record)
 11_CONTROL/                     + mcp/ (registry record MCP-*, created through the door)
 12_RUNTIME/                     + agent_runs/ (disposable run ledger; absent in a fresh clone)
 13_LAB/ 14_CANDIDATES/          untouched (shelf gained the harness-bridge row)
-15_SYSTEM/scripts/              + mcp_server.py, runs.py
+15_SYSTEM/scripts/              + mcp_server.py, runs.py, orchestrator.py, backend/ (package)
 15_SYSTEM/integrations/         + README.md + client config examples (was empty by design)
 02_WIKI/reference_maps/         + this map
 ```
 
 Machine plane stays disposable except `11_CONTROL`; no new top-level zone; nothing moved.
+Inside `scripts/` the arrangement is now two-layered: flat one-shot CLIs (`hades.py`,
+`runs.py`, `orchestrator.py`, `mcp_server.py`, `test_hades.py`, …) over an importable
+package (`backend/`) that holds the engine logic — the tests import the package in-process,
+the battery copies `scripts/` wholesale, so both worlds see the same code.
 
 ## Phase 2 roadmap (next increments, in order of value)
+
+Done already: the engine, toolkits with allowlists, declarative workflows, schedule math
+and the LTM seam (see "The backend package"); run → shelf promotion (`runs.py promote`).
+Remaining:
 
 1. **Corpus for the KB** — `kb.py` gains a repo ingest (index the brain itself, not only
    `vault-template`), and `vault_search` reuses it instead of its in-memory pass.
@@ -107,7 +141,5 @@ Machine plane stays disposable except `11_CONTROL`; no new top-level zone; nothi
    the zero-dependency fallback. Interface first, dependency optional.
 3. **HTTP layer, only if wanted** — a thin stdlib `http.server` wrapping the same tool
    functions for browser/remote clients; MCP over stdio remains the primary door.
-4. **Run → shelf promotion** — `runs.py finish --promote` drafts a candidate row from the
-   run's feed, so a run that learned something leaves the disposable plane.
-5. **Workflows** — SuperAGI's `AgentWorkflow` steps as declarative `loop` records the
-   runtime can execute step-by-step (deterministic steps only; LLM steps stay human-gated).
+4. **Scheduler seam** — wire `loop.py` to `backend/schedules.is_due` so a loop record's
+   schedule decides "run now?" with the same math the orchestrator reports.

@@ -14,16 +14,16 @@
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 235 |
+| tests collected (`python -m unittest discover -s tests`) | 254 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 22 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 23 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 4 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
-| zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 14 / 16 |
+| zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 15 / 16 |
 | python floor | 3.9 (standard library only) |
 <!-- END measured -->
 
@@ -135,7 +135,16 @@ py -3.10 15_SYSTEM\scripts\runs.py step --run RUN-XXXXXXXX --text "..."
 py -3.10 15_SYSTEM\scripts\runs.py finish --run RUN-XXXXXXXX --status completed
 py -3.10 15_SYSTEM\scripts\runs.py promote --run RUN-XXXXXXXX   # خروجِ شاهد از صفحهٔ یک‌بارمصرف
 py -3.10 15_SYSTEM\scripts\runs.py list
+py -3.10 15_SYSTEM\scripts\orchestrator.py workflow validate --file WF.json
+py -3.10 15_SYSTEM\scripts\orchestrator.py workflow run --file WF.json --agent AGT-XXXXXXXX
+py -3.10 15_SYSTEM\scripts\orchestrator.py tool list
+py -3.10 15_SYSTEM\scripts\orchestrator.py ltm fetch --query "..."
 ```
+
+موتورِ اجرا در پکیج `15_SYSTEM/scripts/backend/` است — لاجیک SuperAGI به‌صورت stdlib:
+ماشینِ وضعیت و حلقهٔ گام، toolkit ها با allowlist واقعی (`tool_allowlist` ایجنت)،
+workflow اعلانی، ریاضیِ schedule و حافظهٔ بلندمدت FTS5. فقط گام‌های قطعی اجرا می‌شوند؛
+گامِ LLM تصمیمِ انسان است، نه کارِ موتور.
 
 ایجنتی که رجیستری نشناسد نمی‌تواند اجرا شروع کند. ران‌ها در `12_RUNTIME/agent_runs/`
 زندگی می‌کنند و در مرز گیت می‌میرند؛ `promote` فید را *داخل* ردیف قفسه صادر می‌کند و

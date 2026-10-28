@@ -1,0 +1,14 @@
+{
+  "kind": "workflow",
+  "id": "WFL-6ACDE232",
+  "name": "standup scan",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-28",
+  "tags": [],
+  "relations": {},
+  "notes": "A deterministic demo workflow: scan the brain for loop-prose, read the canon, stop with a note for the human.",
+  "engine": "deterministic",
+  "body_path": "steps.json",
+  "updated_at": "2026-10-28T01:27:17Z"
+}

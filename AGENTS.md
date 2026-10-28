@@ -45,6 +45,17 @@ learned something exits the disposable plane with `runs.py promote`, which expor
 into a registered shelf row: the run directory itself never becomes evidence (it lives
 behind the git boundary), so the row embeds the feed and cites only tracked files.
 
+The execution logic behind those runs is a stdlib package, `15_SYSTEM/scripts/backend/`:
+the engine (SuperAGI's AgentExecution state machine — created/running/paused/completed/
+failed/terminated — and its step loop), toolkits with per-actor allowlists
+(`tool_allowlist` is a real gate: a write tool needs `--approve` AND a place in the
+actor's list; an empty list means zero write tools), declarative workflows (a `workflow`
+record whose `body_path` points at the executable `steps.json`), pure schedule math and
+an FTS5 long-term memory — all driven by the thin `orchestrator.py` CLI
+(`workflow validate|run`, `tool list|call`, `schedule due`, `ltm store|fetch`).
+Deterministic steps only: an LLM step is a human-gated decision, never something the
+engine invents.
+
 ## The one rule that explains the layout
 `00`–`10` is the **human plane**: readable, citable, canonical. `11` and above is the **machine plane**: definitions in `11_CONTROL`, disposable state in `12_RUNTIME`, quarantine in `13_LAB`, your review shelf in `14_CANDIDATES`, infrastructure in `15_SYSTEM`. Anything the machine produces that is worth keeping must be **promoted** into the human plane with an ID and evidence — never left living only in harness memory.
 

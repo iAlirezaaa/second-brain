@@ -48,8 +48,11 @@ Four properties this repo is built to keep:
    are a disposable ledger (`15_SYSTEM/scripts/runs.py` → `12_RUNTIME/agent_runs/`) that
    refuses actors the registry has never heard of, and `runs.py promote` exports a finished
    run's feed into a registered shelf row — the run dir never becomes evidence, it lives behind
-   the git boundary. The full reverse-engineering map behind these choices:
-   `02_WIKI/reference_maps/superagi-to-hades-map.md`.
+   the git boundary. The execution logic behind runs is a stdlib package
+   (`15_SYSTEM/scripts/backend/`: engine, toolkits with real allowlists, declarative
+   workflows, schedules, FTS5 memory) driven by the thin `orchestrator.py` CLI —
+   deterministic steps only; an LLM step stays a human decision. The full reverse-engineering
+   map behind these choices: `02_WIKI/reference_maps/superagi-to-hades-map.md`.
 
 ```text
 python scripts/health.py                   # every gate in one command, incl. the numbers below
@@ -93,16 +96,16 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 235 |
+| tests collected (`python -m unittest discover -s tests`) | 254 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 22 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 23 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 4 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
-| zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 14 / 16 |
+| zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 15 / 16 |
 | python floor | 3.9 (standard library only) |
 <!-- END measured -->
 

@@ -87,6 +87,16 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   `15_SYSTEM/integrations/` and the first real record `MCP-E1807E50` was created and
   amended through the sanctioned door itself. `doctor` now refuses an `mcp` record whose
   `.py` endpoint does not exist — a server definition whose body is missing is a rumour.
+- **The backend package: SuperAGI's logic, stdlib-ported** — `15_SYSTEM/scripts/backend/`
+  (`engine`, `tools_kit`, `workflows`, `schedules`, `ltm`, `search`) driven by the thin
+  `orchestrator.py` CLI: the AgentExecution state machine and step loop, the BaseTool
+  contract with per-actor `tool_allowlist` gating (a write tool needs `--approve` AND the
+  list; empty list = zero write tools), declarative workflows validated before they walk,
+  pure schedule math, an FTS5 long-term memory, and the BM25 index moved out of
+  `mcp_server.py` into a single source. The first `workflow` record (`WFL-6ACDE232`,
+  "standup scan") was created through the door, its `body_path` amended to the executable
+  `steps.json` beside it, and run for real (`RUN-F89C1143`, COMPLETED). Tests 235 → 254,
+  battery 116 → 120.
 - **Runs promote to evidence; the door sees the runs** — `15_SYSTEM/scripts/runs.py promote`
   exports a finished run's append-only feed into a **registered** shelf row: the feed is
   embedded because the run directory lives behind the git boundary — evidence is exported,

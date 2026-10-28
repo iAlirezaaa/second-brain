@@ -1,0 +1,23 @@
+{
+  "name": "standup scan",
+  "max_steps": 10,
+  "steps": [
+    {
+      "name": "scan",
+      "type": "tool_call",
+      "tool": "core.vault_search",
+      "args": {"query": "loop candidate shelf", "limit": 3}
+    },
+    {
+      "name": "read canon",
+      "type": "tool_call",
+      "tool": "core.fs_read",
+      "args": {"path": "AGENTS.md"}
+    },
+    {
+      "name": "stop",
+      "type": "done",
+      "note": "the feed above is the standup: what the brain says about the loop today; a human reads it and decides"
+    }
+  ]
+}
