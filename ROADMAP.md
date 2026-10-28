@@ -244,6 +244,33 @@ session, and installation only after approval.*
       retired records, CLI/MCP), `tests/test_install_skill.py` (review required, no
       replacement, stale source, unapproved record, visible incomplete install).
 
+## Phase 35 — An installed brain is a whole brain · 🟢
+
+*Source: issue #27 and the owner's decision that an install uses the repo's sixteen zones,
+not the old template folders.*
+
+- [x] **M** `scripts/install.py` lays the same sixteen zones the repo uses, read from
+      `15_SYSTEM/config/system.json`, and ships what the gates judge: `15_SYSTEM/scripts`
+      (registry door, backend, MCP), `15_SYSTEM/schemas`, `15_SYSTEM/memory`,
+      `15_SYSTEM/integrations`, `15_SYSTEM/migrations`, `15_SYSTEM/templates`,
+      `02_WIKI/reference_maps`, `AGENTS.md`, `.gitignore` and `tests/test_installed_home.py`.
+      The home's `system.json` carries `"home": true` and binds every plane's `test` to that
+      one proof file, so the map an installed brain ships is a map it can re-run.
+- [x] **S** `vault-template/` is now only the starter (`index.md`, `_templates`); the old
+      `00_Inbox…90_Agent_Output` folders are gone from installs. Migration note in
+      `CHANGELOG.md`: an existing home keeps its notes where they are and gains the zones
+      beside them; nothing is moved or deleted by the installer.
+- [x] **M** `tests/test_phase16_host_independence.py` now runs the *installed* `health.py`
+      (the old version ran the source repo's script, so every root-only gate judged the repo
+      and a home with no readers, no map and no registry door passed), asserts the eight
+      plane line, runs the installed suite, and compares the zone shape to the source.
+- [x] **S** Measured in a fresh `--target` home: install prints 16 zones / 6 plane stores /
+      `34 kinds, 16 zones, 8 planes proved by tests/test_installed_home.py`; health reports
+      8/8 gates OK (12 tracked stores, 4 disposable absent by design); the home suite runs
+      5 tests; `memory.py --recall` answers `NO_ENTRY`; `hades.py list` opens the registry.
+- [ ] 🔵 Limitation: the installer is a flat copy with no update path — re-running it against
+      a non-empty home is refused, so upgrading means a fresh folder plus a manual merge.
+
 ## Distribution & scale (parked) · ⛔/🔵
 
 - [ ] 🔵 multi-host installer flags (`--host codex|opencode|gemini|claude`) — one skill tree,
