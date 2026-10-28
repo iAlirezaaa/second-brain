@@ -607,6 +607,11 @@ def cmd_doctor(cfg, sch, as_json=False):
             else:
                 errors.append("missing zone: %s" % z)
             continue
+        if absent_by_boundary(cfg, z, gi):
+            # the zone exists on this machine only as disposable local state -- its
+            # README could never be tracked, so the tracked-plane law stops at the
+            # boundary instead of demanding an untrackable file
+            continue
         if not (d / "README.md").exists():
             errors.append("zone without README: %s" % z)
     recs = list(iter_records(cfg))

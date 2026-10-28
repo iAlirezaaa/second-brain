@@ -19,11 +19,11 @@
 | registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 23 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 24 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 4 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
-| zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored) | 15 / 16 |
+| zones a fresh clone reproduces / declared (`12_RUNTIME`, `13_LAB` are gitignored) | 12 / 16 |
 | python floor | 3.9 (standard library only) |
 <!-- END measured -->
 

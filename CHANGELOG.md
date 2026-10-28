@@ -95,8 +95,8 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   pure schedule math, an FTS5 long-term memory, and the BM25 index moved out of
   `mcp_server.py` into a single source. The first `workflow` record (`WFL-6ACDE232`,
   "standup scan") was created through the door, its `body_path` amended to the executable
-  `steps.json` beside it, and run for real (`RUN-F89C1143`, COMPLETED). Tests 235 → 254,
-  battery 116 → 120.
+  `steps.json` beside it, and run for real against the live repo (COMPLETED, 2 steps).
+  Tests 235 → 254, battery 116 → 120.
 - **Runs promote to evidence; the door sees the runs** — `15_SYSTEM/scripts/runs.py promote`
   exports a finished run's append-only feed into a **registered** shelf row: the feed is
   embedded because the run directory lives behind the git boundary — evidence is exported,
