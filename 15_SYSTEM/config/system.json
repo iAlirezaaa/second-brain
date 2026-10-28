@@ -119,6 +119,7 @@
     { "kind": "command", "prefix": "CMD", "zone": "11_CONTROL", "container": "commands", "layout": "file", "manifest": "command.json" },
     { "kind": "mode", "prefix": "MDE", "zone": "11_CONTROL", "container": "modes", "layout": "file", "manifest": "mode.json" },
     { "kind": "loop", "prefix": "LOP", "zone": "11_CONTROL", "container": "loops", "layout": "file", "manifest": "loop.json" },
+    { "kind": "schedule", "prefix": "SCH", "zone": "11_CONTROL", "container": "schedules", "layout": "file", "manifest": "schedule.json" },
     { "kind": "harness", "prefix": "HAR", "zone": "11_CONTROL", "container": "harnesses", "layout": "file", "manifest": "harness.json" },
     { "kind": "plugin", "prefix": "PLG", "zone": "11_CONTROL", "container": "plugins", "layout": "file", "manifest": "plugin.json" },
     { "kind": "template", "prefix": "TPL", "zone": "11_CONTROL", "container": "templates", "layout": "file", "manifest": "template.json" },
@@ -141,6 +142,7 @@
     "tutorial": ["draft", "verified", "stale"],
     "candidate": ["proposed", "reviewed", "approved", "rejected"],
     "experiment": ["running", "evaluating", "passed", "failed", "archived"],
+    "schedule": ["active", "paused", "retired"],
     "default": ["draft", "tested", "approved", "deprecated"]
   },
   "relations": {

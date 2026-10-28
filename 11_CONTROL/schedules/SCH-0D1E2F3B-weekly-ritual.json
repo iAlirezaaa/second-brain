@@ -1,0 +1,15 @@
+{
+  "kind": "schedule",
+  "id": "SCH-0D1E2F3B",
+  "name": "weekly ritual",
+  "status": "active",
+  "classification": "internal",
+  "created_at": "2026-10-28",
+  "tags": [],
+  "relations": {},
+  "notes": "At most one weekly ritual per seven days, judged by the same pure due-math as the loop. The skill passes its last `ritual(weekly)` commit date; a clone with no such commit is due.",
+  "spec": {
+    "every_minutes": 10080
+  },
+  "target": "skills/weekly/SKILL.md"
+}

@@ -1,0 +1,15 @@
+{
+  "kind": "schedule",
+  "id": "SCH-0D1E2F3A",
+  "name": "improvement loop",
+  "status": "active",
+  "classification": "internal",
+  "created_at": "2026-10-28",
+  "tags": [],
+  "relations": {},
+  "notes": "The one definition of when an improvement cycle is due. `python scripts/loop.py --due` reads this record and asks backend/schedules.is_due; the GitHub Actions cron is only the alarm that wakes the check.",
+  "spec": {
+    "daily_at": "02:00"
+  },
+  "target": "scripts/loop.py"
+}
