@@ -1,5 +1,9 @@
 # HADES OS v0.01
 
+For explicitly importing and searching local documents or conversation exports, see
+[local source ingestion](15_SYSTEM/integrations/local-sources.md). Imported content is
+private local data, and the MCP source search exposes matches to connected clients.
+
 [![CI](https://github.com/iAlirezaaa/second-brain/actions/workflows/ci.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain/actions/workflows/ci.yml)
 [![loop](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml)
 [![version](https://img.shields.io/badge/engine-v0.0.3-blue)](https://github.com/iAlirezaaa/second-brain/releases)
@@ -43,8 +47,8 @@ Four properties this repo is built to keep:
    `15_SYSTEM/scripts/mcp_server.py` — a Model Context Protocol server over stdio, stdlib-only,
    no port, no keys; OpenCode, Claude Desktop and friends register it natively
    (`15_SYSTEM/integrations/`). Read tools are open (`vault_search`, `memory_recall`, the
-   registry, `doctor_status`, the run ledger); the single write tool, `candidate_propose`,
-   files a registered row on the quarantine shelf — agents propose, humans decide. Agent runs
+   registry, `doctor_status`, the run ledger); `candidate_propose` files on the quarantine
+   shelf, and `lesson_propose` files private source-backed proposals — humans decide. Agent runs
    are a disposable ledger (`15_SYSTEM/scripts/runs.py` → `12_RUNTIME/agent_runs/`) that
    refuses actors the registry has never heard of, and `runs.py promote` exports a finished
    run's feed into a registered shelf row — the run dir never becomes evidence, it lives behind
@@ -96,13 +100,13 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 297 |
+| tests collected (`python -m unittest discover -s tests`) | 333 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
 | active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 26 |
-| candidate rows on the shelf (`14_CANDIDATES/loop`) | 4 |
+| candidate rows on the shelf (`14_CANDIDATES/loop`) | 6 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
 | zones a fresh clone reproduces / declared (`12_RUNTIME`, `13_LAB` are gitignored) | 12 / 16 |
@@ -118,14 +122,14 @@ idempotent)، `wiki.py` (سایت ناحیه انسان)، `test_hades.py` (تس
 بک‌اندی که ایجنت‌ها صدا می‌زنند، پروتکلی است که هارنس‌ها همین حالا حرف می‌زنند:
 `15_SYSTEM/scripts/mcp_server.py` — سرور MCP روی stdio، فقط کتابخانهٔ استاندارد، بدون
 پورت و کلید و دیمن. ابزارهای خواندن بازند (`vault_search`، `memory_recall`،
-`registry_list`، `registry_show`، `doctor_status`) و تنها ابزار نوشتن `candidate_propose`
-است که یک ردیف ثبت‌شده روی قفسهٔ قرنطینه می‌گذارد — ایجنت پیشنهاد می‌دهد، انسان تصمیم
+`registry_list`، `registry_show`، `doctor_status`). ابزار `candidate_propose` روی قفسهٔ قرنطینه
+و `lesson_propose` در حافظهٔ خصوصی پیشنهاد ثبت می‌کند — ایجنت پیشنهاد می‌دهد، انسان تصمیم
 می‌گیرد. نمونهٔ اتصال برای OpenCode و Claude Desktop در `15_SYSTEM/integrations/` است.
 
 EN — The backend agents call is the protocol harnesses already speak:
 `15_SYSTEM/scripts/mcp_server.py`, a Model Context Protocol server over stdio,
-stdlib-only, no port, no keys, no daemon. Read tools are open; the single write tool,
-`candidate_propose`, files a registered row on the quarantine shelf — agents propose,
+stdlib-only, no port, no keys, no daemon. `candidate_propose` files on the quarantine shelf;
+`lesson_propose` files a private source-backed proposal — agents propose,
 humans decide. Client examples: `15_SYSTEM/integrations/`. Agent runs are a separate
 disposable ledger (`15_SYSTEM/scripts/runs.py` → `12_RUNTIME/agent_runs/`): the registry
 keeps who the actor is, the run keeps what it did, and both die at the git boundary —

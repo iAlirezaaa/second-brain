@@ -42,9 +42,9 @@ Frameworks like SuperAGI answered "how do agents reach the system" with a server
 (FastAPI + Postgres + Celery/Redis + a GUI). This brain answers it with the protocol
 harnesses already speak: `15_SYSTEM/scripts/mcp_server.py`, a Model Context Protocol server
 over stdio — stdlib-only, no port, no keys, no daemon. Read tools are open (`vault_search`,
-`memory_recall`, `registry_list`, `registry_show`, `doctor_status`); the single write tool
-is `candidate_propose`, which files a registered row on the quarantine shelf — an agent
-proposes, the human decides. Client registration examples live in `15_SYSTEM/integrations/`.
+`memory_recall`, `registry_list`, `registry_show`, `doctor_status`). `candidate_propose`
+files on the quarantine shelf; `lesson_propose` files evidence-backed private proposals in
+`.brain-data`. Agents propose, humans decide. Client examples live in `15_SYSTEM/integrations/`.
 What an agent *did* is a separate disposable ledger: `15_SYSTEM/scripts/runs.py` writes
 `12_RUNTIME/agent_runs/<RUN>/` (a run plus an append-only step feed), refuses actors the
 registry has never heard of, and dies at the git boundary by design — evidence that matters

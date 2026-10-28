@@ -28,7 +28,11 @@ control-plane registry, measured documents, evidence-survives-a-clone, `keep_bas
 the registry laws: `set` amendments, `supersedes` retirement, content enumeration, one file one
 contract, the MCP harness door, agent runs in the disposable plane, and the SuperAGI backend
 package) are done — every row test-gated, the full trail in `CHANGELOG.md` and the git log.
-Current floor, measured at the time of writing: **297 unittests, a 120-check HADES battery,
+Phase 8 established the public project standard and handoff. Phases 31–34 add the private
+source memory the charter's §5 asks for: explicit import, a rebuildable index, provenance,
+evidence-backed lessons, retrieval measurement, transfer between devices, and a
+capability catalogue that never installs without approval.
+Current floor, measured at the time of writing: **333 unittests, a 120-check HADES battery,
 6 health gates, CI on ubuntu+windows × 3.9/3.12, 26 recorded lessons.**
 
 ---
@@ -112,6 +116,93 @@ handoff, not invented here.*
 - [ ] **S** recovery on the probe's own initiative stays refused unless the owner grants the
       permission explicitly — reverting a tree from an unattended measurement is a bigger
       permission than naming one.
+
+## Phase 31 — Private source memory with provenance · 🟢
+
+*Source: charter §5 (knowledge and conversation memory must be stored and accessible) and the
+owner's brief: keep what was produced and researched, retrieve it with its source, and keep
+raw data separate from extracted knowledge. The store is local and explicit — nothing is
+scanned or fetched on its own.*
+
+- [x] **M** `15_SYSTEM/scripts/backend/sources.py`: explicit import of one selected UTF-8
+      file (or validated bytes) into `.brain-data/sources/<id>/{raw.txt,metadata.json}`; the
+      id is the sha256 of kind + origin + content, so re-importing the same bytes and origin
+      is idempotent and changed content is a new record. Metadata records kind, origin,
+      original filename, import time, format and checksum. The raw bytes stay authoritative.
+- [x] **M** A rebuildable SQLite index (`rebuild`) with word-frequency tables and a
+      BM25-style ranking that keeps a slower text-scan path for older indexes; every rebuild
+      validates every record first and leaves the previous index in place on refusal.
+      `search` returns kind, origin, filename and import time with every hit.
+- [x] **M** Harness conversation adapters (`codex-jsonl`, `claude-stream-json`,
+      `cursor-stream-json`) that index only user/assistant text, refuse mixed sessions and
+      keep the selected raw JSONL. No automatic session discovery.
+- [x] **S** Declared import path: `sources.py import|rebuild|search|batch` and the MCP
+      tools `source_search` + `lesson_propose`/`lesson_recall`; a manifest is previewed with a
+      content-bound `plan_id` before `--apply`. Batch never scans folders.
+- [x] **S** Tests: `tests/test_sources.py` (round-trip, duplicates, corrupt/interrupted
+      records, BOM/CRLF preservation, adapter projections, CLI), `tests/test_batch.py`
+      (stale plan, all-or-nothing preview, partial-failure reporting).
+
+## Phase 32 — Transfer between devices with conflicts named · 🟢
+
+*Source: charter §5 + the owner's brief: multi-device use, conflict detection, backups and
+sensitive-data control. The chosen mechanism is an explicit folder transfer with a preview;
+a sync service is refused until a measurement justifies one.*
+
+- [x] **S** `source_sync.transfer`: preview first; copies only complete, validated records;
+      reports new / already-present / conflicts; a conflict is a second content with the same
+      kind and origin and is copied only with `--allow-conflicts`, both versions kept.
+- [x] **S** Approval receipts are local decisions: they are previewed but imported only with
+      `--include-approvals`, and a receipt without its proposal is refused.
+- [x] **S** `verify-copy` compares every source, proposal and approval byte-for-byte and
+      returns nonzero on a missing or changed record; extras are allowed.
+- [x] **S** Sensitive-data boundary: `.brain-data/` is gitignored and behind the clone
+      boundary, the docs state it is not encrypted or backed up, and the default tool read
+      scope refuses `.env`, key/credential filenames, `.git`, `secrets` and the runtime,
+      lab, candidate, backup and client-metadata zones (`backend/access.py`).
+- [x] **S** Tests: `tests/test_source_sync.py` (idempotency, conflict preview, corruption
+      before copy, missing source, hidden incomplete record, approval import, invalid
+      proposal/receipt), `tests/test_access_boundary.py` (search and resource reads, symlink
+      aliasing, credential paths).
+
+## Phase 33 — Evidence-backed lessons and measured retrieval · 🟢
+
+*Source: charter §6/§11 (learn from what happened, keep the evidence, improve with a
+measurement) and the owner's brief: lessons from permitted data, retrieval quality before
+and after a change, rollback available.*
+
+- [x] **M** `backend/learning.py`: a proposal must cite an imported source id and an exact
+      quote that is present in the source; the id is a digest of the content, so a modified
+      proposal is refused. `evaluate` re-checks the source checksum and quote and whether the
+      chosen query retrieves that source. `approve` requires `--approve`, re-evaluates and
+      writes a receipt. `recall` returns only approved lessons with their source and origin.
+- [x] **S** The evaluation states its limit out loud: it does not establish that a lesson is
+      true, useful or improves performance. Extraction stays a human/agent interpretation,
+      not an asserted fact.
+- [x] **M** `backend/retrieval_eval.py` + `tests/fixtures/retrieval-golden.json`: mean
+      recall and MRR on an independently curated case set; both reports must share the case
+      set, limit and corpus hash; any regression in either metric fails the comparison.
+- [x] **S** Tests: `tests/test_learning.py` (source→proposal→evaluation→approval→recall,
+      bad evidence, changed record, tampered proposal, CLI approval), `tests/test_retrieval_golden.py`.
+
+## Phase 34 — Capability catalogue and approval-gated install · 🟢
+
+*Source: charter §7 (register roles and abilities) and the owner's brief: a catalogue of
+skills, plugins and tools with compatibility, origin and permissions, a suggestion per
+session, and installation only after approval.*
+
+- [x] **S** `15_SYSTEM/scripts/capabilities.py` + `backend/capabilities.py`: inventory of
+      active registry skills, plugins, MCP records, extensions and built-in tools with
+      origin, permissions, approval list and installation state; `--task` returns keyword
+      matches, `--harness-id` reports `approved` / `not_approved` / `unknown`. Retired and
+      deprecated records are excluded. The MCP tool `capabilities` exposes the same read-only view.
+- [x] **M** `backend/install_skill.py` + `15_SYSTEM/scripts/install_skill.py`: plan → apply
+      → never replace. The plan binds skill id, harness, destination, file digests and a
+      `plan_id`; apply requires `--approve`, refuses a stale or modified plan, writes only
+      into a new directory, and leaves `.install-incomplete` on a partial write.
+- [x] **S** Tests: `tests/test_capabilities.py` (registry + built-in inventory, suggestions,
+      retired records, CLI/MCP), `tests/test_install_skill.py` (review required, no
+      replacement, stale source, unapproved record, visible incomplete install).
 
 ## Distribution & scale (parked) · ⛔/🔵
 

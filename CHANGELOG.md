@@ -7,6 +7,35 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- Phases 31–34 — **private source memory**: `15_SYSTEM/scripts/sources.py` imports one
+  explicitly selected UTF-8 file (or a reviewed manifest) into `.brain-data/sources/<id>/`
+  as authoritative raw bytes plus metadata (kind, origin, filename, import time, format,
+  checksum); the id is content-addressed, so re-import is idempotent and changed content is a
+  new record. `rebuild` validates every record and atomically replaces a disposable SQLite
+  index; `search` is BM25-style with a legacy scan path and returns provenance with each hit.
+  Conversation adapters read Codex JSONL, Claude Code stream JSON and Cursor stream JSON,
+  indexing user/assistant text only and refusing mixed sessions.
+- **Evidence-backed private lessons** — `backend/learning.py` accepts a proposal only with an
+  exact quote present in an imported source, evaluates source checksum + quote + whether the
+  query retrieves that source, and writes a receipt only after explicit `--approve`; `recall`
+  returns approved lessons with their origin. The evaluation says what it does not prove.
+- **Retrieval measurement** — `backend/retrieval_eval.py` reports mean recall and MRR on an
+  independently curated case set and refuses to compare reports with different cases, limits
+  or corpus hash; any regression fails the verdict.
+- **Transfer between devices** — `backend/source_sync.py` previews an explicit folder copy,
+  names conflicts (same kind + origin, different content; copied only with
+  `--allow-conflicts`), keeps both versions, previews approval receipts but imports them only
+  with `--include-approvals`, and `verify-copy` compares every record byte-for-byte.
+- **Capability catalogue and install gate** — `15_SYSTEM/scripts/capabilities.py` inventories
+  active registry skills/plugins/MCP records/extensions and built-in tools with origin,
+  permissions, harness approvals and installation state; `backend/install_skill.py` plans by
+  file digest and applies only with `--approve`, never replacing a directory.
+- **Default read boundary** — `backend/access.py` refuses `.env`, key/credential filenames,
+  `.git`, `secrets`, the runtime/lab/candidate/backup zones and client metadata in file reads,
+  search and MCP resources; MCP resources now serve only the advertised list. This is a
+  tool-level path guard, not OS access control or a secret scanner.
+- MCP door grows from 8 to 12 tools: `source_search`, `lesson_propose`, `lesson_recall`,
+  `capabilities`. Write tools remain proposal-only; approval stays local.
 - Phase 7 — continuous improvement loop: `scripts/loop.py` (one-cycle ratchet:
   integrity/test/inbox/gap/hygiene signals → candidate report → prev-run compare;
   REGRESSED verdicts are loud, P1 exits non-zero), `skills/loop`, and a nightly

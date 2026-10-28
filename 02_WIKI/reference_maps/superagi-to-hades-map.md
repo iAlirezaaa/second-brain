@@ -54,13 +54,14 @@ stderr only. Tools:
   can go stale is worse than one that costs 100 ms; unicode tokenizer, so Persian matches),
   `memory_recall` (the repo's own lessons), `registry_list`, `registry_show`,
   `doctor_status` (facts only; the gate itself is `scripts/health.py`).
-- write, exactly one: `candidate_propose` — files a **registered** row on the quarantine
+- write: `candidate_propose` — files a **registered** row on the quarantine
   shelf (`14_CANDIDATES/loop`), which is where an agent's writes belong. Agents propose;
   humans decide. (`candidate_check.register` prints, so its stdout is captured — a tool
-  print must never land on the protocol channel.)
+  print must never land on the protocol channel.) `lesson_propose` adds a separate private,
+  evidence-backed proposal; `lesson_recall` reads approved private lessons.
 
 Resources: `AGENTS.md`, `HANDOFF.md`, `README.md`, `ROADMAP.md`, `00_START_HERE/SYSTEM_MAP.md`,
-`15_SYSTEM/generated/catalog.json` — existing files only, traversal-guarded.
+— existing files only, restricted to the advertised resource list.
 
 Client registration examples live in `15_SYSTEM/integrations/` (OpenCode, Claude Desktop).
 
