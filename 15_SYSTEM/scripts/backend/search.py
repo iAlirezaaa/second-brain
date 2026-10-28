@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 import common  # noqa: F401  (parse_frontmatter; path bootstrapped by the package)
+from .access import readable
 
 WORD_RE = re.compile(r"\w+", re.UNICODE)
 STOPWORDS = {
@@ -31,6 +32,8 @@ def corpus(root):
     the root documents. The machine infrastructure and the engine template are skipped --
     the corpus is *this* brain's content, not its plumbing."""
     for path in sorted(root.rglob("*.md")):
+        if not readable(root, path):
+            continue
         rel = path.relative_to(root).as_posix()
         parts = rel.split("/")
         if parts[0] in SEARCH_SKIP_DIRS or parts[0].startswith(".") or path.name in SEARCH_SKIP_NAMES:

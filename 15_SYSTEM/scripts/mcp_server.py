@@ -14,10 +14,11 @@ Wire format: newline-delimited JSON-RPC 2.0 on stdin/stdout (MCP stdio transport
 logs on stderr only. Supported: initialize, ping, tools/list, tools/call,
 resources/list, resources/read, single messages and batched arrays.
 
-Read tools are open. The single write tool is `candidate_propose`, and it writes where an
+Read tools are open. `candidate_propose` writes where an
 agent's writes belong under this repo's law: a registered row on the quarantine shelf --
 the human merges. Agent run history is a separate disposable-plane script (runs.py); runs
 die at the git boundary, evidence is promoted to the shelf, never stranded in machine state.
+`lesson_propose` writes private proposals in .brain-data; only a local human can approve them.
 """
 import argparse
 import contextlib
@@ -72,6 +73,7 @@ def bind(root):
 # moved verbatim into the backend package (single source of truth): the MCP door and
 # the toolkit's core.vault_search must never drift apart.
 from backend.search import snippet, tokenize, vault_search  # noqa: E402,F401
+from backend.access import readable  # noqa: E402
 
 
 # --------------------------------------------------------------------------- tools
@@ -114,6 +116,46 @@ def tool_memory_recall(root, args):
         lines.append("  cue: %s" % row.get("cue"))
         lines.append("  lesson: %s" % row.get("lesson"))
     return text_result("\n".join(lines))
+
+
+def tool_source_search(root, args):
+    from backend import sources
+    try:
+        return json.dumps(sources.search(root, args.get('query', ''),
+                                         int(args.get('limit', 10))), ensure_ascii=False)
+    except (ValueError, OSError) as exc:
+        raise ToolRefused(str(exc))
+
+
+def tool_lesson_propose(root, args):
+    from backend import learning
+    try:
+        result = learning.propose(root, args.get('source_id'), args.get('quote'),
+                                  args.get('lesson'), args.get('query'))
+        return json.dumps(result, ensure_ascii=False)
+    except (ValueError, OSError, KeyError) as exc:
+        raise ToolRefused(str(exc))
+
+
+def tool_lesson_recall(root, args):
+    from backend import learning
+    try:
+        return json.dumps(learning.recall(root, args.get('query'), int(args.get('limit', 10))),
+                          ensure_ascii=False)
+    except (ValueError, OSError, KeyError) as exc:
+        raise ToolRefused(str(exc))
+
+
+def tool_capabilities(root, args):
+    from backend import capabilities
+    try:
+        task = str(args.get('task') or '').strip()
+        harness = str(args.get('harness_id') or '').strip()
+        result = (capabilities.suggest(root, task, harness, int(args.get('limit', 10)))
+                  if task else capabilities.inventory(root, harness))
+        return json.dumps(result, ensure_ascii=False)
+    except (ValueError, OSError, KeyError) as exc:
+        raise ToolRefused(str(exc))
 
 
 def tool_registry_list(root, args):
@@ -267,6 +309,21 @@ def tool_candidate_propose(root, args):
 
 
 TOOLS = [
+    {"name": "capabilities", "description": "List or suggest registered capabilities; never installs or grants permissions.",
+     "inputSchema": {"type": "object", "properties": {"task": {"type": "string"},
+                     "harness_id": {"type": "string"}, "limit": {"type": "integer", "minimum": 1, "maximum": 100}}}},
+    {"name": "lesson_propose", "description": "Propose a private lesson with an exact source quote; human approval is separate.",
+     "inputSchema": {"type": "object", "properties": {"source_id": {"type": "string"},
+                     "quote": {"type": "string"}, "lesson": {"type": "string"},
+                     "query": {"type": "string"}}, "required": ["source_id", "quote", "lesson", "query"]}},
+    {"name": "lesson_recall", "description": "Recall approved private lessons with their source evidence.",
+     "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
+                     "limit": {"type": "integer", "minimum": 1, "maximum": 100}}, "required": ["query"]}},
+    {"name": "source_search",
+     "description": "Search explicitly imported private sources, including their origin and import time.",
+     "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
+                       "limit": {"type": "integer", "minimum": 1, "maximum": 100}},
+                     "required": ["query"]}},
     {"name": "vault_search",
      "description": "Keyword search (BM25) over the brain's own prose: zones, wiki, skills, "
                     "the shelf, root documents. Rebuilt per call, never stale.",
@@ -314,6 +371,10 @@ TOOLS = [
          "required": ["cue", "lesson"]}},
 ]
 TOOL_FUNCS = {
+    "capabilities": tool_capabilities,
+    "lesson_propose": tool_lesson_propose,
+    "lesson_recall": tool_lesson_recall,
+    "source_search": tool_source_search,
     "vault_search": tool_vault_search,
     "memory_recall": tool_memory_recall,
     "registry_list": tool_registry_list,
@@ -330,8 +391,6 @@ RESOURCE_FILES = [
     ("README.md", "text/markdown", "What this repo is and how to run it"),
     ("ROADMAP.md", "text/markdown", "The phase roadmap"),
     ("00_START_HERE/SYSTEM_MAP.md", "text/markdown", "Zone map of the brain"),
-    ("15_SYSTEM/generated/catalog.json", "application/json",
-     "The generated registry catalog (from hades.py index)"),
 ]
 
 
@@ -346,9 +405,13 @@ def tool_resources(root):
 
 def read_resource(root, uri):
     rel = uri[len("file://"):] if uri.startswith("file://") else uri
+    if rel not in {item[0] for item in RESOURCE_FILES}:
+        raise ToolRefused("resource is not published: %s" % rel)
     candidate = (root / rel).resolve()
     if root.resolve() not in candidate.parents:
         raise ToolRefused("resource uri %r escapes the vault" % uri)
+    if not readable(root, candidate):
+        raise ToolRefused("resource is outside the default read scope")
     if not candidate.is_file():
         raise ToolRefused("no such resource: %s" % rel)
     mime = "application/json" if candidate.suffix == ".json" else "text/markdown"
@@ -407,7 +470,7 @@ def handle(root, msg, responses):
                              "resources": {"subscribe": False, "listChanged": False}},
             "serverInfo": SERVER_INFO,
             "instructions": "Read AGENTS.md first (it is exposed as a resource). "
-                            "candidate_propose is the only write: agents propose, humans decide.",
+                            "Agents may propose candidates and private lessons; humans decide.",
         }))
     elif method == "ping":
         responses.append(ok(mid, {}))

@@ -763,8 +763,8 @@ def t_harness_bridge():
         send({"jsonrpc": "2.0", "method": "notifications/initialized"})
         send({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         names = [t["name"] for t in recv()["result"]["tools"]]
-        check("harness: eight tools exposed",
-              set(names) == {"vault_search", "memory_recall", "registry_list", "registry_show",
+        check("harness: twelve tools exposed",
+              set(names) == {"capabilities", "lesson_propose", "lesson_recall", "source_search", "vault_search", "memory_recall", "registry_list", "registry_show",
                              "doctor_status", "runs_list", "runs_show", "candidate_propose"},
               str(names)[:140])
         send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",

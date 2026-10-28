@@ -173,14 +173,14 @@ class TestHarnessDoor(TempVault, unittest.TestCase):
         self.addCleanup(c.close)
         return c
 
-    def test_initialize_echoes_protocol_and_lists_the_eight_tools(self):
+    def test_initialize_echoes_protocol_and_lists_tools(self):
         c = self.client()
         result = initialize(c)
         self.assertEqual("hades-second-brain", result["serverInfo"]["name"])
         self.assertEqual("2025-06-18", result["protocolVersion"])
         r = c.call("tools/list", mid=2)
         names = [t["name"] for t in r["result"]["tools"]]
-        self.assertEqual(["vault_search", "memory_recall", "registry_list", "registry_show",
+        self.assertEqual(["capabilities", "lesson_propose", "lesson_recall", "source_search", "vault_search", "memory_recall", "registry_list", "registry_show",
                           "doctor_status", "runs_list", "runs_show", "candidate_propose"],
                          names)
 

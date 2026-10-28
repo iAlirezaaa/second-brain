@@ -1,0 +1,14 @@
+{
+  "documents": [
+    {"name": "backup", "text": "A backup must be restored and checked. backup restore backup restore"},
+    {"name": "garden", "text": "Restore backups and talk about gardens."},
+    {"name": "persian", "text": "مدیریت اطلاعات و يادگيري ماشين"},
+    {"name": "citation", "text": "Record source links and citations when documenting research."}
+  ],
+  "cases": [
+    {"query": "restore backup", "expected": "backup"},
+    {"query": "یادگیری ماشین", "expected": "persian"},
+    {"query": "source links", "expected": "citation"},
+    {"query": "gardens", "expected": "garden"}
+  ]
+}
