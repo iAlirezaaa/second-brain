@@ -234,13 +234,13 @@ status: active
   cycle guard because the single `superseded_by` map makes a cycle unrepresentable; 20 of 33
   kinds fall back to `draft|tested|approved|deprecated`; retired records still surface in
   `search`/`list` unmarked.
-- **A fresh install fails `plane_check`, and the phase-16 test cannot see it** (#23).
+- **A fresh install fails `plane_check`, and the phase-16 test cannot see it** (#27).
   `install.py` copies the dev `15_SYSTEM/config/system.json` — which maps `02_WIKI`,
   `03_PROJECTS`, `09_OPERATIONS`, `11_CONTROL` and `tests/` — into a template-shaped folder set,
   so `python scripts/health.py --vault .` in an installed home reports 30 missing stores,
   readers, tests and maps (verified from `cb4c257`). `test_phase16_host_independence` runs the
   source repo's `health.py` with `cwd=<install>`, but root-only gates take their script path and
-  root from `__file__`, so they judge the repo and pass. Filed as #23; fixing it is a product
+  root from `__file__`, so they judge the repo and pass. Filed as #27; fixing it is a product
   decision — ship the stores, ship a template `system.json`, or let an installed home declare a
   reduced map.
 - **A base is local by construction** (bytes in the gitignored backups). `--recover` is a
