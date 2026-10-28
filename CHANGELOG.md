@@ -57,6 +57,14 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   3.8 ms over 40 runs (max 5.9 ms); an installed home indexes its own 28 notes. The phase-4 golden gate is repointed at
   repo paths and `tests/test_phase27_repo_corpus.py` adds ten tests (boundary, installed home,
   shared golden fixture).
+- **Retirement is visible where a record is read** (phase 27 item 2) — measured before the
+  change in a scratch vault: `list` showed 4 rows, 1 retired, 0 markers; `search --query
+  provider` returned 5 hits, 1 of them the retired record's file, 0 markers. Now `list` prints
+  `records: N (active A, retired R)` and appends `[retired by ID]` to the retired row;
+  `search` appends the same marker to the retired record's own file and names the count in its
+  summary; `show` prints `# retired by: ID`; the MCP door (`registry_list`, `registry_show`)
+  carries `superseded_by` / `retired by`. Nothing is deleted or hidden — retirement stays a
+  verdict, not a delete. Four tests cover the three CLI surfaces and the MCP door.
 - Phase 7 — continuous improvement loop: `scripts/loop.py` (one-cycle ratchet:
   integrity/test/inbox/gap/hygiene signals → candidate report → prev-run compare;
   REGRESSED verdicts are loud, P1 exits non-zero), `skills/loop`, and a nightly
