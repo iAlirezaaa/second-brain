@@ -66,7 +66,20 @@ def measures(root):
     lessons = len(memory_mod.active(memory_mod.read_lessons(root)[0]))
     cfg = load_json(root / "15_SYSTEM" / "config" / "system.json")
     declared = len(cfg["zones"])
-    present = len([z for z in cfg["zones"] if (root / z["dir"]).exists()])
+    ignored = set(cfg.get("gitignore_required_paths") or ())
+
+    def clone_visible(zone_dir):
+        """A fresh clone reproduces this zone's presence only if it is not gitignored.
+        Machine-local state (12_RUNTIME appearing on the writing machine) must never
+        move a measured number -- that is how a green office becomes a red clone."""
+        for entry in ignored:
+            entry = str(entry).rstrip("/")
+            if entry == zone_dir or entry.startswith(zone_dir + "/"):
+                return False
+        return True
+
+    present = len([z for z in cfg["zones"]
+                   if (root / z["dir"]).exists() and clone_visible(z["dir"])])
     import sync_hosts
     return [
         ("tests collected (`python -m unittest discover -s tests`)", collected_tests(root)),
@@ -78,7 +91,7 @@ def measures(root):
         ("candidate rows on the shelf (`14_CANDIDATES/loop`)", rows),
         ("kinds in the contract (`15_SYSTEM/config/system.json`)", len(cfg["kinds"])),
         ("relation types in the contract", len(cfg["relations"])),
-        ("zones on disk / declared (human plane; `12_RUNTIME`, `13_LAB` are gitignored)",
+        ("zones a fresh clone reproduces / declared (`12_RUNTIME`, `13_LAB` are gitignored)",
          "%d / %d" % (present, declared)),
         ("python floor", PYTHON_FLOOR),
     ]

@@ -137,8 +137,30 @@ keep-base fallback). The rows are in build order; every checked row has a test.*
 - [ ] **S** recovery on the probe's own initiative — today a `hurt` verdict tells the agent to
       fall back; `scripts/probe.py` does not run `base.py --recover` for it, because reverting a
       tree from an unattended measurement is a bigger permission than naming one
-- [ ] **S** `hades.py edit`/`set` — the registry is create-only today, so a record can be
-      filed and never amended
+- [x] **S** `hades.py set` — the registry is no longer create-only (issue #12): an amendment
+      goes through `plan` → `apply --approve`, `id`/`kind`/`created_at` stay immutable, a plan
+      whose record moved is refused as stale, and the record keeps its own `amendments` trail
+      (`tests/test_phase22_amend_a_record.py`)
+- [x] **S** `supersedes` enforces its own definition (issue #12, second half) — a superseded
+      record leaves the active index, `doctor` counts active records and names the retirements,
+      and self-supersession is an error rather than a quiet pass
+      (`tests/test_phase23_superseded_leaves_the_index.py`)
+- [x] **M** a markdown record is enumerated by content, not by one filename (issue #13) —
+      `news` and `wiki_note` were written as `<ID>-<slug>.md` while the scan only matched
+      `note.md`, so a record created through the sanctioned path answered `NOT FOUND` and the
+      gate still printed `errors: 0`; prose, relations and the amendment trail now round-trip
+      through the markdown writer (`tests/test_phase21_records_are_visible.py`)
+- [x] **S** one file, one contract (#14) — a record `apply` writes into a human zone (`02_WIKI`,
+      `04_INTELLIGENCE`) was judged by the note schema and came back `invalid status: 'draft'`;
+      `frontmatter_check.py` now selects the contract from the file's content, using the
+      recognizer the registry already uses, and reads the record's required fields and status
+      vocabulary from the registry's own config and schema instead of a second list. Refusing a
+      record that claims a kind its id cannot be enumerated by is part of the fix, not an
+      exception to it (`tests/test_phase24_a_record_is_not_a_note.py`)
+- [ ] **S** per-kind status vocabularies — 20 of 33 kinds in `system.json` inherit
+      `draft|tested|approved|deprecated`, so `retired` is `deprecated` for a wiki note and
+      `superseded` for news while a `task` has no status that means "done"; the gates already read
+      whatever the config says, so this is a decision to make, not a mechanism to build
 - [x] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit — `.github/workflows/ci.yml`
       runs the six gates plus the full suite on `3.9` and `3.12` across ubuntu and windows, and
       run `40558517318` closed 4/4 green on `33522ec`
