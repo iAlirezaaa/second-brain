@@ -84,14 +84,19 @@ tests, five of which break a fixture on purpose and read the gate's refusal.*
 now covers the clone-readable human plane (43 notes here, 28 in an installed home), excludes
 the machine plane, template, dot-folders and agent doors by `common.clone_readable()`'s own
 boundary, strips frontmatter before indexing, keeps raw text for snippets while matching on
-folded text, and refuses a missing or stale index instead of answering from it.*
+folded text, and refuses a missing or stale index instead of answering from it. Retirement
+now has a visible surface: `list` counts active/retired and marks the retired row,
+`search` marks the retired record's own file, `show` names who retired it, and the MCP door
+carries `superseded_by`. Measured before the change: 4 list rows / 1 retired / 0 markers;
+5 search hits / 1 on the retired file / 0 markers.*
 
 - [x] **M** Point `kb.py` at the tracked repo (human plane only; machine plane excluded by the
       same boundary `common.clone_readable()` declares) with the existing golden-set gate as the
       regression harness. The phase-4 gate is repointed; `tests/test_phase27_repo_corpus.py`
       proves the boundary, the installed home and the shared golden fixture.
-- [ ] **S** Decide, with a measurement first, how retired records surface in `search`/`list`
-      (handoff §4: the index is settled, the reading surface is not).
+- [x] **S** Decide, with a measurement first, how retired records surface in `search`/`list`
+      (handoff §4: the index is settled, the reading surface is not). Measured, then marked on
+      `list`, `search` and `show`; four tests cover the three CLI surfaces and the MCP door.
 - [ ] **S** BM25 recency boost behind a measured eval — only if the golden set shows it wins.
 
 ## Phase 28 — Scheduler seam: one clock for the rituals · 🔵

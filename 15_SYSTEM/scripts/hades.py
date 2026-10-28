@@ -1106,24 +1106,38 @@ def cmd_new(cfg, sch, args):
 
 
 def cmd_list(cfg, args):
-    recs = list(iter_records(cfg))
+    all_recs = list(iter_records(cfg))
+    sup = superseded_by(all_recs)
+    recs = all_recs
     if args.kind:
         recs = [(p, r) for p, r in recs if r.get("kind") == args.kind]
     if args.zone:
         recs = [(p, r) for p, r in recs if rel(p).startswith(args.zone)]
-    print("records: %d" % len(recs))
+    retired = sum(1 for _p, r in recs if r.get("id") in sup)
+    summary = "records: %d" % len(recs)
+    if retired:
+        summary += " (active %d, retired %d)" % (len(recs) - retired, retired)
+    print(summary)
     print("  %-22s %-13s %-18s %-26s %s" % ("id", "kind", "status", "name", "path"))
     for p, r in sorted(recs, key=lambda x: str(x[1].get("id"))):
+        path = rel(p)
+        by = sup.get(r.get("id"))
+        if by:
+            path += "  [retired by %s]" % by
         print("  %-22s %-13s %-18s %-26s %s" % (r.get("id"), r.get("kind"), (r.get("status") or "")[:18],
-                                                (r.get("name") or "")[:26], rel(p)))
+                                                (r.get("name") or "")[:26], path))
     return 0
 
 
 def cmd_show(cfg, args):
-    for p, r in iter_records(cfg):
+    recs = list(iter_records(cfg))
+    sup = superseded_by(recs)
+    for p, r in recs:
         if r.get("id") == args.id:
             print(json.dumps(r, ensure_ascii=False, indent=2))
             print("# file: %s" % rel(p))
+            if r.get("id") in sup:
+                print("# retired by: %s" % sup[r.get("id")])
             return 0
     print("NOT FOUND: %s" % args.id)
     return 1
@@ -1206,7 +1220,11 @@ def cmd_context(cfg, args):
 
 def cmd_search(cfg, args):
     terms = [t.lower() for t in args.query.split()]
+    recs = list(iter_records(cfg))
+    sup = superseded_by(recs)
+    retired_at = {rel(p): sup[r.get("id")] for p, r in recs if r.get("id") in sup}
     hits = 0
+    retired_hits = 0
     files = []
     for z in zone_dirs(cfg):
         if args.machine or not is_denied(z + "/", cfg):
@@ -1223,10 +1241,18 @@ def cmd_search(cfg, args):
         low = text.lower()
         if all(t in low for t in terms):
             hits += 1
-            print("HIT %s" % rel(f))
+            path = rel(f)
+            line = "HIT %s" % path
+            if path in retired_at:
+                retired_hits += 1
+                line += "  [retired by %s]" % retired_at[path]
+            print(line)
             if hits >= args.limit:
                 break
-    print("matches: %d files (query: %s)" % (hits, args.query))
+    note = ""
+    if retired_hits:
+        note = "; %d retired record%s" % (retired_hits, "" if retired_hits == 1 else "s")
+    print("matches: %d files (query: %s%s)" % (hits, args.query, note))
     return 0 if hits else 1
 
 

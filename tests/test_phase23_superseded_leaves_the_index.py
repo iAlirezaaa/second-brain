@@ -106,6 +106,83 @@ class TestSupersededLeavesTheIndex(unittest.TestCase):
                          "doctor and the index count different things and call both healthy")
 
 
+class TestRetirementIsVisibleWhereARecordIsRead(unittest.TestCase):
+    """Measured before this change: 4 list rows, 1 retired, 0 marked; 5 search hits,
+    1 on the retired file, 0 marked. The verdict existed in the index and nowhere a
+    person or an agent actually reads a record."""
+
+    def setUp(self):
+        self.vault = seeded()
+        self.ids = []
+        for name in ("Old Provider", "New Provider"):
+            code, out = self.vault.hades("new", "--kind", "organization", "--name", name,
+                                         "--description", "provider fixture", "--approve")
+            self.assertEqual(code, 0, out)
+            self.ids.append(re.search(r"\b(ORG-[0-9A-F]{8})\b", out).group(1))
+        self.older, self.newer = self.ids
+        code, out = self.vault.hades("link", "--id", self.newer, "--rel", "supersedes",
+                                     "--to", self.older)
+        self.assertEqual(code, 0, out)
+        code, out = self.vault.hades("index")
+        self.assertEqual(code, 0, out)
+
+    def tearDown(self):
+        self.vault.close()
+
+    def path_of(self, rid):
+        code, out = self.vault.hades("show", "--id", rid)
+        self.assertEqual(code, 0, out)
+        return re.search(r"# file: (\S+)", out).group(1)
+
+    def test_list_marks_the_retired_row_and_still_counts_it(self):
+        code, out = self.vault.hades("list", "--kind", "organization")
+        self.assertEqual(code, 0, out)
+        self.assertIn("records: 3 (active 2, retired 1)", out)
+        rows = [ln for ln in out.splitlines() if "ORG-" in ln]
+        self.assertEqual(len(rows), 3, "retirement is a verdict, not a delete")
+        older = [ln for ln in rows if ln.split()[0] == self.older][0]
+        newer = [ln for ln in rows if ln.split()[0] == self.newer][0]
+        self.assertIn("[retired by %s]" % self.newer, older, out)
+        self.assertNotIn("[retired by", newer, out)
+
+    def test_search_marks_a_retired_file_without_hiding_it(self):
+        older_path = self.path_of(self.older)
+        code, out = self.vault.hades("search", "--query", "provider")
+        self.assertEqual(code, 0, out)
+        hits = {ln.split()[1]: ln for ln in out.splitlines() if ln.startswith("HIT ")}
+        self.assertIn(older_path, hits, "a retired record is still findable")
+        self.assertIn("[retired by %s]" % self.newer, hits[older_path], out)
+        self.assertNotIn("[retired by", hits[self.path_of(self.newer)], out)
+        self.assertIn("1 retired record", out.splitlines()[-1], out)
+
+    def test_show_names_the_record_that_retired_it(self):
+        code, out = self.vault.hades("show", "--id", self.older)
+        self.assertEqual(code, 0, out)
+        self.assertIn("# retired by: %s" % self.newer, out)
+        code, out = self.vault.hades("show", "--id", self.newer)
+        self.assertEqual(code, 0, out)
+        self.assertNotIn("# retired by:", out)
+
+    def test_the_mcp_door_carries_the_same_verdict(self):
+        sys.path.insert(0, str(ROOT / "15_SYSTEM" / "scripts"))
+        import mcp_server
+        mcp_server.bind(self.vault.root)
+        try:
+            result = mcp_server.handle_tool_call(
+                self.vault.root, {"name": "registry_list", "arguments": {"kind": "organization"}})
+        finally:
+            mcp_server.bind(ROOT)
+        self.assertFalse(result.get("isError"), result)
+        payload = json.loads(result["content"][0]["text"])
+        rows = {row["id"]: row for row in payload["records"]}
+        self.assertEqual(payload["count"], 3)
+        self.assertEqual(payload["retired"], 1)
+        self.assertFalse(rows[self.older]["active"])
+        self.assertEqual(rows[self.older]["superseded_by"], self.newer)
+        self.assertTrue(rows[self.newer]["active"])
+        self.assertNotIn("superseded_by", rows[self.newer])
+
+
 class TestRetirementThatCannotBeTrusted(unittest.TestCase):
     def setUp(self):
         self.vault = seeded()

@@ -128,6 +128,8 @@ audit trail lives in the definition, not in a chat log.
 **Retiring a definition is a verdict the index has to honour.** `link --id NEW --rel supersedes
 --to OLD` means OLD leaves the active index: `index` lists it under `superseded` together with the
 record that retired it, `doctor` counts active records and names the retirements, and a record that
-supersedes itself is an error. Nothing is deleted — `list` still enumerates every record on disk, so
-the history stays readable. A sentence in `system.json` that no gate enforces is worse than no
+supersedes itself is an error. Nothing is deleted — `list` still enumerates every record on disk and
+marks the retired row with `[retired by ID]`, `search` marks the retired record's own file, and
+`show` names the record that retired it, so the history stays readable without looking identical to
+the active truth. A sentence in `system.json` that no gate enforces is worse than no
 sentence: it lets one thing keep two definitions while printing `errors: 0`.
