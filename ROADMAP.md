@@ -32,8 +32,8 @@ Phase 8 established the public project standard and handoff. Phases 31–34 add 
 source memory the charter's §5 asks for: explicit import, a rebuildable index, provenance,
 evidence-backed lessons, retrieval measurement, transfer between devices, and a
 capability catalogue that never installs without approval.
-Current floor, measured at the time of writing: **333 unittests, a 120-check HADES battery,
-6 health gates, CI on ubuntu+windows × 3.9/3.12, 26 recorded lessons.**
+Current floor, measured at the time of writing: **343 unittests, a 120-check HADES battery,
+7 health gates, CI on ubuntu+windows × 3.9/3.12, 26 recorded lessons.**
 
 ---
 
@@ -53,20 +53,28 @@ decoration. Audit: `00_START_HERE/CHARTER_AUDIT.md` — 11/15 honoured, 3 partia
 - [x] **S** Amend this roadmap from the audit's verdicts: phases 26–27 implement the §5/§11
       verdicts, ⛔ rows carry the refusals with the section number that justifies them.
 
-## Phase 26 — The eight memory planes, mapped and gated · 🔵
+## Phase 26 — The eight memory planes, mapped and gated · 🟢
 
 *Source: charter §5 (project, repository, agent, task, error, decision, knowledge, conversation
-memory — "each memory type is stored in a specific place and is accessible to the agent").*
+memory — "each memory type is stored in a specific place and is accessible to the agent").
+Shipped: `15_SYSTEM/config/system.json` → `memory_planes` (tracked store, disposable store,
+reader, test and map per plane), `02_WIKI/reference_maps/eight-memory-planes.md` (one row per
+plane, measured inventory, provenance description) and `scripts/plane_check.py`, a seventh
+health gate that refuses a dropped plane, a missing tracked store, an empty folder or a
+reader/test/map that no longer exists. Proved by `tests/test_phase26_memory_planes.py` — nine
+tests, five of which break a fixture on purpose and read the gate's refusal.*
 
-- [ ] **S** Write the mapping: which existing store holds which plane (projects → `03_*` records,
+- [x] **S** Write the mapping: which existing store holds which plane (projects → `03_*` records,
       agents → `11_CONTROL` + backend actor registry, errors → `lessons.jsonl`, decisions →
       `02_WIKI/decisions/`, knowledge → `kb.py` + wiki, task/runs → `runs.py` ledger,
       conversation → promoted rows, repository → HANDOFF/CHANGELOG). The mapping is a doc row
       with evidence, not a claim.
-- [ ] **M** Close the real gaps the mapping exposes — the honest expectation: conversation
+- [x] **M** Close the real gaps the mapping exposes — the honest expectation: conversation
       memory has no reader surface and `kb.py` covers the template, not the repo corpus. Each
-      gap becomes an issue first, then a test-first fix.
-- [ ] **S** A health gate that fails when a memory plane's store is missing or unreadable — so
+      gap becomes an issue first, then a test-first fix. Filed instead of half-built: #20 keeps
+      the conversation extraction path and `kb.py` (phase 27); #24 contradiction awareness (no
+      measured definition yet); #25 lessons carry no plane field.
+- [x] **S** A health gate that fails when a memory plane's store is missing or unreadable — so
       the charter's §5 is enforced by a gate, not remembered by the next agent.
 
 ## Phase 27 — The brain searches its own corpus · 🔵
