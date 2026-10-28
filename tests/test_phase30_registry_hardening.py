@@ -19,6 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from hades_fixture import seeded  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+import probe  # noqa: E402
 PLANS = "15_SYSTEM/generated/plans"
 
 
@@ -248,6 +250,28 @@ class EveryKindOwnsItsStatusVocabulary(unittest.TestCase):
             self.assertIn("open|blocked|done|cancelled", out)
         finally:
             vault.close()
+
+
+class AnUnattendedProbeCannotRestoreABase(unittest.TestCase):
+    def test_the_recovery_script_is_reserved_and_the_reason_names_the_owner(self):
+        argv, reason = probe.resolve_command(ROOT, {"probe": "scripts/base.py",
+                                                    "probe_args": ["--recover"]})
+        self.assertEqual([], argv)
+        self.assertIn("reserved", reason)
+        self.assertIn("owner", reason,
+                      "the refusal must say whose permission a recovery needs")
+
+    def test_the_installer_stays_reserved(self):
+        argv, reason = probe.resolve_command(ROOT, {"probe": "scripts/install.py"})
+        self.assertEqual([], argv)
+        self.assertIn("outside the repo", reason)
+
+    def test_an_ordinary_measurement_is_still_a_legal_probe(self):
+        argv, reason = probe.resolve_command(ROOT, {"probe": "scripts/vector_check.py"})
+        self.assertEqual("", reason)
+        self.assertEqual(2, len(argv), argv)
+        self.assertTrue(argv[1].endswith("scripts/vector_check.py") or
+                        argv[1].endswith("scripts\\vector_check.py"), argv)
 
 
 if __name__ == "__main__":

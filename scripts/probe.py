@@ -50,7 +50,12 @@ except AttributeError:
 ALLOWED_DIRS = ("scripts", "15_SYSTEM/scripts")
 # scripts that reach outside the repo (a user's home dir) — running them from an
 # unattended candidate is not a measurement, it is a side effect
-REFUSED_PROBES = ("scripts/install.py",)
+# scripts a candidate may never execute, and why: a probe is a measurement, not a licence
+REFUSED_PROBES = {
+    "scripts/install.py": "it writes outside the repo",
+    "scripts/base.py": "recovery is the owner's decision, not a measurement -- an unattended "
+                       "run may name a base, never restore one",
+}
 
 
 def resolve_command(root, candidate_fm):
@@ -67,9 +72,9 @@ def resolve_command(root, candidate_fm):
         return [], "probe %s is outside the allowlisted script dirs %s" % (rel, list(ALLOWED_DIRS))
     if not (root / rel).is_file():
         return [], "probe script does not exist: %s" % rel
-    for refused in REFUSED_PROBES:
+    for refused, why in REFUSED_PROBES.items():
         if rel == refused:
-            return [], "probe %s is reserved: it writes outside the repo" % rel
+            return [], "probe %s is reserved: %s" % (rel, why)
     args = candidate_fm.get("probe_args") or []
     if isinstance(args, str):
         args = [args]
