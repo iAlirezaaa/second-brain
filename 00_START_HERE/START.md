@@ -14,13 +14,13 @@
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 264 |
+| tests collected (`python -m unittest discover -s tests`) | 297 |
 | health gates (`python scripts/health.py`) | 6 |
-| registry records (`11_CONTROL/**/*.json`) | 12 |
+| registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 21 |
-| candidate rows on the shelf (`14_CANDIDATES/loop`) | 3 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 26 |
+| candidate rows on the shelf (`14_CANDIDATES/loop`) | 4 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
 | relation types in the contract | 13 |
 | zones a fresh clone reproduces / declared (`12_RUNTIME`, `13_LAB` are gitignored) | 12 / 16 |
@@ -120,7 +120,37 @@ py -3.10 15_SYSTEM\scripts\hades.py sync --harness HAR-XXXXXXXX
 کپی می‌شوند؛ اسکیل‌های غایب از آینه پاک می‌شوند. هارنس ناشناخت = رد، چون adapter
 تأیید نشده یک ادعاست نه یک اتصال.
 
-## ۷) ویکی
+## ۷) دروازهٔ هارنس و اجرای ایجنت‌ها
+
+مغز از طریق پروتکل MCP روی stdio صدا زده می‌شود — بدون پورت، کلید و دیمن
+(`15_SYSTEM/scripts/mcp_server.py`؛ نمونهٔ اتصال OpenCode و Claude Desktop در
+`15_SYSTEM/integrations/`). ابزارهای خواندن بازند و تنها ابزار نوشتن
+`candidate_propose` است که یک ردیف ثبت‌شده روی قفسهٔ قرنطینه می‌گذارد — ایجنت
+پیشنهاد می‌دهد، انسان تصمیم می‌گیرد.
+
+```powershell
+py -3.10 15_SYSTEM\scripts\mcp_server.py          # خودِ دروازه؛ هارنس این را اجرا می‌کند
+py -3.10 15_SYSTEM\scripts\runs.py start --agent AGT-XXXXXXXX --goal "..."
+py -3.10 15_SYSTEM\scripts\runs.py step --run RUN-XXXXXXXX --text "..."
+py -3.10 15_SYSTEM\scripts\runs.py finish --run RUN-XXXXXXXX --status completed
+py -3.10 15_SYSTEM\scripts\runs.py promote --run RUN-XXXXXXXX   # خروجِ شاهد از صفحهٔ یک‌بارمصرف
+py -3.10 15_SYSTEM\scripts\runs.py list
+py -3.10 15_SYSTEM\scripts\orchestrator.py workflow validate --file WF.json
+py -3.10 15_SYSTEM\scripts\orchestrator.py workflow run --file WF.json --agent AGT-XXXXXXXX
+py -3.10 15_SYSTEM\scripts\orchestrator.py tool list
+py -3.10 15_SYSTEM\scripts\orchestrator.py ltm fetch --query "..."
+```
+
+موتورِ اجرا در پکیج `15_SYSTEM/scripts/backend/` است — لاجیک SuperAGI به‌صورت stdlib:
+ماشینِ وضعیت و حلقهٔ گام، toolkit ها با allowlist واقعی (`tool_allowlist` ایجنت)،
+workflow اعلانی، ریاضیِ schedule و حافظهٔ بلندمدت FTS5. فقط گام‌های قطعی اجرا می‌شوند؛
+گامِ LLM تصمیمِ انسان است، نه کارِ موتور.
+
+ایجنتی که رجیستری نشناسد نمی‌تواند اجرا شروع کند. ران‌ها در `12_RUNTIME/agent_runs/`
+زندگی می‌کنند و در مرز گیت می‌میرند؛ `promote` فید را *داخل* ردیف قفسه صادر می‌کند و
+فقط به فایل‌های track شده اشاره می‌کند — پوشهٔ ران هرگز شاهد نیست، چون پشت مرز گیت است.
+
+## ۸) ویکی
 
 ```powershell
 py -3.10 15_SYSTEM\scripts\wiki.py build
@@ -131,7 +161,7 @@ py -3.10 15_SYSTEM\scripts\wiki.py serve
 برای خودش نمی‌خواند مگر با `--include` صریح (و فقط برای ناحیه انسانی). خروجی روی
 `127.0.0.1` می‌نشیند و `noindex` می‌گیرد.
 
-## ۸) انتشار به GitHub
+## ۹) انتشار به GitHub
 
 ```powershell
 py -3.10 15_SYSTEM\scripts\hades.py export --path 11_CONTROL/skills/SKL-XXXXXXXX-name
@@ -142,13 +172,13 @@ py -3.10 15_SYSTEM\scripts\hades.py publish --path 11_CONTROL/skills/SKL-XXXXXXX
 BLOCKED یعنی publish مسدود. انتشار فقط مخزن **جدید خصوصی** است و بعد از ساخت،
 visibility را از GitHub دوباره می‌خواند؛ اگر PRIVATE نبود، هشدار می‌دهد.
 
-## ۹) راهنمای کامل
+## ۱۰) راهنمای کامل
 
 این فایل فقط دستورهای روزمره است. برای توضیح کامل ناحیه‌ها، انواع رکورد و رابطه‌های
 تعریف‌شده در قرارداد (عددشان را در جدول بخش ۰ همین فایل بخوان، نه از حافظه)، فهرست گیت‌ها،
 عیب‌یابی پیام‌به‌پیام و بخش انگلیسی، `00_START_HERE/GUIDE_FA_EN.md` را بخوان.
 
-## ۱۰) تست گیت‌ها
+## ۱۱) تست گیت‌ها
 
 ```powershell
 py -3.10 15_SYSTEM\scripts\test_hades.py

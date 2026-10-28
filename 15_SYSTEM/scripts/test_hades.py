@@ -683,6 +683,132 @@ def md_file(v, wid):
     return hits[0] if hits else None
 
 
+# ---- harness bridge (phase 22)
+def t_harness_bridge():
+    v = Vault()
+    try:
+        # the door's own helpers (common/memory/candidate_check) live in scripts/;
+        # a scratch vault only ships 15_SYSTEM, so bring the package along
+        shutil.copytree(SRC / "scripts", v.root / "scripts",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        # the run ledger: an actor the registry never heard of cannot run
+        c, o = v.run("runs.py", "start", "--agent", "AGT-ghost", "--goal", "nope")
+        check("harness: a ghost actor cannot start a run",
+              c == 2 and "no registry record AGT-ghost" in o, o.strip()[:140])
+        c, o = v.hades("new", "--kind", "agent", "--name", "Bridge Runner",
+                       "--description", "fixture", "--approve")
+        agt = [ln.split()[1] for ln in o.splitlines() if ln.startswith("APPLIED ")][0]
+        c, o = v.run("runs.py", "start", "--agent", agt, "--goal", "prove the bridge")
+        run_id = [ln.split()[1] for ln in o.splitlines() if ln.startswith("RUN ")][0] if c == 0 else ""
+        check("harness: a registered actor starts a run", c == 0 and run_id.startswith("RUN-"),
+              o.strip()[:140])
+        c, o = v.run("runs.py", "step", "--run", run_id, "--text", "opened the door")
+        check("harness: a run takes a step", c == 0 and "STEP" in o, o.strip()[:140])
+        c, o = v.run("runs.py", "finish", "--run", run_id, "--status", "completed",
+                     "--summary", "door proven")
+        check("harness: a run finishes once", c == 0 and "completed" in o, o.strip()[:140])
+        c, o = v.run("runs.py", "step", "--run", run_id, "--text", "too late")
+        check("harness: a finished feed refuses steps", c == 2 and "REFUSED" in o, o.strip()[:140])
+        c, o = v.run("runs.py", "list")
+        check("harness: list shows the closed run", c == 0 and run_id in o, o.strip()[:140])
+        c, o = v.run("runs.py", "promote", "--run", run_id, "--dimension", "invariant")
+        check("harness: a finished run promotes into a registered row",
+              c == 0 and "PROMOTED cand-" in o, o.strip()[:160])
+        promoted_rows = list((v.root / "14_CANDIDATES/loop").glob("cand-*-run-*.md"))
+        check("harness: the promoted row is on the shelf with the feed embedded",
+              len(promoted_rows) == 1 and "opened the door" in promoted_rows[0].read_text(encoding="utf-8"),
+              str(promoted_rows))
+        c, o = v.run("runs.py", "promote", "--run", run_id)
+        check("harness: promoting twice is refused", c == 2 and "promoting twice" in o, o.strip()[:140])
+        wf_path = v.root / "15_SYSTEM" / "workflows" / "battery-demo.json"
+        wf_path.parent.mkdir(parents=True, exist_ok=True)
+        wf_path.write_text(json.dumps({"name": "battery demo", "steps": [
+            {"name": "read", "type": "tool_call", "tool": "core.fs_read",
+             "args": {"path": "15_SYSTEM/config/system.json"}},
+            {"name": "stop", "type": "done", "note": "engine walked it"}]}), encoding="utf-8")
+        c, o = v.run("orchestrator.py", "workflow", "validate", "--file", str(wf_path))
+        check("backend: the workflow validator is the gate",
+              c == 0 and "VALID" in o, o.strip()[:140])
+        c, o = v.run("orchestrator.py", "workflow", "run", "--file", str(wf_path), "--agent", agt)
+        check("backend: the engine walks the workflow end to end",
+              c == 0 and "WORKFLOW battery demo -> COMPLETED" in o, o.strip()[:160])
+        feeds = list((v.root / "12_RUNTIME" / "agent_runs").glob("*/steps.jsonl"))
+        check("backend: the run transcript holds the engine feed",
+              any("core.fs_read" in f.read_text(encoding="utf-8") for f in feeds),
+              str(feeds)[:140])
+        c, o = v.run("orchestrator.py", "tool", "call", "--tool", "core.ltm_store",
+                     "--args", '{"text": "sneaky"}', "--agent", agt)
+        check("backend: a write tool refuses an unapproved context",
+              c == 2 and "not approved" in o, o.strip()[:140])
+
+        # the MCP door over the wire, in a subprocess, exactly like a harness talks to it
+        server = v.root / "15_SYSTEM/scripts/mcp_server.py"
+        proc = subprocess.Popen(PY + [str(server), "--root", str(v.root)], cwd=str(v.root),
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+
+        def send(obj):
+            proc.stdin.write((json.dumps(obj) + "\n").encode("utf-8"))
+            proc.stdin.flush()
+
+        def recv():
+            return json.loads(proc.stdout.readline().decode("utf-8", errors="replace"))
+
+        send({"jsonrpc": "2.0", "id": 1, "method": "initialize",
+              "params": {"protocolVersion": "2025-06-18", "capabilities": {},
+                         "clientInfo": {"name": "battery", "version": "0"}}})
+        r = recv()
+        check("harness: initialize names the brain",
+              r["result"]["serverInfo"]["name"] == "hades-second-brain", str(r)[:140])
+        send({"jsonrpc": "2.0", "method": "notifications/initialized"})
+        send({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
+        names = [t["name"] for t in recv()["result"]["tools"]]
+        check("harness: eight tools exposed",
+              set(names) == {"vault_search", "memory_recall", "registry_list", "registry_show",
+                             "doctor_status", "runs_list", "runs_show", "candidate_propose"},
+              str(names)[:140])
+        send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+              "params": {"name": "registry_list", "arguments": {}}})
+        text = recv()["result"]["content"][0]["text"]
+        check("harness: registry_list sees the seeded agent", agt in text, text[:140])
+        send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+              "params": {"name": "runs_list", "arguments": {}}})
+        text = recv()["result"]["content"][0]["text"]
+        check("harness: runs_list shows the promoted run through the door",
+              run_id in text and '"promoted"' in text, text[:200])
+        send({"jsonrpc": "2.0", "id": 4, "method": "tools/call",
+              "params": {"name": "doctor_status", "arguments": {}}})
+        text = recv()["result"]["content"][0]["text"]
+        runs_count = len([d for d in (v.root / "12_RUNTIME" / "agent_runs").iterdir()
+                          if d.is_dir()])
+        check("harness: doctor_status counts the run and the record",
+              ('"runs": %d' % runs_count) in text and '"records": 1' in text, text[:200])
+        send({"jsonrpc": "2.0", "id": 5, "method": "tools/call",
+              "params": {"name": "candidate_propose", "arguments": {
+                  "dimension": "invariant", "cue": "the battery spoke to the brain",
+                  "lesson": "the door answers on the wire", "confidence": 0.8}}})
+        text = recv()["result"]["content"][0]["text"]
+        check("harness: candidate_propose files a registered row",
+              "PROPOSED cand-" in text, text[:140])
+        rows = list((v.root / "14_CANDIDATES/loop").glob("cand-*-mcp-*.md"))
+        ledger = ""
+        ledger_path = v.root / "14_CANDIDATES/loop/ledger.jsonl"
+        if ledger_path.is_file():
+            ledger = ledger_path.read_text(encoding="utf-8")
+        check("harness: the proposal landed on the shelf and in the ledger",
+              len(rows) == 1 and "proposed" in ledger, "%d row(s); ledger %d char(s)"
+              % (len(rows), len(ledger)))
+        proc.stdin.close()
+        check("harness: the door exits cleanly on EOF", proc.wait(timeout=30) == 0)
+        for stream in (proc.stdout, proc.stderr):
+            try:
+                stream.close()
+            except OSError:
+                pass
+    finally:
+        v.close()
+
+
 def guard(fn, *a):
     """A crash in one case must not hide the verdict of the other 40."""
     try:
@@ -732,6 +858,7 @@ def main():
     guard(t_archive)
     guard(t_status_accounts_every_zone)
     guard(t_markdown_and_amendments)
+    guard(t_harness_bridge)
 
     ok = sum(1 for _, p, _ in RESULTS if p)
     bad = len(RESULTS) - ok

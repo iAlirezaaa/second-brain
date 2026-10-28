@@ -1,0 +1,24 @@
+{
+  "kind": "mcp",
+  "id": "MCP-E1807E50",
+  "name": "second-brain bridge",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-10-28",
+  "tags": [],
+  "relations": {},
+  "notes": "MCP stdio door into the second brain: read tools (vault_search, memory_recall, registry_list, registry_show, doctor_status) and one write tool (candidate_propose) that files a registered row on the quarantine shelf.",
+  "transport": "stdio",
+  "endpoint_or_command": "15_SYSTEM/scripts/mcp_server.py",
+  "tools_exposed": [
+    "vault_search",
+    "memory_recall",
+    "registry_list",
+    "registry_show",
+    "doctor_status",
+    "runs_list",
+    "runs_show",
+    "candidate_propose"
+  ],
+  "updated_at": "2026-10-28T00:33:20Z"
+}

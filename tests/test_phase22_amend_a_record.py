@@ -2,7 +2,7 @@
 
 The measured defect was the CLI itself:
 
-    $ py -3.10 15_SYSTEM/scripts/hades.py edit --id SKL-15EE69D8 --set title=x
+    $ py -3.10 15_SYSTEM/scripts/hades.py set --id SKL-15EE69D8 --field title --value x
     hades.py: error: argument cmd: invalid choice: 'edit' (choose from 'status', 'doctor', ...)
 
 `11_CONTROL` is the plane an agent reads *before* acting, and the pack's own law makes the

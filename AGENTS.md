@@ -37,6 +37,33 @@ the document — write it to `14_CANDIDATES/loop/` and continue with `scripts/`.
 the machine that wrote it. Export what you measured (see `14_CANDIDATES/loop/gaps.jsonl`)
 instead of pointing at local state.
 
+## The harness door is MCP, not a server farm
+Frameworks like SuperAGI answered "how do agents reach the system" with a server farm
+(FastAPI + Postgres + Celery/Redis + a GUI). This brain answers it with the protocol
+harnesses already speak: `15_SYSTEM/scripts/mcp_server.py`, a Model Context Protocol server
+over stdio — stdlib-only, no port, no keys, no daemon. Read tools are open (`vault_search`,
+`memory_recall`, `registry_list`, `registry_show`, `doctor_status`); the single write tool
+is `candidate_propose`, which files a registered row on the quarantine shelf — an agent
+proposes, the human decides. Client registration examples live in `15_SYSTEM/integrations/`.
+What an agent *did* is a separate disposable ledger: `15_SYSTEM/scripts/runs.py` writes
+`12_RUNTIME/agent_runs/<RUN>/` (a run plus an append-only step feed), refuses actors the
+registry has never heard of, and dies at the git boundary by design — evidence that matters
+is promoted to the shelf or the human plane, never stranded in machine state. A run that
+learned something exits the disposable plane with `runs.py promote`, which exports the feed
+into a registered shelf row: the run directory itself never becomes evidence (it lives
+behind the git boundary), so the row embeds the feed and cites only tracked files.
+
+The execution logic behind those runs is a stdlib package, `15_SYSTEM/scripts/backend/`:
+the engine (SuperAGI's AgentExecution state machine — created/running/paused/completed/
+failed/terminated — and its step loop), toolkits with per-actor allowlists
+(`tool_allowlist` is a real gate: a write tool needs `--approve` AND a place in the
+actor's list; an empty list means zero write tools), declarative workflows (a `workflow`
+record whose `body_path` points at the executable `steps.json`), pure schedule math and
+an FTS5 long-term memory — all driven by the thin `orchestrator.py` CLI
+(`workflow validate|run`, `tool list|call`, `schedule due`, `ltm store|fetch`).
+Deterministic steps only: an LLM step is a human-gated decision, never something the
+engine invents.
+
 ## The one rule that explains the layout
 `00`–`10` is the **human plane**: readable, citable, canonical. `11` and above is the **machine plane**: definitions in `11_CONTROL`, disposable state in `12_RUNTIME`, quarantine in `13_LAB`, your review shelf in `14_CANDIDATES`, infrastructure in `15_SYSTEM`. Anything the machine produces that is worth keeping must be **promoted** into the human plane with an ID and evidence — never left living only in harness memory.
 

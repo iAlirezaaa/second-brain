@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "second-brain": {
+      "type": "local",
+      "command": ["python", "15_SYSTEM/scripts/mcp_server.py"],
+      "enabled": true
+    }
+  }
+}

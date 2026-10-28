@@ -549,16 +549,26 @@ def skill_entrypoint(name):
 
 
 def check_entrypoints(path, rec):
-    """Every file an agent is told to open has to exist -- record-local or vault-relative."""
+    """Every file an agent is told to open has to exist -- record-local or vault-relative.
+
+    An MCP record points at a server file instead of prose (`endpoint_or_command`); when
+    that value is a `.py` path it is a file pointer, not a package name, and the same law
+    applies: a server definition whose body is missing is a rumour, not a capability.
+    """
+    problems = []
     entry = str(rec.get("entrypoint") or "").strip()
-    if not entry:
-        return []
-    local, from_root = path.parent / entry, ROOT / entry
-    if local.is_file() or from_root.is_file():
-        return []
-    return ["entrypoint '%s' does not exist (looked for %s and %s) -- a definition whose "
-            "body is missing is a promise, not a capability" %
-            (entry, rel(local), rel(from_root))]
+    if entry:
+        local, from_root = path.parent / entry, ROOT / entry
+        if not (local.is_file() or from_root.is_file()):
+            problems.append("entrypoint '%s' does not exist (looked for %s and %s) -- a definition whose "
+                            "body is missing is a promise, not a capability" %
+                            (entry, rel(local), rel(from_root)))
+    if rec.get("kind") == "mcp":
+        endpoint = str(rec.get("endpoint_or_command") or "").strip()
+        if endpoint.endswith(".py") and not (ROOT / endpoint).is_file():
+            problems.append("mcp endpoint '%s' does not exist -- a server definition whose "
+                            "body is missing is a rumour, not a capability" % endpoint)
+    return problems
 
 
 def cmd_doctor(cfg, sch, as_json=False):

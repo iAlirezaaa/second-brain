@@ -95,6 +95,42 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   Text is verbatim except seventeen ZWNJ insertions the Persian hygiene gate requires
   (`Skillها` → `Skill‌ها`); `qc` measures clean across 36 files and `doctor` at
   `errors: 0 | warnings: 0`.
+- **The harness door** (SuperAGI reverse-engineering, phase 22) — the backend agents call
+  is the protocol harnesses already speak: `15_SYSTEM/scripts/mcp_server.py`, a Model
+  Context Protocol server over stdio, stdlib-only (newline-delimited JSON-RPC 2.0;
+  initialize / ping / tools / resources / batches / JSON-RPC errors). Read tools open —
+  `vault_search` (BM25 over the brain's prose, rebuilt per call, unicode tokenizer so
+  Persian matches), `memory_recall`, `registry_list`, `registry_show`, `doctor_status` —
+  and exactly one write tool, `candidate_propose`, which files a **registered** row on the
+  quarantine shelf: agents propose, humans decide. Client registration examples live in
+  `15_SYSTEM/integrations/` and the first real record `MCP-E1807E50` was created and
+  amended through the sanctioned door itself. `doctor` now refuses an `mcp` record whose
+  `.py` endpoint does not exist — a server definition whose body is missing is a rumour.
+- **The backend package: SuperAGI's logic, stdlib-ported** — `15_SYSTEM/scripts/backend/`
+  (`engine`, `tools_kit`, `workflows`, `schedules`, `ltm`, `search`) driven by the thin
+  `orchestrator.py` CLI: the AgentExecution state machine and step loop, the BaseTool
+  contract with per-actor `tool_allowlist` gating (a write tool needs `--approve` AND the
+  list; empty list = zero write tools), declarative workflows validated before they walk,
+  pure schedule math, an FTS5 long-term memory, and the BM25 index moved out of
+  `mcp_server.py` into a single source. The first `workflow` record (`WFL-6ACDE232`,
+  "standup scan") was created through the door, its `body_path` amended to the executable
+  `steps.json` beside it, and run for real against the live repo (COMPLETED, 2 steps).
+  Tests 235 → 254, battery 116 → 120.
+- **Runs promote to evidence; the door sees the runs** — `15_SYSTEM/scripts/runs.py promote`
+  exports a finished run's append-only feed into a **registered** shelf row: the feed is
+  embedded because the run directory lives behind the git boundary — evidence is exported,
+  never cited across it (a run still running, an empty feed, and a second promotion of the
+  same run are all refused). The harness door grew two read tools, `runs_list` and
+  `runs_show` (eight tools total; `MCP-E1807E50` amended through the plan door again), so
+  a harness can see what its actors did without leaving the protocol.
+- **Agent runs in the disposable plane** — `15_SYSTEM/scripts/runs.py` borrows SuperAGI's
+  `AgentExecution` model at git scale: `12_RUNTIME/agent_runs/<RUN-*/>` with `run.json`
+  plus an append-only `steps.jsonl` feed, `start` (refuses actors the registry has never
+  heard of), `step` (refuses a finished feed), `finish` (completed|failed, once),
+  `list`, `show`. The registry keeps who the actor is; the runtime keeps what it did; both
+  die at the git boundary — evidence that matters is promoted, never stranded. The full
+  reverse-engineering map (what was adopted, what was refused, why, and the phase-2
+  roadmap) is `02_WIKI/reference_maps/superagi-to-hades-map.md`.
 
 ### Changed
 - `scripts/loop.py` exports the unanswered-search register it read from the local
