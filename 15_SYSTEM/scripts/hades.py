@@ -673,6 +673,12 @@ def cmd_doctor(cfg, sch, as_json=False):
         if r.get("id") in [t for t in targets if isinstance(t, str)]:
             errors.append("%s: supersedes itself -- a record cannot retire its own identity; "
                           "file the replacement and link that one" % rel(p))
+    # a cycle is the same defect one step out: A retires B and B retires A, so the index
+    # drops both and whichever one a reader finds first has no live definition to point at.
+    # The retirement map is deliberately single-valued; the cycle is reported, not modelled.
+    for cycle in supersedes_cycles(recs):
+        errors.append("supersedes cycle %s -- each record retires the next, so none of them "
+                      "is the live one" % " -> ".join(cycle + [cycle[0]]))
     rec_n = len([1 for _p, r in recs if r.get("id") not in retired])
     if as_json:
         print(json.dumps({"records": rec_n, "superseded": sorted(retired),
@@ -695,6 +701,36 @@ def cmd_doctor(cfg, sch, as_json=False):
         off = [k for k, v in cfg["feature_flags"].items() if not v]
         print("not enforced by this package (documented, not silently claimed): %s" % ", ".join(off))
     return 1 if errors else 0
+
+
+def supersedes_cycles(recs):
+    """Every directed cycle in the supersedes graph, each named once, in walk order.
+
+    The retirement record (`superseded_by`) is single-valued on purpose: it says who retired
+    a record, not what happens when two records each claim to retire the other. That shape
+    used to be unrepresentable rather than detected -- both twins left the active index and
+    `doctor` printed errors: 0. This walk finds the cycles the map cannot express.
+    """
+    edges, known = {}, set()
+    for _p, r in recs:
+        rid = r.get("id")
+        known.add(rid)
+        targets = (r.get("relations") or {}).get("supersedes") or []
+        if isinstance(targets, str):
+            targets = [targets]
+        edges[rid] = [t for t in targets if isinstance(t, str) and t != rid]
+    cycles, done = [], set()
+    for start in sorted(k for k in edges if k):
+        path, index, node = [], {}, start
+        while node in edges and node not in done and node not in index:
+            index[node] = len(path)
+            path.append(node)
+            nxt = [t for t in edges.get(node, []) if t in known]
+            node = nxt[0] if nxt else None
+        if node in index:
+            cycles.append(path[index[node]:])
+        done.update(path)
+    return cycles
 
 
 def superseded_by(recs):

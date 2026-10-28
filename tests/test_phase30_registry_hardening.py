@@ -157,5 +157,49 @@ class ARetiringEdgeGoesThroughThePlanDoor(LinkFixture):
                          "an additive edge adds a reference; it does not need a plan")
 
 
+class ACycleIsDetectedNotSwallowed(LinkFixture):
+    def retire(self, source, target):
+        code, out = self.vault.hades("link", "--id", source, "--rel", "supersedes",
+                                     "--to", target, "--approve")
+        self.assertEqual(code, 0, out)
+
+    def test_two_records_that_retire_each_other_are_an_error(self):
+        self.retire(self.newer, self.older)
+        self.retire(self.older, self.newer)
+        code, out = self.vault.hades("doctor")
+        self.assertEqual(1, code, out)
+        self.assertIn("supersedes cycle", out, out)
+        self.assertIn(self.older, out)
+        self.assertIn(self.newer, out)
+
+    def test_the_cycle_is_named_in_walk_order_and_ends_where_it_began(self):
+        third = self.new_note("Third Law")
+        self.retire(self.newer, self.older)
+        self.retire(self.older, third)
+        self.retire(third, self.newer)
+        code, out = self.vault.hades("doctor")
+        self.assertEqual(1, code, out)
+        match = re.search(r"supersedes cycle (\S+(?: -> \S+)+)", out)
+        self.assertTrue(match, out)
+        walk = match.group(1).split(" -> ")
+        self.assertEqual(walk[0], walk[-1], "a cycle has to come back to where it started")
+        self.assertEqual({self.older, self.newer, third}, set(walk[:-1]))
+        self.assertEqual(3, len(walk) - 1)
+
+    def test_a_straight_chain_is_not_a_cycle(self):
+        self.retire(self.newer, self.older)
+        code, out = self.vault.hades("doctor")
+        self.assertEqual(0, code, out)
+        self.assertNotIn("cycle", out)
+        self.assertIn("%s by %s" % (self.older, self.newer), out)
+
+    def test_a_dangling_edge_is_reported_as_dangling_not_as_a_cycle(self):
+        self.retire(self.newer, "WIK-00000000")
+        code, out = self.vault.hades("doctor")
+        self.assertEqual(1, code, out)
+        self.assertIn("dangling", out)
+        self.assertNotIn("cycle", out)
+
+
 if __name__ == "__main__":
     unittest.main()
