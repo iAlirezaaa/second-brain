@@ -100,14 +100,14 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 359 |
+| tests collected (`python -m unittest discover -s tests`) | 373 |
 | health gates (`python scripts/health.py`) | 7 |
-| registry records (`11_CONTROL/**/*.json`) | 13 |
+| registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
 | active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 26 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 6 |
-| kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
+| kinds in the contract (`15_SYSTEM/config/system.json`) | 34 |
 | relation types in the contract | 13 |
 | zones a fresh clone reproduces / declared (`12_RUNTIME`, `13_LAB` are gitignored) | 12 / 16 |
 | python floor | 3.9 (standard library only) |

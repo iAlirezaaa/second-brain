@@ -21,14 +21,14 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 359 |
+| tests collected (`python -m unittest discover -s tests`) | 373 |
 | health gates (`python scripts/health.py`) | 7 |
-| registry records (`11_CONTROL/**/*.json`) | 13 |
+| registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
 | active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 26 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 6 |
-| kinds in the contract (`15_SYSTEM/config/system.json`) | 33 |
+| kinds in the contract (`15_SYSTEM/config/system.json`) | 34 |
 | relation types in the contract | 13 |
 | zones a fresh clone reproduces / declared (`12_RUNTIME`, `13_LAB` are gitignored) | 12 / 16 |
 | python floor | 3.9 (standard library only) |
@@ -36,6 +36,19 @@ status: active
 
 ## 2. In-Flight Work
 
+- **Phase 28 shipped on `phase/28-scheduler-seam`**: the rituals now have one clock. The
+  `schedule` kind (34 in the contract) holds the spec objects `backend/schedules.py` already
+  reads: `SCH-0D1E2F3A` = nightly loop, `{"daily_at": "02:00"}` UTC, target
+  `scripts/loop.py`; `SCH-0D1E2F3B` = weekly ritual, `{"every_minutes": 10080}`.
+  `python scripts/loop.py --due` imports that due-math instead of re-deriving it and prints a
+  verdict without writing: 0 due, 3 not due (with the next run), 1 refused (no record, paused,
+  unreadable spec). Cycle history now stamps `ran_at`, so a second cycle on the same day is
+  judged by the hour. The skills say the command; `.github/workflows/loop.yml` asks for a
+  verdict only on `schedule` events, and a manual dispatch stays a human override. Verified at
+  fixed clocks: last run `2026-10-27T03:30Z`, so the 28th at 01:00 is not due (next
+  `2026-10-28T02:00Z`) and the 28th at 02:00 is due; the weekly record is due with an empty
+  `--last-run`. `hades.py doctor` reports 15 zones / 17 records / 0 errors, and
+  `tests/test_phase28_schedule_seam.py` adds 14 tests.
 - **Phase 27 closed on `phase/27-recency-decision`**: the last item — a BM25 recency boost,
   allowed only behind a measured win — was measured and refused. Date coverage: 3 of 43 corpus
   notes declare `updated:`; the other 40 fall back to mtime, one distinct day (the checkout)
@@ -241,10 +254,15 @@ status: active
   `02_WIKI/reference_maps/eight-memory-planes.md` and `kb.py` now indexes the repo corpus (phase
   27); the manager agent (#21) and two reference maps (#22) are unregistered.
 - **Registry leftovers**: `link` writes without the plan door; `supersedes` has no cycle guard
-  because the single `superseded_by` map makes a cycle unrepresentable; 20 of 33 kinds fall back
+  because the single `superseded_by` map makes a cycle unrepresentable; 20 of 34 kinds fall back
   to `draft|tested|approved|deprecated`. Retirement is now marked in `list`, `search`, `show`
   and the MCP door (phase 27), but `search` marks only the retired record's own file — a prose
   note that merely quotes a retired id is not marked.
+- **A schedule record says *when*, not that anything will wake it.** The Actions cron is the
+  only alarm; a machine with no runner never checks, and a cron line the record does not match
+  is invisible to `--due`. The weekly check derives its last run from
+  `git log --grep='ritual(weekly)'`, so a cycle announced in another message reads as overdue.
+  `--due` is arithmetic on UTC — a local-time expectation is wrong by the offset, not by a bug.
 - **A fresh install fails `plane_check`, and the phase-16 test cannot see it** (#27).
   `install.py` copies the dev `15_SYSTEM/config/system.json` — which maps `02_WIKI`,
   `03_PROJECTS`, `09_OPERATIONS`, `11_CONTROL` and `tests/` — into a template-shaped folder set,
