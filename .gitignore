@@ -64,3 +64,4 @@ Desktop.ini
 
 # --- second-brain engine (v0.0.3) additions ---
 .kb/
+.brain-data/

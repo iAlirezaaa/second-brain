@@ -113,7 +113,7 @@ def iter_notes(vault):
 # Volatile names that must never enter a content fingerprint: caches, VCS internals,
 # and the probe shelf itself (a probe writes there, so including it would make every
 # probe report "the probe mutated the vault").
-FINGERPRINT_SKIP_DIRS = {"__pycache__", ".git", ".kb", ".obsidian", "node_modules"}
+FINGERPRINT_SKIP_DIRS = {"__pycache__", ".git", ".kb", ".brain-data", ".obsidian", "node_modules"}
 FINGERPRINT_SKIP_PATHS = ("14_CANDIDATES/loop/probes",)
 # Paperwork is not the state of the brain. The quarantine shelf, the disposable runtime
 # plane and the proposal sink all grow while nothing being measured moves; if they sat
@@ -130,7 +130,7 @@ PAPERWORK_SKIP_PATHS = ("14_CANDIDATES/", "12_RUNTIME/", "15_SYSTEM/backups/",
 # repository open this path? A laptop-only file is not evidence -- it is a rumour the author
 # happens to be able to check. .gitignore is the law; this mirrors the parts of it that a
 # citation could land in, and tests/test_phase19 keeps the two from drifting apart.
-BOUNDARY_PREFIXES = (".kb/", "12_RUNTIME/", "13_LAB/", "14_CANDIDATES/",
+BOUNDARY_PREFIXES = (".kb/", ".brain-data/", "12_RUNTIME/", "13_LAB/", "14_CANDIDATES/",
                      "15_SYSTEM/generated/", "15_SYSTEM/backups/", "15_SYSTEM/logs/",
                      ".secrets/", ".obsidian/", "node_modules/")
 BOUNDARY_EXCEPTIONS = ("14_CANDIDATES/loop/", "14_CANDIDATES/README.md")

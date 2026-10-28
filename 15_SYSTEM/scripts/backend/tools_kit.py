@@ -12,6 +12,7 @@ else in this repo. Read tools stay open.
 import importlib.util
 import json
 from pathlib import Path
+from .access import readable
 
 _HAD = Path(__file__).resolve().parent.parent / "hades.py"
 _HADES = None
@@ -119,6 +120,8 @@ class FsRead(Tool):
         target = (root / rel).resolve()
         if root.resolve() not in target.parents:
             raise ToolError("path %r escapes the vault" % rel)
+        if not readable(root, root / rel):
+            raise ToolError("path %r is outside the default read scope" % rel)
         if not target.is_file():
             raise ToolError("no such file: %s" % rel)
         return target.read_text(encoding="utf-8", errors="replace")[:2000]
