@@ -22,10 +22,16 @@ def _allowed(parts):
 
 
 def readable(root, path):
-    root = Path(root).resolve()
+    """True only when the real target and the requested spelling both stay inside root
+    and outside DENIED. On Windows an 8.3 alias (RUNNER~1) and a resolved root name
+    (runneradmin) are the same directory; the resolved check is then authoritative."""
+    root_real = Path(root).resolve()
     try:
-        lexical = Path(os.path.abspath(path)).relative_to(root).parts
-        resolved = Path(path).resolve().relative_to(root).parts
+        resolved = Path(path).resolve().relative_to(root_real).parts
     except (ValueError, OSError, RuntimeError):
         return False
+    try:
+        lexical = Path(os.path.abspath(path)).relative_to(Path(os.path.abspath(root))).parts
+    except ValueError:
+        lexical = resolved
     return _allowed(lexical) and _allowed(resolved)

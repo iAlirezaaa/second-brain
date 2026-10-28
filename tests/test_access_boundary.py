@@ -5,11 +5,24 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / '15_SYSTEM' / 'scripts'))
 from backend.search import vault_search
+from backend.access import readable
 from backend.tools_kit import Context, ToolError, default_registry
 import mcp_server
 
 
 class AccessBoundary(unittest.TestCase):
+    def test_readable_accepts_equivalent_spellings_of_the_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / '02_WIKI').mkdir()
+            public = root / '02_WIKI' / 'public.md'
+            public.write_text('x', encoding='utf-8')
+            resolved = Path(tmp).resolve()
+            self.assertTrue(readable(root, public))
+            self.assertTrue(readable(resolved, public))
+            self.assertTrue(readable(root, resolved / '02_WIKI' / 'public.md'))
+            self.assertFalse(readable(resolved, root / '14_CANDIDATES' / 'x.md'))
+
     def test_search_and_file_read_refuse_protected_paths(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
