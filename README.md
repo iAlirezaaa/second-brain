@@ -100,7 +100,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 333 |
+| tests collected (`python -m unittest discover -s tests`) | 334 |
 | health gates (`python scripts/health.py`) | 6 |
 | registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |

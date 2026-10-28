@@ -12,10 +12,14 @@ def inventory(root, harness_id=''):
     retired = h.superseded_by(records)
     items = []
     for path, record in records:
+        try:
+            rel = path.resolve().relative_to(root)
+        except (ValueError, OSError, RuntimeError):
+            continue
         kind = record.get('kind')
         if kind not in ('skill', 'plugin', 'mcp', 'app'):
             continue
-        if kind == 'app' and 'extensions' not in path.relative_to(root).parts:
+        if kind == 'app' and 'extensions' not in rel.parts:
             continue
         identity = str(record.get('id', ''))
         if identity in retired or record.get('status') == 'deprecated':
@@ -35,7 +39,7 @@ def inventory(root, harness_id=''):
                          'not_approved' if harness_id and supported else 'unknown')
         items.append({'id': identity, 'kind': kind, 'name': record.get('name', ''),
                       'description': description, 'status': record.get('status', ''),
-                      'origin': path.relative_to(root).as_posix(), 'entrypoint': entry,
+                      'origin': rel.as_posix(), 'entrypoint': entry,
                       'harness_compatibility': compatibility,
                       'approved_for_harness_ids': supported,
                       'permissions': record.get('permissions', 'unspecified'),
