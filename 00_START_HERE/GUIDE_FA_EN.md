@@ -195,9 +195,29 @@ PRJ-7C1A9E20
 | `news` | unverified → verified → superseded |
 | `organization` | tracked → verified → stale |
 | `tutorial` | draft → verified → stale |
-| بقیه | draft → tested → approved → deprecated |
+| `benchmark` | unverified → verified → stale |
+| `asset` | collected → cleared → retired |
+| `deliverable` | draft → reviewed → published → retired |
+| `channel` | planned → active → paused → retired |
+| `episode` | draft → produced → published → retired |
+| `campaign` | planned → running → completed → retired |
+| `app` | prototype → beta → live → retired |
+| `task` | open → blocked → done / cancelled |
+| `decision` | proposed → accepted / rejected → superseded |
+| `wiki_note` | draft → reviewed → stable → stale |
+| `mcp` | draft → configured → verified → disabled |
+| `hook` | draft → enabled / disabled → retired |
+| `command` | draft → active → deprecated |
+| `mode` | draft → active → retired |
+| `loop` | proposed → active → paused → retired |
+| `schedule` | active → paused → retired |
+| `harness` | planned → connected → verified → retired |
+| `plugin` | available → installed / disabled → retired |
+| `template` | draft → in_use → retired |
+| `policy` | proposed → enforced → retired |
+| `sandbox` | prepared → running → used → destroyed |
 
-وضعیتی که برای نوعی تعریف نشده باشد، رد می‌شود؛ `doctor` فهرست مجاز را در همان خط خطا چاپ می‌کند.
+هیچ نوعی به مجموعهٔ عمومی برنمی‌گردد: هر ۳۴ نوع مجموعهٔ خودش را دارد. مقدار خارج از مجموعه با نام همان مجموعه رد می‌شود و `doctor` آن را در خط خطا چاپ می‌کند.
 
 ## ۷) رابطه‌ها
 
@@ -596,7 +616,7 @@ Layouts: `folder` (`ID-slug/` with the manifest inside), `file` (`ID-slug.json`)
 | `experiment` | `EXP` | `13_LAB` / experiments, agents_in_training, models_in_training | a falsifiable experiment |
 | `candidate` | `CAND` | `14_CANDIDATES` / agents, skills, outputs | a candidate awaiting approval |
 
-Status sets: project `incubating → active → paused/completed → archived`; experiment `running → evaluating → passed/failed → archived`; candidate `proposed → reviewed → approved/rejected`; agent and subagent `draft → tested → approved → production → deprecated`; skill `draft → tested → approved → deprecated`; model and version `rumored → announced → available → deprecated`; news `unverified → verified → superseded`; organization `tracked → verified → stale`; tutorial `draft → verified → stale`; everything else falls back to `draft → tested → approved → deprecated`.
+Status sets: project `incubating → active → paused/completed → archived`; experiment `running → evaluating → passed/failed → archived`; candidate `proposed → reviewed → approved/rejected`; agent and subagent `draft → tested → approved → production → deprecated`; skill, prompt and workflow `draft → tested → approved → deprecated`; model and version `rumored → announced → available → deprecated`; news `unverified → verified → superseded`; organization `tracked → verified → stale`; tutorial `draft → verified → stale`; benchmark `unverified → verified → stale`; asset `collected → cleared → retired`; deliverable `draft → reviewed → published → retired`; channel `planned → active → paused → retired`; episode `draft → produced → published → retired`; campaign `planned → running → completed → retired`; app `prototype → beta → live → retired`; task `open → blocked → done/cancelled`; decision `proposed → accepted/rejected → superseded`; wiki_note `draft → reviewed → stable → stale`; mcp `draft → configured → verified → disabled`; hook `draft → enabled/disabled → retired`; command `draft → active → deprecated`; mode `draft → active → retired`; loop `proposed → active → paused → retired`; schedule `active → paused → retired`; harness `planned → connected → verified → retired`; plugin `available → installed/disabled → retired`; template `draft → in_use → retired`; policy `proposed → enforced → retired`; sandbox `prepared → running → used → destroyed`. Every one of the 34 kinds owns its set; the generic `default` remains only for a kind added without one.
 
 ## 7. Relations
 

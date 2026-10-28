@@ -239,7 +239,8 @@ class TestTheAmendmentDoorRefusesWhatItShould(TempVault, unittest.TestCase):
 
     def test_a_markdown_record_keeps_its_fields_over_link_and_amendment(self):
         wid2 = self.new_wiki_note("Second Law")
-        code, out = self.cli("link", "--id", wid2, "--rel", "supersedes", "--to", self.wid)
+        code, out = self.cli("link", "--id", wid2, "--rel", "supersedes", "--to", self.wid,
+                             "--approve")
         self.assertEqual(0, code, out)
         _p, rec = self.records()[wid2]
         self.assertEqual("wiki_note", rec.get("kind"), "the link rewrite dropped the record's kind")

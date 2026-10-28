@@ -49,7 +49,7 @@ class TestSupersededLeavesTheIndex(unittest.TestCase):
 
     def supersede(self, older=None, newer=None):
         code, out = self.vault.hades("link", "--id", newer or self.newer, "--rel", "supersedes",
-                                     "--to", older or self.older)
+                                     "--to", older or self.older, "--approve")
         self.assertEqual(code, 0, out)
         return out
 
@@ -121,7 +121,7 @@ class TestRetirementIsVisibleWhereARecordIsRead(unittest.TestCase):
             self.ids.append(re.search(r"\b(ORG-[0-9A-F]{8})\b", out).group(1))
         self.older, self.newer = self.ids
         code, out = self.vault.hades("link", "--id", self.newer, "--rel", "supersedes",
-                                     "--to", self.older)
+                                     "--to", self.older, "--approve")
         self.assertEqual(code, 0, out)
         code, out = self.vault.hades("index")
         self.assertEqual(code, 0, out)
@@ -195,7 +195,7 @@ class TestRetirementThatCannotBeTrusted(unittest.TestCase):
 
     def test_a_record_that_supersedes_itself_is_an_error_not_a_relativity_trick(self):
         code, out = self.vault.hades("link", "--id", self.older, "--rel", "supersedes",
-                                     "--to", self.older)
+                                     "--to", self.older, "--approve")
         self.assertEqual(code, 0, out)
         code, doctor = self.vault.hades("doctor")
         self.assertEqual(code, 1, doctor)
@@ -215,7 +215,7 @@ class TestTheContractAndTheCodeAgree(unittest.TestCase):
                 _code, out = vault.hades("new", "--kind", "organization", "--name", name,
                                          "--description", "fixture", "--approve")
                 ids.append(re.search(r"\b(ORG-[0-9A-F]{8})\b", out).group(1))
-            vault.hades("link", "--id", ids[1], "--rel", "supersedes", "--to", ids[0])
+            vault.hades("link", "--id", ids[1], "--rel", "supersedes", "--to", ids[0], "--approve")
             vault.hades("index")
             self.assertNotIn(ids[0], active_ids(catalog(vault)),
                              "the config says %r; the index still lists it" % meaning)

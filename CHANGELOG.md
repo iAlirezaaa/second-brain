@@ -7,6 +7,19 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **Registry hardening leftovers** (phase 30) — a `supersedes` link is a structural change, so
+  `hades.py link … --supersedes` now writes a `mode: link` plan carrying the record's
+  `pre_image_sha1` and applies only with `apply --plan … --approve`; a file changed after
+  planning is refused, and the resulting amendment is recorded on the record. Additive
+  relations (`depends-on`, `related`, …) still write through, because they never retire a
+  record. `doctor` walks `supersedes` as a directed graph and errors on every cycle
+  (`A -> B -> A`), with self-edges left to the existing self-supersession check and dangling
+  targets ignored. All 34 kinds now own a status set in `system.json` (20 sets added;
+  `default` stays for a kind added without one), and `GUIDE_FA_EN.md` lists every set in both
+  languages. `scripts/probe.py` refuses `scripts/base.py` (recovery belongs to the owner) and
+  `scripts/install.py` (writes outside the repo) by name. Nineteen tests in
+  `tests/test_phase30_registry_hardening.py`; the cycle walk is read-only, and a plan is still
+  only as honest as the human who approves it.
 - **The embedding seam, inert by default** (phase 29, charter §2) — `backend/vector.py` ships
   one `Embedder` interface, `cosine`/`rank` as pure functions, and `HashingEmbedder`: a
   sha256 bag-of-words double, deterministic across processes, marked
