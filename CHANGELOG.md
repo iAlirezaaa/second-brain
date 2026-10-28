@@ -61,21 +61,40 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   now paperwork, so recording a base cannot invalidate the state it just recorded —
   and recovery reverts the brain, never the shelf. This is the `keep_base` piece of the
   harness2 spine: falling back is an output, not a failure.
-- **Registry amendments and a real `supersedes`** (issue #12) — `hades.py edit` plans an
-  amendment through the same plan → review → `apply --approve` door as creation, with an
-  audit diff (`mode: amend`, `changes: {field: {old, new}}`) and `updated_at`; identity
-  fields (`id`, `kind`, `created_at`, `promoted_from`) are immutable by edit, unknown
-  fields are refused at the plan (a typo would be a second truth), and an amendment that
-  would fail the record's own contract writes nothing. `supersedes` now does what
-  `system.json` declares: the superseded record leaves the active index
-  (`catalog.json`: `active: false`, `superseded_by`), `status` and `index` count it as
-  retired, and `doctor` names the retirement instead of staying quiet.
-- **Enumeration on content** (issue #13) — markdown-layout kinds (`news`, `wiki_note`)
-  are enumerated by frontmatter (a registry-shaped `id` plus a declared `kind`), not by
-  the filename `apply` happens to write: a `<ID>-<slug>.md` record can no longer be
-  created by the sanctioned path and then be invisible to `show`, `list`, `link`, `index`
-  and `doctor`. Markdown files round-trip without dropping fields, so `link` and
-  amendments on a markdown record keep kind, edges and values.
+- **Amendments** (issue #12) — `hades.py set --id --field --value [--approve]`: an applied
+  registry record can now be corrected instead of duplicated. It goes through the same
+  plan → `apply --approve` gate as a creation, `id` / `kind` / `created_at` are immutable,
+  an amendment that breaks the record's own contract or strands its `entrypoint` is refused
+  before a byte moves, a plan whose record moved since it was written is refused as stale,
+  and every accepted amendment appends `field, from, to, when, plan` to the record's own
+  `amendments` trail. A field neither the record nor its kind's schema has ever heard of is
+  refused at the plan — a typo would silently add a second truth.
+  `tests/test_phase22_amend_a_record.py` is red without it.
+- **Retirement that the index honours** (issue #12) — `supersedes` was declared in
+  `15_SYSTEM/config/system.json` as "replaces a record; superseded leaves the active index"
+  and `link` accepted it, while `index` listed both records and `doctor` printed `errors: 0`
+  (measured: 12 before the link, 12 after). Now `cmd_index` moves a superseded record into a
+  `superseded` block that names who retired it, `cmd_doctor` counts active records, prints the
+  retirements and errors when a record supersedes itself, and `cmd_status` reports the split.
+  Nothing is deleted — `list` still enumerates every record on disk; retirement is a verdict,
+  not a shredder. `tests/test_phase23_superseded_leaves_the_index.py` is red without it.
+- `02_WIKI/decisions/` has its first inhabitant: *Gates enforce laws or they are comments*
+  (`WIK-B7ED0084`), written through `plan` → `apply --approve` and amended through `set` for its
+  own provenance — the instruction in `AGENTS.md` to "record decisions in `02_WIKI/decisions`"
+  finally carried out, with the lesson of the same pass that built the tools it describes.
+  `doctor` counts it (`registry records: 13`, `errors: 0`, `by kind: {"wiki_note": 1}`); the
+  generated index it also lands in stays local paperwork, outside the git boundary.
+- **The owner's charter is a tracked file** — `00_START_HERE/PROJECT_CHARTER.md`: the
+  project brief (15 sections — vision, app-independence, the reference repos, the
+  folder/ID law, the eight memory planes, the improvement cycle, agent and skill
+  management, the repository workflow, per-repo memory, PR review, conversation
+  knowledge, English docs, fourteen laws, the expected outcome, the order of work)
+  existed only in a chat, where no future agent could read it. It is now read-before-acting
+  item (2) in `AGENTS.md`, with the law that **the charter outranks the task**: a conflict
+  is filed on the shelf with its section number, not resolved silently by the last editor.
+  Text is verbatim except seventeen ZWNJ insertions the Persian hygiene gate requires
+  (`Skillها` → `Skill‌ها`); `qc` measures clean across 36 files and `doctor` at
+  `errors: 0 | warnings: 0`.
 - **The harness door** (SuperAGI reverse-engineering, phase 22) — the backend agents call
   is the protocol harnesses already speak: `15_SYSTEM/scripts/mcp_server.py`, a Model
   Context Protocol server over stdio, stdlib-only (newline-delimited JSON-RPC 2.0;
@@ -123,6 +142,30 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   was replaced by what is actually in the folder.
 
 ### Fixed
+- A registry record in a human zone was judged as a broken note (issue #14). `apply` writes a `wiki_note` as
+  markdown into `02_WIKI`, and an installed brain scans its own root (`health.py --vault .`), so
+  the first decision record this repo filed came back `INVALID: missing field: type … invalid
+  status: 'draft'` — the note contract and the registry contract both claiming one file. The
+  tempting fix (write a `title`, a `type` and a note `status` next to `name`, `kind` and a registry
+  `status`) would have given one field two truths nobody keeps in step, so the gate now picks the
+  contract from the file's content using the recognizer the registry already uses, and reads the
+  record's required fields and status vocabulary from `15_SYSTEM/config/system.json` and
+  `15_SYSTEM/schemas/manifest.schema.json` instead of retyping them. It bites harder, not softer: a
+  record with a status its kind disallows, or missing its identity, is refused, and a file that
+  claims a registry `kind` with an id the registry cannot enumerate is named as an orphan.
+  `tests/test_phase24_a_record_is_not_a_note.py` (13 tests) is red without it.
+- Amending or linking a markdown record deleted its prose — found by dogfooding `set` the moment
+  it shipped. The body was *rendered from* `notes`/`claim`, but the reader parsed only the
+  frontmatter, so the next write-back re-rendered the file from fields that no longer held the
+  paragraph. Those fields now round-trip, and
+  `test_an_amendment_does_not_lose_the_prose_of_a_markdown_record` is red without the fix.
+- A markdown record was created invisible (issue #13): `news` and `wiki_note` land as
+  `<ID>-<slug>.md`, while `iter_records` admitted a markdown record only when its stem was
+  exactly `note`. `apply` wrote the record, then `show`, `list`, `index` and `doctor` answered
+  that nothing existed — and `doctor` printed `errors: 0`, which is a silent gate, not a clean
+  house. Enumeration is now by content (a registry-shaped `id` **and** a declared `kind`), a
+  body (`OVERVIEW.md`, `SKILL.md`) stays a body, and `link` round-trips relations through the
+  markdown writer instead of dropping them on the floor.
 - CI was red on all four matrices while every local gate printed OK. The shelf row
   `cand-2026-10-27-c3-01` blamed a gap count held in `.kb/kb.sqlite`, a file that is
   gitignored by design: it existed on the machine that wrote the claim and nowhere

@@ -64,7 +64,7 @@ def bind(root):
     HADES.SCHEMA_PATH = root / "15_SYSTEM/schemas/manifest.schema.json"
     HADES.GEN = root / "15_SYSTEM/generated"
     HADES.PLANS = HADES.GEN / "plans"
-    HADES.KIND_NAMES = None
+    HADES.REGISTRY_KINDS = None
     HADES.MANIFEST_NAMES = None
 
 
@@ -120,7 +120,7 @@ def tool_registry_list(root, args):
     cfg = HADES.config()
     recs = list(HADES.iter_records(cfg))
     kind = str(args.get("kind") or "").strip()
-    sup = HADES.superseded_map(recs)
+    sup = HADES.superseded_by(recs)
     rows = []
     for p, r in recs:
         rid = str(r.get("id"))
@@ -149,7 +149,7 @@ def tool_doctor_status(root, args):
     """A status readout, not the gate itself -- the gate is scripts/health.py."""
     cfg = HADES.config()
     recs = list(HADES.iter_records(cfg))
-    sup = HADES.superseded_map(recs)
+    sup = HADES.superseded_by(recs)
     gi = HADES.gitignore_lines()
     zones = HADES.zone_dirs(cfg)
     missing = [z for z in zones if not (root / z).exists() and not HADES.absent_by_boundary(cfg, z, gi)]

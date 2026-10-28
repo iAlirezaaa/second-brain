@@ -60,7 +60,7 @@ def load_hades(root):
     module.SCHEMA_PATH = root / "15_SYSTEM/schemas/manifest.schema.json"
     module.GEN = root / "15_SYSTEM/generated"
     module.PLANS = module.GEN / "plans"
-    module.KIND_NAMES = None
+    module.REGISTRY_KINDS = None
     module.MANIFEST_NAMES = None
     return module
 

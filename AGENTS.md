@@ -12,8 +12,16 @@ shelf, memory, host projections, and the numbers the documents quote, which are 
 than typed).
 A red gate is the task. If all you were given is this repo's URL, work through
 `skills/first-session/SKILL.md` — it is the orientation, not a suggestion.
+When you find something wrong, `skills/self-audit/SKILL.md` is the channel: file the finding as a
+GitHub issue carrying the command you ran and the output it actually printed (probe the credential,
+never print it), fix it test-first with one theme per commit, then close it with the evidence.
+`14_CANDIDATES/loop/` is where the same finding goes when there is no tracker to write to, and
+`scripts/candidate_check.py` counts every row there — so an ignored finding stays visible instead
+of expiring quietly.
 
-**Read before acting:** (1) `README.md`, (2) `00_START_HERE/SYSTEM_MAP.md`, (3) `00_START_HERE/LIFECYCLE.md`, (4) `00_START_HERE/ACCESS.md`, (5) `15_SYSTEM/generated/catalog.json` if present, (6) the target project's `project.json`. Do **not** recursively load the vault into context.
+**Read before acting:** (1) `README.md`, (2) `00_START_HERE/PROJECT_CHARTER.md` — the owner's own brief, 15 sections, and the file this repo must answer to, (3) `00_START_HERE/SYSTEM_MAP.md`, (4) `00_START_HERE/LIFECYCLE.md`, (5) `00_START_HERE/ACCESS.md`, (6) `15_SYSTEM/generated/catalog.json` if present, (7) the target project's `project.json`. Do **not** recursively load the vault into context.
+
+**The charter outranks the task.** When a requested change conflicts with a law in it — independence from any app, one place per file, learn from the error and record it — the charter wins and the conflict goes to `14_CANDIDATES/loop/` as a finding, with the section number it conflicts with. An agent that quietly follows the task and skips the law has not solved a problem; it has created the defect the law exists to prevent.
 
 ## Independence from any app
 The system runs on Python 3.9+ standard library only — no Obsidian, no IDE, no network,
@@ -88,4 +96,38 @@ Run every script as `py -3.10 <script>` (PowerShell: `py -3.10`). Plain `python`
 ## Structural changes
 Creating or reclassifying a project, skill, agent, model or registry item goes through plan → review → `apply --approve`. The applied stamp is written **before** any console output, so a printing failure can never leave an orphan record. Then `doctor` + `index` to verify. Publishing anything outward goes through the audit gate and needs your explicit approval; the vault is never published as a whole.
 
-Correcting an existing record is a structural change too (issue #12): `hades.py edit` plans the amendment — fields, old and new values, `updated_at` — and nothing is written until `apply --approve`. The record's identity (`id`, `kind`, `created_at`, `promoted_from`) is immutable by edit: a change there is a **new record with a new id**, superseding the old one, not a rewrite of it under the same number. `supersedes` is enforced, not decorative: a superseded record leaves the active index (`catalog.json` marks it `active: false` with `superseded_by`), `status` and `index` count it as retired, and `doctor` names the retirement as a warning. Refused amendments write nothing.
+**What `apply` writes, `iter_records` must read.** A record is only governed if the scan that
+finds records finds it, so enumeration is by content — a markdown file is a registry record when
+its frontmatter carries a registry-shaped `id` **and** a declared `kind` — never by one filename.
+Naming after `note.md` made every `news` and `wiki_note` record invisible to `doctor`, `index`,
+`link` and `promote`: the tool created it, then answered `NOT FOUND`, and still printed
+`errors: 0`. A silent gate is worse than a red one. A body (`OVERVIEW.md`, `SKILL.md`) carries
+its record's id with `type: note` and no `kind`, so it stays a body instead of becoming a twin.
+
+**A record in a human zone is judged by one contract, not two.** The same content check decides
+which gate owns a file: `frontmatter_check.py` applies the note schema to a note and the
+*registry* contract to a file whose frontmatter carries a registry-shaped `id` **and** a declared
+`kind`. Writing `title`, `type` and a note `status` beside `name`, `kind` and a registry `status`
+would give one field two truths that can quietly disagree. The exemption is not a hole: a record is
+still refused -- for the fields and the status vocabulary its own kind declares, read from
+`15_SYSTEM/config/system.json` and `15_SYSTEM/schemas/manifest.schema.json`, never retyped in the
+gate -- and a note that merely claims a `kind` with an id the registry cannot enumerate is
+refused as an orphan, because a file belonging to neither contract is invisible to one of them.
+
+**A wrong definition is corrected, not duplicated.** `hades.py set --id ID --field F --value V`
+plans an amendment and `apply --plan PLAN --approve` performs it — the same gate a creation goes
+through, because editing the plane every agent reads before acting *is* a structural change, not
+a file edit. `id`, `kind` and `created_at` are immutable: changing one of those makes a different
+record, so file the new one and retire the old with `link --rel supersedes`. A plan is bound to
+the bytes it was written against; if the record moved since, `apply` refuses it as stale rather
+than overwriting work it never saw. A field neither the record nor its kind's schema has ever
+heard of is refused at the plan: a typo would silently add a second truth. Every accepted
+amendment appends to the record's own `amendments` trail (field, from, to, when, plan) — the
+audit trail lives in the definition, not in a chat log.
+
+**Retiring a definition is a verdict the index has to honour.** `link --id NEW --rel supersedes
+--to OLD` means OLD leaves the active index: `index` lists it under `superseded` together with the
+record that retired it, `doctor` counts active records and names the retirements, and a record that
+supersedes itself is an error. Nothing is deleted — `list` still enumerates every record on disk, so
+the history stays readable. A sentence in `system.json` that no gate enforces is worse than no
+sentence: it lets one thing keep two definitions while printing `errors: 0`.

@@ -99,7 +99,7 @@ def bind_hades(root):
     h.SCHEMA_PATH = root / "15_SYSTEM/schemas/manifest.schema.json"
     h.GEN = root / "15_SYSTEM/generated"
     h.PLANS = h.GEN / "plans"
-    h.KIND_NAMES = None
+    h.REGISTRY_KINDS = None
     h.MANIFEST_NAMES = None
     return h
 
@@ -156,7 +156,7 @@ class RegistryList(Tool):
         h = bind_hades(root)
         recs = list(h.iter_records(h.config()))
         kind = str(args.get("kind") or "").strip()
-        sup = h.superseded_map(recs)
+        sup = h.superseded_by(recs)
         rows = []
         for p, r in recs:
             rid = str(r.get("id"))

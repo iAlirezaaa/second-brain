@@ -623,24 +623,29 @@ def t_markdown_and_amendments():
         v.hades("index")
         cat = v.json_of("15_SYSTEM/generated/catalog.json")
         rows = {r["id"]: r for r in cat.get("records", [])}
+        retired = {r["id"]: r for r in cat.get("superseded", [])}
         check("a superseded record leaves the active index (issue #12)",
-              rows.get(wid, {}).get("active") is False and rows.get(wid2, {}).get("active") is True,
-              json.dumps(rows, ensure_ascii=False)[:170])
+              wid in retired and retired.get(wid, {}).get("superseded_by") == wid2
+              and wid2 in rows and cat.get("superseded_count") == 1,
+              json.dumps({"records": sorted(rows), "superseded": cat.get("superseded")},
+                         ensure_ascii=False)[:170])
         c, o = v.hades("doctor")
-        check("doctor names the retirement as a warning, not a silence",
-              c == 0 and "errors: 0" in o and "superseded by" in o,
+        check("doctor names the retirement and counts only active records",
+              c == 0 and "errors: 0" in o and "superseded (retired from the active index)" in o
+              and wid in o and wid2 in o and bool(re.search(r"registry records: 1\b", o)),
               o.strip().replace("\n", " | ")[:150])
         c, o = v.hades("status")
         check("status counts one record for one thing",
-              c == 0 and "active: 1 | superseded (left the active index): 1" in o,
+              c == 0 and "registry records: 2" in o
+              and "superseded (retired from the active index): 1 of 2" in o,
               o.strip()[:150])
 
         wiki2 = md_file(v, wid2)
         before = v.read(wiki2)
-        c, o = v.hades("edit", "--id", wid2, "--set", "name=Gates Law Renamed")
+        c, o = v.hades("set", "--id", wid2, "--field", "name", "--value", "Gates Law Renamed")
         m = re.search(r"PLAN-[0-9A-F]{12}", o)
-        check("edit writes an amend plan and prints the diff",
-              c == 0 and bool(m) and "amend" in o and "changes: name" in o,
+        check("set writes an amend plan and prints the diff",
+              c == 0 and bool(m) and "--field name" in o and "apply --plan" in o,
               o.strip().replace("\n", " | ")[:160])
         if not (c == 0 and m):
             return
@@ -658,12 +663,12 @@ def t_markdown_and_amendments():
               o.strip()[:140])
 
         snapshot = v.read(wiki2)
-        c, o = v.hades("edit", "--id", wid2, "--set", "classification=topless")
+        c, o = v.hades("set", "--id", wid2, "--field", "classification", "--value", "topless")
         check("an amendment breaking the contract is refused",
               c == 2 and "REFUSED" in o and "classification" in o, o.strip().replace("\n", " | ")[:160])
-        c, o = v.hades("edit", "--id", wid2, "--set", "created_at=2000-01-01")
-        check("identity fields cannot be amended by edit", c == 2 and "REFUSED" in o, o.strip()[:120])
-        c, o = v.hades("edit", "--id", wid2, "--set", "nams=typo")
+        c, o = v.hades("set", "--id", wid2, "--field", "created_at", "--value", "2000-01-01")
+        check("identity fields cannot be amended", c == 2 and "REFUSED" in o, o.strip()[:120])
+        c, o = v.hades("set", "--id", wid2, "--field", "nams", "--value", "typo")
         check("an unknown field is refused (a typo is a second truth)", c == 2 and "REFUSED" in o,
               o.strip()[:120])
         check("every refused amendment changed nothing on disk", v.read(wiki2) == snapshot, "")

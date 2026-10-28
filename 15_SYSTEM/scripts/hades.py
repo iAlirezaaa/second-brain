@@ -10,6 +10,9 @@ Design commitments (each one exists because v2 broke on it):
     at creation and re-checked by doctor -- it is not decoration
   * .gitignore is cross-checked against config, so the documented boundary and
     the real boundary cannot drift apart
+  * a record is amendable, not just creatable: `set` plans an amendment, `apply --approve`
+    performs it, the plan is bound to the bytes it was written against, and the record keeps
+    its own audit trail -- identity and provenance stay immutable
   * every count printed comes from a live scan of this disk, never from a doc
 """
 import sys
@@ -135,6 +138,15 @@ def ascii_slug(name):
 
 # ---------------------------------------------------------------- discovery
 MANIFEST_NAMES = None
+REGISTRY_KINDS = None
+
+
+def registry_kinds(cfg):
+    """The kind names the contract declares -- a markdown file is a record only as one of these."""
+    global REGISTRY_KINDS
+    if REGISTRY_KINDS is None:
+        REGISTRY_KINDS = {k["kind"] for k in cfg["kinds"]}
+    return REGISTRY_KINDS
 
 
 def manifest_names(cfg):
@@ -142,17 +154,6 @@ def manifest_names(cfg):
     if MANIFEST_NAMES is None:
         MANIFEST_NAMES = sorted({k["manifest"] for k in cfg["kinds"]})
     return MANIFEST_NAMES
-
-
-KIND_NAMES = None
-
-
-def kinds_names(cfg):
-    """Declared kinds, cached: registry membership is decided by content, not names."""
-    global KIND_NAMES
-    if KIND_NAMES is None:
-        KIND_NAMES = {k["kind"] for k in cfg["kinds"]}
-    return KIND_NAMES
 
 
 def iter_records(cfg):
@@ -191,17 +192,13 @@ def iter_records(cfg):
             if isinstance(obj, dict) and obj.get("id"):
                 yield p, obj
         elif p.suffix == ".md":
-            # The markdown twin of the json rule above (issue #13): `apply` writes
-            # markdown-layout kinds (news, wiki_note) as <ID>-<slug>.md, and a name-only
-            # match would make those files invisible to every gate -- created by the
-            # sanctioned path and then never existing again. Enumeration matches on
-            # *content*: a frontmatter id shaped like a registry id PLUS a declared kind.
-            # A human note (an `id:`/`type:` frontmatter, or an id that is not
-            # registry-shaped) never counts, so doctor's record count does not jump when
-            # ordinary notes exist. Whatever `apply` writes, `doctor` enumerates.
+            # A markdown record is found by its content, not by one filename: file-layout
+            # kinds are written as `<ID>-<slug>.md`, so a `stem == "note"` match made every
+            # news and wiki_note record `apply` writes invisible to every gate (issue #13).
+            # A body (OVERVIEW.md, SKILL.md) carries its record's id with `type: note` and no
+            # `kind`, so requiring a declared kind keeps a body from becoming a second record.
             fm = frontmatter(p)
-            if (fm and isinstance(fm.get("id"), str) and ID_RE_STRICT.match(fm["id"])
-                    and fm.get("kind") in kinds_names(cfg)):
+            if fm and ID_RE_STRICT.match(str(fm.get("id") or "")) and fm.get("kind") in registry_kinds(cfg):
                 yield p, fm
 
 
@@ -233,8 +230,11 @@ def frontmatter(path):
 def parse_scalar(v):
     t = v.strip()
     if t and t[0] in ("[", "{", '"'):
-        # JSON first: dict values (relations, evaluation, ...) and lists whose members
-        # carry commas or quotes must round-trip exactly, not be re-split
+        # JSON first: a record's relations and amendments are JSON -- what one script
+        # writes, another has to be able to read back, or the field is decoration. Dict
+        # values and lists whose members carry commas or quotes must round-trip exactly,
+        # not be re-split. Hand-written YAML flow lists are not valid JSON, so the
+        # splitter below still gets them.
         try:
             return json.loads(t)
         except ValueError:
@@ -510,37 +510,16 @@ def counts_by(records):
     return by_kind, by_zone
 
 
-def superseded_map(records):
-    """{retired id: [ids replacing it]} from the supersedes edges actually on disk.
-
-    `system.json` declares supersedes as "replaces a record; superseded leaves the
-    active index" (issue #12: that meaning was declared and enforced by nothing --
-    both records stayed active, both counted, zero warnings). Everything that
-    counts, excludes or warns reads the retirement from this one map, so the three
-    commands cannot drift apart.
-    """
-    out = {}
-    for _p, r in records:
-        for t in ((r.get("relations") or {}).get("supersedes") or []):
-            out.setdefault(t, []).append(r.get("id"))
-    return out
-
-
-def active_split(records):
-    """(active, superseded) record pairs, split by the supersedes edges on disk."""
-    sup = superseded_map(records)
-    active = [(p, r) for p, r in records if str(r.get("id")) not in sup]
-    return active, [pair for pair in records if pair not in active]
-
-
 # ---------------------------------------------------------------- commands
 def cmd_status(cfg):
     recs = list(iter_records(cfg))
+    retired = superseded_by(recs)
     bk, bz = counts_by(recs)
     print("HADES OS v3 | root %s" % ROOT)
     print("registry records: %d" % len(recs))
-    active, superseded = active_split(recs)
-    print("active: %d | superseded (left the active index): %d" % (len(active), len(superseded)))
+    if retired:
+        print("superseded (retired from the active index): %d of %d -- %s"
+              % (len(retired), len(recs), ", ".join(sorted(retired))))
     print("by kind: %s" % (json.dumps(bk, ensure_ascii=False, sort_keys=True) if bk else "{}"))
     print("by zone: %s" % (json.dumps(bz, ensure_ascii=False, sort_keys=True) if bz else "{}"))
     zones = zone_dirs(cfg)
@@ -632,15 +611,6 @@ def cmd_doctor(cfg, sch, as_json=False):
     # registry manifests inside the disposable plane = knowledge stranded in machine
     # state; 12_RUNTIME is never enumerated as a registry, so scan it directly
     names = set(manifest_names(cfg))
-    sup_map = superseded_map(recs)
-    for p, r in recs:
-        by = sup_map.get(r.get("id"))
-        if by:
-            # the retirement is a warning, not an error: the file stays readable, it
-            # has only left the active index (issue #12: this used to be said by the
-            # relation's definition and enforced by nothing)
-            warnings.append("%s: superseded by %s -- %s has left the active index "
-                            "(the file stays in place for the record)" % (rel(p), ",".join(by), r.get("id")))
     rt = ROOT / "12_RUNTIME"
     # a harness's declared skills_dir is a sanctioned mirror, not a stranded record
     mirrors = []
@@ -690,14 +660,28 @@ def cmd_doctor(cfg, sch, as_json=False):
     fa = scan_fa(fa_doc_files())
     for p, hits in fa:
         warnings.append("%s: persian hygiene %s" % (p, json.dumps(hits, ensure_ascii=False)))
-    rec_n = len(recs)
+    # retirement is a verdict about a record, and a verdict the index ignores is a second
+    # definition of the same thing that nobody has to answer for
+    retired = superseded_by(recs)
+    for p, r in recs:
+        targets = (r.get("relations") or {}).get("supersedes") or []
+        if isinstance(targets, str):
+            targets = [targets]
+        if r.get("id") in [t for t in targets if isinstance(t, str)]:
+            errors.append("%s: supersedes itself -- a record cannot retire its own identity; "
+                          "file the replacement and link that one" % rel(p))
+    rec_n = len([1 for _p, r in recs if r.get("id") not in retired])
     if as_json:
-        print(json.dumps({"records": rec_n, "errors": errors, "warnings": warnings,
+        print(json.dumps({"records": rec_n, "superseded": sorted(retired),
+                          "errors": errors, "warnings": warnings,
                           "zones_absent_at_git_boundary": boundary_absent,
                           "flags": cfg["feature_flags"]}, ensure_ascii=False, indent=2))
     else:
         print("HADES OS v3 doctor")
         print("scanned zones: %d | registry records: %d" % (len([z for z in zones if (ROOT / z).exists()]), rec_n))
+        if retired:
+            print("superseded (retired from the active index): %s" % ", ".join(
+                "%s by %s" % (k, retired[k]) for k in sorted(retired)))
         if boundary_absent:
             print("absent at the documented git boundary: %s" % ", ".join(boundary_absent))
         print("errors: %d | warnings: %d" % (len(errors), len(warnings)))
@@ -710,36 +694,57 @@ def cmd_doctor(cfg, sch, as_json=False):
     return 1 if errors else 0
 
 
+def superseded_by(recs):
+    """{retired id: the record that retires it} -- what `supersedes` is declared to mean.
+
+    system.json says a superseding record "replaces a record; superseded leaves the active
+    index". Until the index and the gate read the relation, that sentence was a comment and
+    the plane kept two definitions of one thing while printing `errors: 0` (issue #12).
+    """
+    out = {}
+    for _p, r in recs:
+        targets = (r.get("relations") or {}).get("supersedes") or []
+        if isinstance(targets, str):
+            targets = [targets]
+        for target in targets:
+            if isinstance(target, str) and target != r.get("id"):
+                out.setdefault(target, r.get("id"))
+    return out
+
+
 def cmd_index(cfg):
     recs = list(iter_records(cfg))
-    sup_map = superseded_map(recs)
-    items, bad, active_n = [], 0, 0
+    retired = superseded_by(recs)
+    items, retired_items, bad = [], [], 0
     for p, r in recs:
         if "_parse_error" in r:
             bad += 1
             continue
-        rid = r.get("id")
-        superseded_by = sup_map.get(rid) or []
-        if not superseded_by:
-            active_n += 1
-        item = {"id": rid, "kind": r.get("kind"), "name": r.get("name"),
+        item = {"id": r.get("id"), "kind": r.get("kind"), "name": r.get("name"),
                 "status": r.get("status"), "classification": r.get("classification"),
                 "path": rel(p), "zone": rel(p).split("/")[0],
                 "plane": "human" if zone_num(rel(p).split("/")[0]) <= HUMAN_MAX else "machine",
-                "last_verified": r.get("last_verified") or r.get("observed_at"),
-                "active": not superseded_by}
-        if superseded_by:
-            item["superseded_by"] = superseded_by
+                "last_verified": r.get("last_verified") or r.get("observed_at")}
+        if r.get("id") in retired:
+            item["superseded_by"] = retired[r.get("id")]
+            retired_items.append(item)
+            continue
         items.append(item)
     GEN.mkdir(parents=True, exist_ok=True)
     PLANS.mkdir(parents=True, exist_ok=True)
     out = {"schema_version": cfg["schema_version"], "generated_at_utc": now(),
-           "scope": "canonical metadata; excludes 12_RUNTIME, 13_LAB, 14_CANDIDATES",
-           "count": len(items), "active_count": active_n, "unreadable": bad,
+           "scope": "canonical metadata; excludes 12_RUNTIME, 13_LAB, 14_CANDIDATES and every "
+                    "record another record supersedes",
+           "count": len(items), "unreadable": bad,
+           "superseded_count": len(retired_items),
+           "superseded": sorted(retired_items, key=lambda x: str(x["id"])),
            "records": sorted(items, key=lambda x: str(x["id"]))}
     dump_json(GEN / "catalog.json", out)
     print("indexed %d records (%d unreadable) -> %s" % (len(items), bad, rel(GEN / "catalog.json")))
-    print("active: %d | superseded (left the active index): %d" % (active_n, len(items) - active_n))
+    if retired_items:
+        print("superseded, left the active index: %s" % ", ".join(
+            "%s (by %s)" % (i["id"], i["superseded_by"]) for i in sorted(
+                retired_items, key=lambda x: str(x["id"]))))
     return 0
 
 
@@ -854,6 +859,124 @@ def existing_ids(cfg):
     return {r.get("id") for _, r in iter_records(cfg)}
 
 
+def find_record(cfg, ident):
+    """(path, record) for one registry id, or None -- the lookup every writer shares."""
+    for p, r in iter_records(cfg):
+        if r.get("id") == ident:
+            return (p, r)
+    return None
+
+
+# Identity and provenance: changing one of these is not correcting a record, it is a
+# different record. Retirement is what `supersedes` is for; `set` cannot rewrite history.
+IMMUTABLE_FIELDS = ("id", "kind", "created_at")
+# the audit trail is written by the tool that made the change, never typed by hand
+LEDGER_FIELDS = ("amendments",)
+
+
+def parse_value(raw):
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return raw
+
+
+def pre_image_sha(path):
+    return hashlib.sha1(path.read_bytes()).hexdigest()
+
+
+def cmd_set(cfg, sch, args):
+    """Amend one field of an applied record -- through a plan, approved like a creation.
+
+    The registry used to be create-only, so the only way to correct a definition was to
+    file a second record for the same thing (issue #12). An amendment is not a file edit:
+    it is an approved structural change, validated against the same contract before a
+    single byte moves, bound to the bytes it was written against, and stamped into the
+    record's own history.
+    """
+    hit = find_record(cfg, args.id)
+    if not hit:
+        raise SystemExit("ERROR: no record %s" % args.id)
+    path, rec = hit
+    if args.field in IMMUTABLE_FIELDS:
+        print("REFUSED: '%s' is identity or provenance -- changing it makes a different record, "
+              "it does not correct this one. File the new one and retire this one: "
+              "hades.py link --id NEW --rel supersedes --to %s" % (args.field, args.id))
+        return 2
+    if args.field in LEDGER_FIELDS or args.field.startswith("_"):
+        print("REFUSED: '%s' is written by the tool that made the change, not typed into it"
+              % args.field)
+        return 2
+    known = set(sch.get("common_required", [])) | set(sch.get("common_types", {}))
+    spec = sch["by_kind"].get(rec.get("kind") or "", {})
+    known |= set(spec.get("required", [])) | set(spec.get("types", {})) | set(rec)
+    if args.field not in known:
+        print("REFUSED: unknown field '%s' for kind %s and the record does not carry it "
+              "-- a typo would silently add a second truth" % (args.field, rec.get("kind")))
+        return 2
+    value = parse_value(args.value)
+    amended = json.loads(json.dumps(rec))
+    amended[args.field] = value
+    amended["updated_at"] = now()
+    problems = validate(amended, cfg, sch, path) + check_entrypoints(path, amended)
+    if problems:
+        print("REFUSED: the amended record fails its own contract, nothing was planned")
+        for problem in problems:
+            print("  %s" % problem)
+        return 2
+    plan = {"plan_id": "PLAN-" + uuid.uuid4().hex[:12].upper(), "created_utc": now(),
+            "applied": False, "mode": "amend", "target_kind": rec.get("kind"),
+            "record_id": args.id, "target_path": rel(path), "field": args.field,
+            "from": rec.get(args.field), "to": value, "pre_image_sha1": pre_image_sha(path),
+            "record": amended}
+    PLANS.mkdir(parents=True, exist_ok=True)
+    dump_json(PLANS / (plan["plan_id"] + ".json"), plan)
+    print("PLAN %s | amend %s --field %s | %s -> %s"
+          % (plan["plan_id"], args.id, args.field,
+             json.dumps(rec.get(args.field), ensure_ascii=False),
+             json.dumps(value, ensure_ascii=False)))
+    print("review it, then: hades.py apply --plan %s --approve" % plan["plan_id"])
+    if args.approve:
+        args.plan = plan["plan_id"]
+        return cmd_apply(cfg, sch, args)
+    return 0
+
+
+def cmd_apply_amend(cfg, sch, plan, pf):
+    """Perform an approved amendment, or refuse without touching the record."""
+    path = ROOT / plan["target_path"]
+    if not path.is_file():
+        print("REFUSED: the record this plan amends is no longer at %s" % plan["target_path"])
+        return 2
+    if pre_image_sha(path) != plan.get("pre_image_sha1"):
+        print("REFUSED: STALE plan -- the record moved after this plan was written, so the "
+              "plan describes a state that no longer exists. Look at the record, then plan again.")
+        return 2
+    amended = plan["record"]
+    problems = validate(amended, cfg, sch, path) + check_entrypoints(path, amended)
+    if problems:
+        print("REFUSED: the amended record fails its own contract, nothing was written")
+        for problem in problems:
+            print("  %s" % problem)
+        return 2
+    entry = {"field": plan["field"], "from": plan["from"], "to": plan["to"], "utc": now(),
+             "plan": plan["plan_id"]}
+    amended.setdefault("amendments", []).append(entry)
+    if path.suffix == ".md":
+        path.write_text(to_markdown(amended), encoding="utf-8")
+    else:
+        dump_json(path, amended)
+    # THE ORDER MATTERS: stamp the plan before any printing, so a console failure cannot leave
+    # an applied amendment looking unexecuted and invite a second one. The pre-image check is
+    # what makes a repeat safe: the bytes already moved, so the plan can only be STALE now.
+    plan["applied"] = True
+    plan["applied_utc"] = now()
+    dump_json(pf, plan)
+    print("AMENDED %s --field %s -> %s" % (plan["record_id"], plan["field"], rel(path)))
+    print("next: hades.py doctor && hades.py index")
+    return 0
+
+
 def cmd_apply(cfg, sch, args):
     if not args.approve:
         print("REFUSED: apply needs --approve (nothing was written)")
@@ -865,14 +988,12 @@ def cmd_apply(cfg, sch, args):
     if plan.get("applied"):
         print("REFUSED: plan already applied -> %s" % plan.get("target_path"))
         return 2
+    if plan.get("mode") == "amend":
+        return cmd_apply_amend(cfg, sch, plan, pf)
     obj = plan["record"]
     kc = kind_cfg(cfg, obj["kind"])
     tp = ROOT / plan["target_path"]
-    amend = plan.get("mode") == "amend"
-    if amend:
-        if not tp.exists():
-            raise SystemExit("ERROR: amend target no longer exists on disk, refusing: %s" % rel(tp))
-    elif tp.exists():
+    if tp.exists():
         raise SystemExit("ERROR: target already exists, refusing to overwrite: %s" % rel(tp))
     problems = validate(obj, cfg, sch, tp)
     if problems:
@@ -885,100 +1006,26 @@ def cmd_apply(cfg, sch, args):
         tp.write_text(to_markdown(obj), encoding="utf-8")
     else:
         dump_json(tp, obj)
-    if not amend:
-        # scaffolds are written once, at creation: an amendment edits the record, it
-        # does not regenerate the prose bodies a human may already have extended
-        if kc["kind"] == "skill":
-            if obj.get("entrypoint") == "SKILL.md":
-                # a scaffold body only for a skill that has no prose yet: when the pack already
-                # holds skills/<name>/SKILL.md the record points at it, and a second body in the
-                # record folder is a parallel truth waiting to disagree
-                (tp.parent / "SKILL.md").write_text(skill_md(obj), encoding="utf-8")
-            for sub in ("scripts", "references", "tests"):
-                (tp.parent / sub).mkdir(exist_ok=True)
-        if kc["kind"] in ("project", "agent", "subagent"):
-            (tp.parent / "OVERVIEW.md").write_text(overview_md(obj), encoding="utf-8")
+    # scaffolds are written once, at creation: an amendment edits the record, it
+    # does not regenerate the prose bodies a human may already have extended
+    if kc["kind"] == "skill":
+        if obj.get("entrypoint") == "SKILL.md":
+            # a scaffold body only for a skill that has no prose yet: when the pack already
+            # holds skills/<name>/SKILL.md the record points at it, and a second body in the
+            # record folder is a parallel truth waiting to disagree
+            (tp.parent / "SKILL.md").write_text(skill_md(obj), encoding="utf-8")
+        for sub in ("scripts", "references", "tests"):
+            (tp.parent / sub).mkdir(exist_ok=True)
+    if kc["kind"] in ("project", "agent", "subagent"):
+        (tp.parent / "OVERVIEW.md").write_text(overview_md(obj), encoding="utf-8")
     # THE ORDER MATTERS: stamp applied first, then print. v2 printed first and a
     # console encoding failure left an unmarked plan plus a duplicate project.
     plan["applied"] = True
     plan["applied_utc"] = now()
     plan["applied_path"] = rel(tp)
     dump_json(pf, plan)
-    if amend:
-        print("AMENDED %s -> %s" % (obj["id"], rel(tp)))
-    else:
-        print("APPLIED %s -> %s" % (obj["id"], rel(tp)))
+    print("APPLIED %s -> %s" % (obj["id"], rel(tp)))
     print("next: hades.py doctor && hades.py index")
-    return 0
-
-
-# fields edit may never touch: they are the record's identity, and an identity that
-# can be rewritten is a rename of one thing into another under the same number
-IMMUTABLE_FIELDS = ("id", "kind", "created_at", "promoted_from", "promoted_utc")
-
-
-def cmd_edit(cfg, sch, args):
-    """Amend an existing record -- through the same plan -> apply --approve door as creation.
-
-    The registry used to be create-only (issue #12): a wrong title, a stale path could
-    only be "fixed" by filing a second record for the same thing, the duplicate-truth
-    pattern this repo deletes everywhere else. An amendment is a structural change, so
-    it gets a plan, a review line, an audit diff in the plan file, and --approve; it
-    never edits bytes in place.
-    """
-    hit = None
-    for p, r in iter_records(cfg):
-        if r.get("id") == args.id:
-            hit = (p, r)
-            break
-    if not hit:
-        print("REFUSED: no record %s to amend (is it enumerable? see `show --id %s`)" % (args.id, args.id))
-        return 2
-    tp, before = hit
-    if not args.set:
-        print("REFUSED: edit needs at least one --set key=value (nothing was planned)")
-        return 2
-    known = set(sch.get("common_required", [])) | set(sch.get("common_types", {}))
-    spec = sch["by_kind"].get(before.get("kind") or "", {})
-    known |= set(spec.get("required", [])) | set(spec.get("types", {})) | set(before)
-    obj = dict(before)
-    changes = {}
-    for raw in args.set:
-        if "=" not in raw:
-            print("REFUSED: --set wants key=value, got '%s' (nothing was planned)" % raw)
-            return 2
-        key, _, value = raw.partition("=")
-        key, value = key.strip(), value.strip()
-        if key in IMMUTABLE_FIELDS:
-            print("REFUSED: '%s' is the record's identity -- a change there is a new record "
-                  "with a new id, not an amendment of this one" % key)
-            return 2
-        if key not in known:
-            print("REFUSED: unknown field '%s' for kind %s and the record does not carry it "
-                  "-- a typo would silently add a second truth" % (key, obj.get("kind")))
-            return 2
-        try:
-            parsed = json.loads(value)
-        except ValueError:
-            parsed = value
-        changes[key] = {"old": before.get(key), "new": parsed}
-        obj[key] = parsed
-    obj["updated_at"] = now()
-    problems = validate(obj, cfg, sch, tp) + check_entrypoints(tp, obj)
-    if problems:
-        print("REFUSED: the amendment would break the record's own contract (nothing was planned)")
-        for p in problems:
-            print("  %s" % p)
-        return 2
-    plan = {"plan_id": "PLAN-" + uuid.uuid4().hex[:12].upper(), "created_utc": now(),
-            "applied": False, "mode": "amend", "target_kind": obj["kind"],
-            "target_id": args.id, "target_path": rel(tp), "record": obj,
-            "changes": changes}
-    PLANS.mkdir(parents=True, exist_ok=True)
-    dump_json(PLANS / (plan["plan_id"] + ".json"), plan)
-    print("PLAN %s | amend %s | id %s | path %s" % (plan["plan_id"], obj["kind"], args.id, rel(tp)))
-    print("  changes: %s" % ", ".join(changes))
-    print("review it, then: hades.py apply --plan %s --approve" % plan["plan_id"])
     return 0
 
 
@@ -994,15 +1041,19 @@ def to_markdown(obj):
     """
     first = ("id", "kind", "name", "status", "classification", "created_at", "updated_at",
              "last_verified", "source_url", "observed_at", "topic", "tags")
-    body_keys = ("claim", "notes")
     front = ["---"]
     emitted = set()
     for k in first:
         if k in obj and obj[k] is not None:
             front.append("%s: %s" % (k, json.dumps(obj[k], ensure_ascii=False)))
             emitted.add(k)
+    # Every field the record carries rides in the frontmatter, prose included: a rewrite
+    # (an amendment or a link) reads the frontmatter, so a field that only lived in the
+    # rendered body would be deleted by being re-rendered -- what one script writes,
+    # another has to be able to read back whole. The body still renders claim/notes for
+    # humans; the frontmatter copy is so the roundtrip cannot lose them.
     for k in sorted(obj):
-        if k in emitted or k in body_keys or obj[k] is None:
+        if k in emitted or obj[k] is None:
             continue
         front.append("%s: %s" % (k, json.dumps(obj[k], ensure_ascii=False)))
     front.append("---")
@@ -1079,11 +1130,7 @@ def cmd_show(cfg, args):
 
 
 def cmd_link(cfg, args):
-    hit = None
-    for p, r in iter_records(cfg):
-        if r.get("id") == args.id:
-            hit = (p, r)
-            break
+    hit = find_record(cfg, args.id)
     if not hit:
         raise SystemExit("ERROR: no record %s" % args.id)
     p, r = hit
@@ -1476,15 +1523,15 @@ def build_parser():
         n.add_argument(extra)
     n.add_argument("--code-repo", action="store_true")
     n.add_argument("--approve", action="store_true")
-    e = sub.add_parser("edit")
-    e.add_argument("--id", required=True)
-    e.add_argument("--set", dest="set", action="append", default=[], metavar="KEY=VALUE")
     l = sub.add_parser("list")
     l.add_argument("--kind"); l.add_argument("--zone")
     s = sub.add_parser("show")
     s.add_argument("--id", required=True)
     lk = sub.add_parser("link")
     lk.add_argument("--id", required=True); lk.add_argument("--rel", required=True); lk.add_argument("--to", required=True)
+    st = sub.add_parser("set")
+    st.add_argument("--id", required=True); st.add_argument("--field", required=True)
+    st.add_argument("--value", required=True); st.add_argument("--approve", action="store_true")
     cx = sub.add_parser("context")
     cx.add_argument("--project", required=True); cx.add_argument("--max-chars", type=int)
     se = sub.add_parser("search")
@@ -1522,14 +1569,14 @@ def main(argv=None):
             print("REFUSED: new needs --approve (it plans and applies in one step)")
             return 2
         return cmd_new(cfg, sch, args)
-    if args.cmd == "edit":
-        return cmd_edit(cfg, sch, args)
     if args.cmd == "list":
         return cmd_list(cfg, args)
     if args.cmd == "show":
         return cmd_show(cfg, args)
     if args.cmd == "link":
         return cmd_link(cfg, args)
+    if args.cmd == "set":
+        return cmd_set(cfg, sch, args)
     if args.cmd == "context":
         return cmd_context(cfg, args)
     if args.cmd == "search":

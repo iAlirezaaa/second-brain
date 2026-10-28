@@ -63,19 +63,19 @@ class TempVault:
             (d / "README.md").write_text("# zone %s\n" % z["dir"], encoding="utf-8")
         h = self.hades
         self._saved = (h.ROOT, h.CONFIG_PATH, h.SCHEMA_PATH, h.GEN, h.PLANS,
-                       h.KIND_NAMES, h.MANIFEST_NAMES)
+                       h.REGISTRY_KINDS, h.MANIFEST_NAMES)
         h.ROOT = self.root
         h.CONFIG_PATH = self.root / "15_SYSTEM/config/system.json"
         h.SCHEMA_PATH = self.root / "15_SYSTEM/schemas/manifest.schema.json"
         h.GEN = self.root / "15_SYSTEM/generated"
         h.PLANS = h.GEN / "plans"
-        h.KIND_NAMES = None
+        h.REGISTRY_KINDS = None
         h.MANIFEST_NAMES = None
 
     def tearDown(self):
         h = self.hades
         (h.ROOT, h.CONFIG_PATH, h.SCHEMA_PATH, h.GEN, h.PLANS,
-         h.KIND_NAMES, h.MANIFEST_NAMES) = self._saved
+         h.REGISTRY_KINDS, h.MANIFEST_NAMES) = self._saved
         self._tmp.cleanup()
 
     def cli(self, *argv):

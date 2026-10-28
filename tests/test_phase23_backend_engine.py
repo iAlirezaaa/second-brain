@@ -282,7 +282,8 @@ class TestOrchestratorCli(TempVault, unittest.TestCase):
         self.assertEqual(2, proc.returncode)
         self.assertIn("not approved", proc.stdout)
         # the write goes through with --approve when the allowlist carries the tool
-        code, out = self.cli("edit", "--id", agt, "--set", 'tool_allowlist=["core.ltm_store"]')
+        code, out = self.cli("set", "--id", agt, "--field", "tool_allowlist",
+                             "--value", '["core.ltm_store"]')
         self.assertEqual(0, code, out)
         plan_id = [ln.split()[1] for ln in out.splitlines() if ln.startswith("PLAN ")][0]
         code, out = self.cli("apply", "--plan", plan_id, "--approve")

@@ -9,5 +9,14 @@
     "created": {"type": "date"},
     "updated": {"type": "date"}
   },
-  "date_format": "YYYY-MM-DD"
+  "date_format": "YYYY-MM-DD",
+  "record_contract": {
+    "_note": "A markdown file whose frontmatter carries a registry-shaped id AND a declared registry kind is a definition with a body, not a note: the note fields above are not applied to it. Writing a second title and a second status for the same file would give one thing two truths. The recognizer, the required fields and the status vocabulary are read from the files named below, never retyped in the gate, so the note gate cannot drift from the registry contract.",
+    "recognized_by": ["id", "kind"],
+    "config": "15_SYSTEM/config/system.json",
+    "schema": "15_SYSTEM/schemas/manifest.schema.json",
+    "id_pattern_from": "id_pattern",
+    "required_fields_from": "common_required",
+    "status_sets_from": "status_sets"
+  }
 }
