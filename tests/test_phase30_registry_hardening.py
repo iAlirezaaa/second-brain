@@ -201,5 +201,54 @@ class ACycleIsDetectedNotSwallowed(LinkFixture):
         self.assertNotIn("cycle", out)
 
 
+class EveryKindOwnsItsStatusVocabulary(unittest.TestCase):
+    def setUp(self):
+        self.cfg = json.loads((ROOT / "15_SYSTEM" / "config" / "system.json")
+                              .read_text(encoding="utf-8"))
+        self.kinds = [k["kind"] for k in self.cfg["kinds"]]
+
+    def test_no_kind_falls_back_to_the_generic_set(self):
+        missing = [k for k in self.kinds if k not in self.cfg["status_sets"]]
+        self.assertEqual([], missing,
+                         "a kind without a set lets any lifecycle word pass for it")
+
+    def test_every_set_is_a_small_lowercase_vocabulary(self):
+        for kind in self.kinds:
+            states = self.cfg["status_sets"][kind]
+            self.assertTrue(states, kind)
+            self.assertEqual(len(states), len(set(states)), kind)
+            for state in states:
+                self.assertRegex(state, r"^[a-z_]+$", kind)
+            self.assertLessEqual(len(states), 5, kind)
+
+    def test_the_default_status_is_the_kinds_own_first_word(self):
+        vault = seeded()
+        try:
+            for kind, first in (("task", "open"), ("decision", "proposed"),
+                                ("sandbox", "prepared")):
+                code, out = vault.hades("new", "--kind", kind, "--name",
+                                        "Fixture " + kind, "--description", "fixture",
+                                        "--approve")
+                self.assertEqual(code, 0, out)
+                ident = re.search(r"\b([A-Z]{3}-[0-9A-F]{8})\b", out).group(1)
+                _code, shown = vault.hades("show", "--id", ident)
+                record = json.loads(shown[:shown.rfind("}") + 1])
+                self.assertEqual(first, record.get("status"), kind)
+                self.assertIn(record.get("status"), self.cfg["status_sets"][kind])
+        finally:
+            vault.close()
+
+    def test_a_status_outside_the_set_is_refused_with_the_set_named(self):
+        vault = seeded()
+        try:
+            code, out = vault.hades("new", "--kind", "task", "--name", "Fixture task",
+                                    "--status", "shipped", "--approve")
+            self.assertEqual(2, code, out)
+            self.assertIn("REFUSED", out)
+            self.assertIn("open|blocked|done|cancelled", out)
+        finally:
+            vault.close()
+
+
 if __name__ == "__main__":
     unittest.main()
