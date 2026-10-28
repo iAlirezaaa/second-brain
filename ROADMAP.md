@@ -33,20 +33,21 @@ Current floor, measured at the time of writing: **297 unittests, a 120-check HAD
 
 ---
 
-## Phase 25 — The charter audit: the yardstick measured · 🟡 (next)
+## Phase 25 — The charter audit: the yardstick measured · 🟢
 
 *Source: the charter itself (§15: the order of work) and the handoff's own admission that the
 charter "has not been audited against the repo yet". A charter nobody has measured against is
-decoration.*
+decoration. Audit: `00_START_HERE/CHARTER_AUDIT.md` — 11/15 honoured, 3 partial, 1 gap.*
 
-- [ ] **S** Walk `00_START_HERE/PROJECT_CHARTER.md` §1–§15 section by section; for each, run or
-      name the command that shows whether the repo honours it today. Output: an audit table on
-      the shelf or in `02_WIKI`, every row carrying evidence (command + output), `NO_ENTRY`
+- [x] **S** Walk `00_START_HERE/PROJECT_CHARTER.md` §1–§15 section by section; for each, run or
+      name the command that shows whether the repo honours it today. Output: the audit table in
+      `00_START_HERE/CHARTER_AUDIT.md`, every row carrying evidence (command + output), `NO_ENTRY`
       where a section is unimplemented.
-- [ ] **S** File every gap as a GitHub issue with the section number and the proving command —
-      issue-then-fix, the repo's own §8 workflow.
-- [ ] **S** Amend this roadmap from the audit's verdicts: a phase that the charter refuses is
-      moved to ⛔ with the section number; a charter section with no phase gets one.
+- [x] **S** File every gap as a GitHub issue with the section number and the proving command —
+      #20 (§5/§11 memory planes), #21 (§7 manager agent), #22 (§3 reference maps); the open
+      §8 backlog (#15–#17) named in the audit.
+- [x] **S** Amend this roadmap from the audit's verdicts: phases 26–27 implement the §5/§11
+      verdicts, ⛔ rows carry the refusals with the section number that justifies them.
 
 ## Phase 26 — The eight memory planes, mapped and gated · 🔵
 
