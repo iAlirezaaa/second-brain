@@ -21,7 +21,7 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 357 |
+| tests collected (`python -m unittest discover -s tests`) | 359 |
 | health gates (`python scripts/health.py`) | 7 |
 | registry records (`11_CONTROL/**/*.json`) | 13 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
@@ -36,16 +36,16 @@ status: active
 
 ## 2. In-Flight Work
 
-- **Phase 27 item 2 on `phase/27-retired-surface`**: retirement is visible where a record is
-  read. Measured before the change in a scratch vault: `list` showed 4 rows, 1 retired, 0
-  markers; `search --query provider` returned 5 hits, 1 on the retired file, 0 markers. Now
-  `list` prints `records: N (active A, retired R)` and appends `[retired by ID]` to the retired
-  row; `search` appends the same marker to the retired record's own file and counts it in the
-  summary; `show` prints `# retired by: ID`; MCP `registry_list` / `registry_show` carry
-  `superseded_by` / `retired by`. Nothing is removed — retirement stays a verdict, not a
-  delete. Four tests cover the three CLI surfaces and the MCP door. Item 1 merged earlier as
-  `b2e17ad`: 43 notes indexed here, 28 in an installed home, ingest 81 ms, median query 3.8 ms
-  over 40 runs (max 5.9 ms).
+- **Phase 27 closed on `phase/27-recency-decision`**: the last item — a BM25 recency boost,
+  allowed only behind a measured win — was measured and refused. Date coverage: 3 of 43 corpus
+  notes declare `updated:`; the other 40 fall back to mtime, one distinct day (the checkout)
+  in a clone. A recency-aware re-rank on the shared golden set moved recall@1 / MRR by 0.000
+  at every weight from 0.05 to 1.0. Nothing in `kb.py` ranks by date;
+  `tests/test_phase27_repo_corpus.py` pins an older exact match above a fresher weak one.
+  Item 2 merged earlier as `8d41827`: retirement marked on `list` (`records: N (active A,
+  retired R)` + `[retired by ID]`), `search` (marker + count), `show` and the MCP door; item 1
+  as `b2e17ad`: 43 notes indexed here, 28 in an installed home, ingest 81 ms, median query
+  3.8 ms over 40 runs (max 5.9 ms).
 - **Phase 26 shipped on `phase/26-eight-plane-map`**: the charter's eight memory planes are
   now a machine-checked map, not a paragraph.
   - `15_SYSTEM/config/system.json` → `memory_planes`: for every plane, the tracked store the
@@ -222,7 +222,15 @@ status: active
   notes here, 28 in an installed home); ingest takes 101 ms and a query a median 3.8 ms, which
   says nothing about thousands of notes or a large private store. Matching is word-based (every
   query term must occur, partial-word matches allowed); the golden set is five cases plus the
-  shared fixture — enough to catch a regression, not to claim retrieval quality.
+  shared fixture — enough to catch a regression, not to claim retrieval quality. Four of the
+  five cases were within 0.14 BM25 units of their runner-up until 2026-10-28; they were
+  re-picked by measured margin (1.23–3.74) and a 0.5 decidability floor now fails an ambiguous
+  case by name instead of letting a 0.0006 tie decide.
+- **No note carries a trustworthy date yet.** 3 of 43 corpus notes declare `updated:`; the
+  other 40 take the file's mtime, and a fresh clone stamps every file with the checkout day
+  (one distinct fallback date, measured 2026-10-28). Time-aware ranking is refused until every
+  note carries a true date — e.g. its commit date — and a labeled case set exists where
+  freshness, not relevance, decides the order.
 - **Adapters are format-specific.** The three JSONL adapters follow documented stream formats;
   they do not parse undocumented local history databases, and nothing scans for sessions. A
   Cursor Markdown export needs `--format text`.
@@ -262,8 +270,8 @@ status: active
 - [x] phase 26: write the eight-plane mapping with evidence and file the remaining gaps — the
       map, the gate and nine tests shipped; what is left is #24, #25 and phase 27
 - [x] phase 27 item 1: point `kb.py` at the tracked repo corpus (human plane only) with the
-      golden set as the regression harness — shipped; one item remains (recency boost behind a
-      measured eval)
+      golden set as the regression harness — shipped; the remaining recency item was measured
+      and refused (0.000 delta, 3/43 dated notes), so phase 27 is closed
 - [ ] #21 register the manager agent through the plan door; #22 add the two missing reference
       map files
 - [x] decide, with a measurement first, how retired records surface in `search`/`list` —

@@ -191,6 +191,22 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   roadmap) is `02_WIKI/reference_maps/superagi-to-hades-map.md`.
 
 ### Changed
+- **The golden retrieval gate's cases are decidable, not coin flips** (the phase-4 gate,
+  found while measuring phase 27 item 3) — four of the five cases sat within 0.14 BM25 units
+  of their runner-up, and `plan apply approve` lost `START.md` to `GUIDE_FA_EN.md` by 0.0006
+  after ordinary documentation growth shifted the index's global average length. Both documents
+  genuinely discuss the pipeline, so the case was asking the ranker to break a tie it had no
+  evidence to break. The five cases were re-picked by measured margin (1.23–3.74) and a new
+  test holds a 0.5 floor, so a case that becomes ambiguous later fails as a *case* defect
+  instead of flipping silently. Corpus, tokenizer and ranker are unchanged.
+- **No recency ranker in the prose search** (phase 27 item 3) — the roadmap allowed a BM25
+  recency boost only behind a measured win, so it was measured first and refused. 3 of 43
+  corpus notes declare `updated:`; the other 40 fall back to mtime, which in a clone is a
+  single checkout day (measured: one distinct fallback date). A recency-aware re-rank over
+  the shared golden set moved recall@1 and MRR by 0.000 at every weight from 0.05 to 1.0.
+  `tests/test_phase27_repo_corpus.py` pins the contract that mattered: a six-year-old exact
+  match still outranks a fresh weak one. Revisit only when every note carries a true date and
+  labeled cases exist where freshness, not relevance, decides the order.
 - `scripts/loop.py` exports the unanswered-search register it read from the local
   SQLite index as a tracked snapshot (`14_CANDIDATES/loop/gaps.jsonl`) and cites the
   snapshot, not the index, in the candidate it raises.

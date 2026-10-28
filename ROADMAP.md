@@ -77,7 +77,7 @@ tests, five of which break a fixture on purpose and read the gate's refusal.*
 - [x] **S** A health gate that fails when a memory plane's store is missing or unreadable — so
       the charter's §5 is enforced by a gate, not remembered by the next agent.
 
-## Phase 27 — The brain searches its own corpus · 🔵
+## Phase 27 — The brain searches its own corpus · 🟢
 
 *Source: charter §1 (the system must manage its own information) — `kb.py` used to ingest the
 *vault-template*, while the tracked prose it should index lived beside it. Shipped: the index
@@ -88,7 +88,10 @@ folded text, and refuses a missing or stale index instead of answering from it. 
 now has a visible surface: `list` counts active/retired and marks the retired row,
 `search` marks the retired record's own file, `show` names who retired it, and the MCP door
 carries `superseded_by`. Measured before the change: 4 list rows / 1 retired / 0 markers;
-5 search hits / 1 on the retired file / 0 markers.*
+5 search hits / 1 on the retired file / 0 markers. The last item was measured and refused:
+3 of 43 notes declare `updated:` and the other 40 fall back to mtime — one distinct day (the
+checkout) in any clone — so a recency term had no signal; a recency-aware re-rank moved
+recall@1 / MRR by 0.000 at every weight from 0.05 to 1.0.*
 
 - [x] **M** Point `kb.py` at the tracked repo (human plane only; machine plane excluded by the
       same boundary `common.clone_readable()` declares) with the existing golden-set gate as the
@@ -97,7 +100,12 @@ carries `superseded_by`. Measured before the change: 4 list rows / 1 retired / 0
 - [x] **S** Decide, with a measurement first, how retired records surface in `search`/`list`
       (handoff §4: the index is settled, the reading surface is not). Measured, then marked on
       `list`, `search` and `show`; four tests cover the three CLI surfaces and the MCP door.
-- [ ] **S** BM25 recency boost behind a measured eval — only if the golden set shows it wins.
+- [x] **S** BM25 recency boost behind a measured eval — only if the golden set shows it wins.
+      Measured first, then refused: date coverage 3/43 explicit (40 notes share one fallback
+      date), golden recall@1 1.000 / MRR 1.000 unchanged at alpha 0.05–1.0. Nothing was ranked
+      by date; `tests/test_phase27_repo_corpus.py` pins relevance-over-recency, and the two
+      conditions for revisiting sit in handoff §4. Measuring it also exposed the phase-4 gate:
+      four of its five cases were near-ties, re-picked by margin with a 0.5 floor.
 
 ## Phase 28 — Scheduler seam: one clock for the rituals · 🔵
 
