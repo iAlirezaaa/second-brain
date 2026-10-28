@@ -79,12 +79,17 @@ tests, five of which break a fixture on purpose and read the gate's refusal.*
 
 ## Phase 27 — The brain searches its own corpus · 🔵
 
-*Source: charter §1 (the system must manage its own information) — today `kb.py` ingests the
-*vault-template*, while the tracked prose it should index lives beside it.*
+*Source: charter §1 (the system must manage its own information) — `kb.py` used to ingest the
+*vault-template*, while the tracked prose it should index lived beside it. Shipped: the index
+now covers the clone-readable human plane (43 notes here, 28 in an installed home), excludes
+the machine plane, template, dot-folders and agent doors by `common.clone_readable()`'s own
+boundary, strips frontmatter before indexing, keeps raw text for snippets while matching on
+folded text, and refuses a missing or stale index instead of answering from it.*
 
-- [ ] **M** Point `kb.py` at the tracked repo (human plane only; machine plane excluded by the
+- [x] **M** Point `kb.py` at the tracked repo (human plane only; machine plane excluded by the
       same boundary `common.clone_readable()` declares) with the existing golden-set gate as the
-      regression harness.
+      regression harness. The phase-4 gate is repointed; `tests/test_phase27_repo_corpus.py`
+      proves the boundary, the installed home and the shared golden fixture.
 - [ ] **S** Decide, with a measurement first, how retired records surface in `search`/`list`
       (handoff §4: the index is settled, the reading surface is not).
 - [ ] **S** BM25 recency boost behind a measured eval — only if the golden set shows it wins.

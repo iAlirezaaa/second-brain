@@ -55,12 +55,13 @@ the approval receipt. `HANDOFF.md` cites the commit it was generated at.
   (`WIK-B7ED0084`, draft) under `02_WIKI/decisions`.
 - **knowledge** — 1 registry note plus plain notes under `02_WIKI/`; `hades.py search`
   covers the repo's own prose (human zones, `skills/`, root documents) and skips
-  `15_SYSTEM`. `kb.py` still indexes `vault-template` only — phase 27.
+  `15_SYSTEM`. `kb.py` indexes this repo's human plane too (phase 27), 43 notes here,
+  machine plane excluded by `common.clone_readable()`'s boundary.
 - **conversation** — nothing imported into this clone; the store is gitignored and local.
   The reader shipped with phases 31–34 (`source_search`, `sources.py search`), but with an
   empty store it answers nothing, and extraction is still a manual act with no defined
-  skill or gate. Issue #20 keeps both, plus `kb.py` covering the template instead of this
-  repo (phase 27), open.
+  skill or gate. Issue #20 keeps the extraction path open; `kb.py` over this repo's corpus
+  shipped in phase 27.
   A disposable lab measured the whole path on 35 imported sources (duplicate add 0,
   transfer verified, one conflict refused then accepted with `--allow-conflicts`,
   propose → evaluate → approve → recall with origin preserved); the numbers are in

@@ -16,7 +16,7 @@ phase that closes it; per the charter's own §8, an issue exists before the fix.
 | 2 | Standalone; no mandatory dependency on any app or model | **honoured** | `git grep -E "^\s*(import\|from)\s+(requests\|fastapi\|numpy\|...)"` → none; `tests/test_phase16_host_independence.py`; CI green on 3.9+3.12, ubuntu+windows | — |
 | 3 | Study the reference repos, extract useful logic, adapt — no blind copying | partial | `02_WIKI/reference_maps/superagi-to-hades-map.md` (adopt/refuse table) + `15_SYSTEM/scripts/backend/` (the SuperAGI port); harness2's keep-base logic ships as `scripts/base.py`; claude-obsidian's audit shipped as phase 8 | only SuperAGI has a standing map file → issue (see gaps) |
 | 4 | One standard structure, stable unique IDs, no scattered files; agents obey it too | **honoured** | `python 15_SYSTEM/scripts/hades.py doctor` → `errors: 0 \| warnings: 0`, duplicate-id gate, zone gates; `catalog.json` enumerates 13 records; the plan → `apply --approve` door is the only write path | — |
-| 5 | Persistent memory: eight planes (project, repository, agent, task, error, decision, knowledge, conversation), structured, searchable, contradiction-aware | partial | `python scripts/plane_check.py` → 8 planes, 12 tracked stores present, 3 disposable stores absent by design; `02_WIKI/reference_maps/eight-memory-planes.md` → one row per plane with writer, reader and proving test; `tests/test_phase26_memory_planes.py` → the gate bites | contradiction awareness is unimplemented (#24); lessons carry no plane field (#25); conversation extraction has no defined path and `kb.py` indexes the template, not this repo (#20, phase 27) |
+| 5 | Persistent memory: eight planes (project, repository, agent, task, error, decision, knowledge, conversation), structured, searchable, contradiction-aware | partial | `python scripts/plane_check.py` → 8 planes, 12 tracked stores present, 3 disposable stores absent by design; `02_WIKI/reference_maps/eight-memory-planes.md` → one row per plane with writer, reader and proving test; `tests/test_phase26_memory_planes.py` → the gate bites | contradiction awareness is unimplemented (#24); lessons carry no plane field (#25); conversation extraction has no defined path (#20); `kb.py` now searches this repo's human plane (phase 27) |
 | 6 | Continuous self-improvement: observe → analyse → improve, learning from errors | partial | `scripts/loop.py` one-cycle ratchet + prev-run compare + `P1` exit; `14_CANDIDATES/loop/gaps.jsonl` self-driving backlog | the loop's cadence is not a registry definition; two clocks (cron + backend schedules) → phase 28 |
 | 7 | Agent & skill management: register roles/abilities, sub-agents, a manager agent, no duplicated work | partial | `hades.py list --kind agent` → `AGT-78188303 repo-auditor`, `AGT-B746F5DE loop-runner`; 10 skills in `skills/`; backend `engine.py` runs actors with per-actor `tool_allowlist` | the charter's **manager agent** is not a registered definition → issue filed |
 | 8 | Standard repo workflow: independent re-discovery → audit → issues → test-first fix → PR | **honoured** | `skills/first-session/SKILL.md` + `skills/self-audit/SKILL.md`; issues #3–#14 filed *before* their fixes (order documented in HANDOFF §2); 3 open issues (#15–#17) are the live §8 backlog | — |
@@ -33,16 +33,16 @@ phase that closes it; per the charter's own §8, an issue exists before the fix.
 **11 of 15 sections honoured, 4 partial, 0 gap.** The structural laws (independence, structure,
 workflow, PR discipline, per-repo memory, documentation, the fourteen laws) are gate-proven.
 What remains is the depth of **memory as the charter means it** (§5, §11): the eight planes are
-mapped and gate-checked, but contradiction awareness (#24), plane-typed lessons (#25), a
-defined conversation-extraction path and search over this repo's own prose (#20, phase 27) are
-still open; plus two registration gaps (§3 map files for the other reference repos, §7 manager
+mapped and gate-checked, and `kb.py` now searches this repo's own prose (phase 27), but
+contradiction awareness (#24), plane-typed lessons (#25) and a defined conversation-extraction
+path (#20) are still open; plus two registration gaps (§3 map files for the other reference repos, §7 manager
 agent). These are phases 26–27 of the roadmap and the issues filed below.
 
 ## Gaps filed as issues (issue-then-fix, per §8)
 
 - #20 — *Eight memory planes: mapping, conversation reader, kb.py corpus* (§5, §11) — phase 26
-  delivered the mapping document, `plane_check.py` and its tests; what stays open is the
-  defined conversation-extraction path and `kb.py` indexing this repo — closes with phase 27.
+  delivered the mapping document, `plane_check.py` and its tests; phase 27 delivered `kb.py`
+  over this repo's human plane; what stays open is the defined conversation-extraction path.
 - #24 — *No memory plane detects a contradiction* (§5) — needs a measured definition of
   "contradiction" before code; filed by phase 26 so the map does not overclaim.
 - #25 — *Lessons are not typed by plane* (§5) — `lessons.jsonl` has 26 rows and no plane/kind
