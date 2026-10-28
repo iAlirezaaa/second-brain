@@ -1,183 +1,122 @@
-# ROADMAP — iAlirezaaa/second-brain
+# ROADMAP — iAlirezaaa/second-brain (HADES OS v3)
 
-An AI-augmented second brain: a plain-markdown vault shared by a human (curator) and AI agents (workers).
-**This file is a public promise:** every idea lands here with a size estimate, gets built test-first,
-and is ticked continuously by the repo's own engineers (human + agents + nightly loop).
+A standalone, self-improving agentic operating system: a plain-markdown brain with a gated
+registry, persistent memory, and its own improvement loop — stdlib-only Python, no app, no
+network, no paid service. **This file is a public promise:** every idea lands here with a size
+estimate, gets built test-first, and is ticked continuously by the repo's own engineers
+(human + agents + nightly loop). The owner's brief — `00_START_HERE/PROJECT_CHARTER.md` —
+outranks this file: phases here *implement* the charter, and a conflict is filed on
+`14_CANDIDATES/loop/` with the section number, never resolved silently.
 
-**Status chips:** 🟢 done · 🟡 in progress · 🔵 planned
-**Sizes:** S = one script, M = script + skill/report surface, L = subsystem
-**Sources:** each phase cites the repos/research it came from (competitive insight, not cargo-cult).
+**Status chips:** 🟢 done · 🟡 in progress · 🔵 planned · ⛔ refused (with the reason kept)
+**Sizes:** S = one script/gate, M = script + tests + doc surface, L = subsystem
+**Sources:** each phase cites where the idea came from (competitive insight, not cargo-cult).
 
-Golden rules (tested, not aspirational):
-1. Zero broken links — verify `[[target]]` exists before writing it.
-2. Fenced zones — agent writes freely only where it is allowed; permission rules > AI obedience.
-3. Nothing is ingested until it is linked.
-4. Contradictions are recorded, never silently overwritten.
-5. Every feature ships with a test before the next feature starts.
-
----
-
-## Phase 0 — Repo skeleton · 🟢
-- [x] README, LICENSE (MIT), .gitignore, ROADMAP · git init + first commit
-
-## Phase 1 — Vault template + contract layer · 🟢
-- [x] Fenced zone structure: 00_Inbox / 10_Projects / 20_Notes / 30_Resources / 90_Agent_Output
-- [x] AGENTS.md contract + CLAUDE.md shim · index.md ground map
-- [x] Frontmatter schema (rules/schema.json) + templates · structure validator test
-
-## Phase 2 — Integrity toolchain · 🟢
-- [x] link_check.py (zero-broken-links) · frontmatter_check.py (schema + ISO dates) · vault_stats.py
-- [x] stdlib-only, py3.9+; unittest fixtures
-
-## Phase 3 — Inbox triage + permission rules · 🟢
-- [x] inbox-triage skill (propose placement + one-line why) · zone_check.py gate
-- [x] write_gate.py (injections / zero-width chars / secrets) · promote.py quarantine→promote + audit trail
-
-## Phase 4 — Keyword knowledge base · 🟢
-- [x] kb.py — SQLite FTS5 (LIKE fallback) · kb-search skill · search-gap register (self-driving backlog)
-- [x] golden-set retrieval eval gate inside the test suite
-
-## Phase 5 — Rituals · 🟢
-- [x] weekly / health / promote skills · promotions.md audit trail · composite health check
-
-## Phase 6 — Packaging & CI · 🟢
-- [x] GitHub Actions: ubuntu+windows × py3.9+3.12 (health + tests + write-gate smoke) · installer
-- [x] deferred: plugin manifest (canonical skill tree via installer instead)
-
-## Phase 7 — Continuous improvement loop · 🟢
-- [x] scripts/loop.py — one-cycle ratchet: signals → candidate report → prev-run compare
-      (`improved / stable / REGRESSED`); P1 exits non-zero
-- [x] skills/loop — bounded protocol (≤3 cycles, stop at zero P1/P2, 2×REGRESSED = escalate)
-- [x] nightly cron committing candidate reports to `14_CANDIDATES/loop/` (human promotes)
-
-## Phase 8 — Public project standard + formal handoff · 🟡
-Built from the community-hygiene audit (Community-standards checklist said: CoC, contributing,
-security, templates all missing) and the agent-handoff research (AGENTS.md has no session-state
-standard; the ecosystem converges on a root `HANDOFF.md`, machine-state + refresh-in-place).
-
-- [x] SECURITY.md (scope + private advisory channel) · CONTRIBUTING.md (golden rules as PR gates)
-- [x] CODE_OF_CONDUCT.md (Contributor Covenant 2.1) · issue templates + PR template · dependabot for Actions
-- [x] README badges (CI / loop / version / license) + public-roadmap link — the hand-typed
-      "tests: 39 green" badge was deleted, not refreshed: see Phase 12 and issues #4/#10
-- [x] CHANGELOG.md — Keep a Changelog; nightly loop commits stay out of it (noise discipline)
-- [x] **HANDOFF standard** — `scripts/handoff.py` + `skills/handoff`:
-      machine-written §1 State Snapshot (head/dirty/tests/loop), model-owned §2–§6
-      (in-flight / decisions / blockers / next-actions / pointers) refreshed in place,
-      frozen §8 rules; freshness = head-match, not clock age — all test-gated.
-
-## Phase 9 — Vault growth & decay mechanics · 🔵
-*The audited gap: everything shipped so far is integrity; these are growth/decay —
-the half that makes a vault a living system, not a filing cabinet. All stdlib-compatible.*
-
-- [ ] **S** freshness/decay lint — timeless vs snapshot vs pointer claims; illegal unstated present-tense facts
-- [ ] **S** orphan adoption engine — not just counting: rank candidate `[[links]]` via FTS5 overlap, agent proposes, human approves
-- [ ] **S** graph audit — centrality + co-citation report (Brandes betweenness, ~60 lines): "these 3 links collapse the diameter"
-- [ ] **S** title-as-claim lint — evergreen titles as APIs (Matuschak); rename flow with alias preservation
-- [ ] **S** review queue — deterministically resurfaced notes weighted by age/orphan/decay, reusable daily
-- [ ] **S** stale-projects archiver — `status: active` + 30d silence → archive candidate (PARA fold)
-- [ ] **M** contradiction detection + reconcile flow — two-stage: FTS5 candidate pairs → agent verdict → `superseded_by` edge, never overwrite
-- [ ] **M** auto-MOC — derived hub notes regenerated nightly between protected markers
-- [ ] **M** near-duplicate merge with redirect stubs — merged note becomes `# merged into [[B]]`, never deleted
-- [ ] **M** emergence/synthesis pass — clusters of ≥3 notes sharing an unnamed pattern → candidate synthesis page
-
-## Phase 10 — Trust & transactional core · 🔵
-*From the competitive audit (claude-obsidian's transaction spec, gbrain's open loops, the kit's secret hygiene).*
-
-- [ ] **M** transactional write core — fingerprint-check every target file, journaled apply, `recover`
-      for interrupted writes, halt on human-collision. No branches needed.
-- [ ] **M** content-addressed raw capture + claim-level provenance — every claim links the source that supports it
-- [ ] **S** secret masking + secret-refusing commits — backup/commit step refuses secret-looking diffs
-- [ ] **S** open-loops ("waiting-for") engine — X owes Y by date; stale loops surface in the weekly/nightly ritual
-- [ ] **S** postmortem ledger — every failure the loop catches yields a recorded mechanism, not just a note
-- [ ] **S** ingest-completeness gate — promote may not finish until the promoted page has ≥1 inbound link
-- [ ] **S** graph export — wikilink graph → JSON/GraphML for offline analysis
-- [ ] **M** markdown-native task + decision ledger (Backlog.md pattern: acceptance criteria, DoD, stable IDs)
-- [ ] **M** skillopt loop — LLM-judged edits to skill prompts, accepted only if they beat the current version
-
-## Phase 11 — Distribution & scale · 🔵
-- [ ] **S** BM25 recency boost + rank fusion in kb search
-- [ ] **S** multi-host installer (`--host codex|opencode|gemini|claude`) — one skill tree, many agents
-- [ ] **S/M** GitHub Pages from `wiki.py` output (docs site without a second docs stack; mkdocs deliberately deferred — content, not tooling, is the bottleneck)
-- [ ] **S** OpenSSF Scorecard badge once Phases 8–10 land
-- [ ] **L**, only with eval evidence: semantic (embedding) layer for the KB — stays refused while keyword + gap register suffice
+Golden rules (tested, not aspirational): zero broken links · fenced zones · nothing is ingested
+until it is linked · contradictions are recorded, never overwritten · every feature ships with a
+test before the next starts · evidence survives a `git clone` · a gate that reports `errors: 0`
+over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## Phase 12 — A system that gets smarter: memory, probes, one law · 🟡
-*Triggered by re-reading the repo from scratch, filing every finding as an issue (#3–#10), and
-by the logic of `google-research/harness2` (Propose → Probe → Compose, typed dimensions,
-keep-base fallback). The rows are in build order; every checked row has a test.*
+## Shipped history (compressed)
 
-- [x] **S** zone/git-boundary law corrected — the machine plane's disposable folders are
-      declared and ignored, and the toolchain reports them as a boundary, not as damage
-- [x] **M** evidence schema + probe with real execution — `rules/candidate.schema.json`,
-      `scripts/probe.py`, `dimension: invariant|domain`, one execution per behaviour claim,
-      and `verdict: proposed` legal on the shelf yet never promotable (#3, #9)
-- [x] **S** ledger count identity — `proposed == adopt + revise + drop + keep_base + open`,
-      checked against the folder by `scripts/candidate_check.py`
-- [x] **S** SHA-1 state fingerprint + freshness — paperwork (quarantine, runtime, proposals)
-      stays out of the identity, so ordinary filing never invalidates a measurement
-- [x] **M** repo memory (#7) — `scripts/memory.py`: lesson ledger, generated `MEMORY.md`,
-      `--recall` with a legal `NO_ENTRY`, retirement by `--supersedes`, a gate on drift
-- [x] **L** independence from any app, one law per host (#8) — `AGENTS.md` is the canon,
-      `scripts/sync_hosts.py` projects it with `--lint`/`--check`, prose is separated from
-      notes, and the installer produces a brain that is green with no editor or network
-- [x] **M** control plane populated — registry records for the pack's own skills and agents,
-      create-only-through-plan, entrypoint resolution enforced by doctor
-- [x] **S** measured documents (#4, #10) — `scripts/doc_report.py` owns the block between the
-      markers in README / HANDOFF / START; a stale number is a failing health gate
-- [x] **S** evidence that survives a clone — `common.clone_readable()` names the git boundary,
-      `candidate_check` refuses a row citing behind it, the loop exports the gap register as a
-      tracked snapshot, and the law is written in `AGENTS.md` so every host inherits it
-      (found as red CI on all four matrices, not as a local failure)
-- [x] **M** `keep_base` + `--recover` — `scripts/base.py` records a base only from a green
-      house, restores those bytes on request, re-proves the fingerprint, and writes
-      `fell_back: true` to `14_CANDIDATES/loop/recovery.jsonl`; `keep_base` keeps its cue closed
-      so the ratchet does not re-propose what was measured worse
-- [ ] **S** recovery on the probe's own initiative — today a `hurt` verdict tells the agent to
-      fall back; `scripts/probe.py` does not run `base.py --recover` for it, because reverting a
-      tree from an unattended measurement is a bigger permission than naming one
-- [x] **S** `hades.py set` — the registry is no longer create-only (issue #12): an amendment
-      goes through `plan` → `apply --approve`, `id`/`kind`/`created_at` stay immutable, a plan
-      whose record moved is refused as stale, and the record keeps its own `amendments` trail
-      (`tests/test_phase22_amend_a_record.py`)
-- [x] **S** `supersedes` enforces its own definition (issue #12, second half) — a superseded
-      record leaves the active index, `doctor` counts active records and names the retirements,
-      and self-supersession is an error rather than a quiet pass
-      (`tests/test_phase23_superseded_leaves_the_index.py`)
-- [x] **M** a markdown record is enumerated by content, not by one filename (issue #13) —
-      `news` and `wiki_note` were written as `<ID>-<slug>.md` while the scan only matched
-      `note.md`, so a record created through the sanctioned path answered `NOT FOUND` and the
-      gate still printed `errors: 0`; prose, relations and the amendment trail now round-trip
-      through the markdown writer (`tests/test_phase21_records_are_visible.py`)
-- [x] **S** one file, one contract (#14) — a record `apply` writes into a human zone (`02_WIKI`,
-      `04_INTELLIGENCE`) was judged by the note schema and came back `invalid status: 'draft'`;
-      `frontmatter_check.py` now selects the contract from the file's content, using the
-      recognizer the registry already uses, and reads the record's required fields and status
-      vocabulary from the registry's own config and schema instead of a second list. Refusing a
-      record that claims a kind its id cannot be enumerated by is part of the fix, not an
-      exception to it (`tests/test_phase24_a_record_is_not_a_note.py`)
-- [ ] **S** per-kind status vocabularies — 20 of 33 kinds in `system.json` inherit
-      `draft|tested|approved|deprecated`, so `retired` is `deprecated` for a wiki note and
-      `superseded` for news while a `task` has no status that means "done"; the gates already read
-      whatever the config says, so this is a decision to make, not a mechanism to build
-- [x] **S** the Python 3.9 floor as a CI fact, not a hand-measured habit — `.github/workflows/ci.yml`
-      runs the six gates plus the full suite on `3.9` and `3.12` across ubuntu and windows, and
-      run `40558517318` closed 4/4 green on `33522ec`
+Phases 0–8 (vault template, integrity toolchain, inbox triage + write gate, FTS5 keyword KB,
+rituals, CI, continuous-improvement loop, public project standard + the HANDOFF machine) and
+phases 12–24 (repo memory ledger, host independence with `AGENTS.md` as single canon, the
+control-plane registry, measured documents, evidence-survives-a-clone, `keep_base`/`--recover`,
+the registry laws: `set` amendments, `supersedes` retirement, content enumeration, one file one
+contract, the MCP harness door, agent runs in the disposable plane, and the SuperAGI backend
+package) are done — every row test-gated, the full trail in `CHANGELOG.md` and the git log.
+Current floor, measured at the time of writing: **297 unittests, a 120-check HADES battery,
+6 health gates, CI on ubuntu+windows × 3.9/3.12, 26 recorded lessons.**
 
 ---
 
-## Ideas consciously rejected
+## Phase 25 — The charter audit: the yardstick measured · 🟡 (next)
 
-- **Ingestion funnels / daemons** (24/7 email/voice/Telegram connectors) — trust surface too big; a curated vault stays curated.
-- **Multi-user brains / RBAC / hosted org mounts** — single-owner model by design.
-- **Full vector RAG infrastructure now** — revisit only when the gap register shows keyword misses.
-- **Persona / identity machinery** — theatrical complexity, no integrity benefit.
-- **release-please bots** — nightly loop commits would violate conventional-commit semantics; a curated CHANGELOG is sturdier.
+*Source: the charter itself (§15: the order of work) and the handoff's own admission that the
+charter "has not been audited against the repo yet". A charter nobody has measured against is
+decoration.*
 
-## How to read our progress (transparency)
+- [ ] **S** Walk `00_START_HERE/PROJECT_CHARTER.md` §1–§15 section by section; for each, run or
+      name the command that shows whether the repo honours it today. Output: an audit table on
+      the shelf or in `02_WIKI`, every row carrying evidence (command + output), `NO_ENTRY`
+      where a section is unimplemented.
+- [ ] **S** File every gap as a GitHub issue with the section number and the proving command —
+      issue-then-fix, the repo's own §8 workflow.
+- [ ] **S** Amend this roadmap from the audit's verdicts: a phase that the charter refuses is
+      moved to ⛔ with the section number; a charter section with no phase gets one.
 
-- Green checkmarks = tests exist for it (search `tests/`).
-- The nightly `loop` workflow files candidate reports in `14_CANDIDATES/loop/` — the raw
-  next-improvement queue, promoted by the human.
-- `HANDOFF.md` at repo root always answers "what's in flight right now".
+## Phase 26 — The eight memory planes, mapped and gated · 🔵
+
+*Source: charter §5 (project, repository, agent, task, error, decision, knowledge, conversation
+memory — "each memory type is stored in a specific place and is accessible to the agent").*
+
+- [ ] **S** Write the mapping: which existing store holds which plane (projects → `03_*` records,
+      agents → `11_CONTROL` + backend actor registry, errors → `lessons.jsonl`, decisions →
+      `02_WIKI/decisions/`, knowledge → `kb.py` + wiki, task/runs → `runs.py` ledger,
+      conversation → promoted rows, repository → HANDOFF/CHANGELOG). The mapping is a doc row
+      with evidence, not a claim.
+- [ ] **M** Close the real gaps the mapping exposes — the honest expectation: conversation
+      memory has no reader surface and `kb.py` covers the template, not the repo corpus. Each
+      gap becomes an issue first, then a test-first fix.
+- [ ] **S** A health gate that fails when a memory plane's store is missing or unreadable — so
+      the charter's §5 is enforced by a gate, not remembered by the next agent.
+
+## Phase 27 — The brain searches its own corpus · 🔵
+
+*Source: charter §1 (the system must manage its own information) — today `kb.py` ingests the
+*vault-template*, while the tracked prose it should index lives beside it.*
+
+- [ ] **M** Point `kb.py` at the tracked repo (human plane only; machine plane excluded by the
+      same boundary `common.clone_readable()` declares) with the existing golden-set gate as the
+      regression harness.
+- [ ] **S** Decide, with a measurement first, how retired records surface in `search`/`list`
+      (handoff §4: the index is settled, the reading surface is not).
+- [ ] **S** BM25 recency boost behind a measured eval — only if the golden set shows it wins.
+
+## Phase 28 — Scheduler seam: one clock for the rituals · 🔵
+
+*Source: charter §6 (continuous improvement cycle) + the backend's pure `schedules.is_due`
+math — two clocks exist (nightly loop + backend schedules); one should tell the truth.*
+
+- [ ] **S** `scripts/loop.py` (and the weekly ritual skill) read their due-date from
+      `backend/schedules.is_due` — pure math, no new dependency, one definition of "due".
+- [ ] **S** The loop's cadence lands as a `schedule` record in the registry, so the
+      improvement cycle itself is a governed definition, not a cron comment.
+
+## Phase 29 — Semantic layer, only behind a flag and only with evidence · ⛔ today
+
+*Source: charter §1's smarter-over-time promise vs. the standing owner decision.*
+
+- [ ] **S** behind `vector_search: false`: an optional embedding seam (interface + a
+      deterministic test double) so the day it is enabled it plugs into the same gates.
+      **Refused by default:** no embedder dependency, no network call, no activation without a
+      golden-set eval that beats BM25 and the owner's explicit approval (charter §2).
+
+## Phase 30 — Registry hardening leftovers · 🔵
+
+*Source: the unification merges that shipped phases 21–24 — the leftovers are named in the
+handoff, not invented here.*
+
+- [ ] **S** `link` goes through the plan door: an edge that retires a record is a structural
+      change and should be reviewable like one (today it writes through, gated but unreviewed).
+- [ ] **S** `supersedes` cycle guard: A superseding B while B supersedes A currently retires
+      both silently — the single `superseded_by` map makes a cycle unrepresentable instead of
+      detected; `doctor` should error on a cycle the way it errors on self-supersession.
+- [ ] **M** per-kind status vocabularies: 20 of 33 kinds fall back to
+      `draft|tested|approved|deprecated` — decide each kind's set, then let the gates enforce
+      what is written.
+- [ ] **S** recovery on the probe's own initiative stays refused unless the owner grants the
+      permission explicitly — reverting a tree from an unattended measurement is a bigger
+      permission than naming one.
+
+## Distribution & scale (parked) · ⛔/🔵
+
+- [ ] 🔵 multi-host installer flags (`--host codex|opencode|gemini|claude`) — one skill tree,
+      many agents; only after a second harness actually asks for it.
+- [ ] ⛔ HTTP/server layer: refused while MCP-over-stdio answers every harness that exists —
+      a port, a daemon and a key surface are the SuperAGI stack this repo exists to not need
+      (charter §2). Revisit only with a named consumer.
+- [ ] ⛔ GitHub Pages docs site: content is the bottleneck, not tooling; the README is the site.
