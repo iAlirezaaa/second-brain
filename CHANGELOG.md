@@ -67,7 +67,9 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   an amendment that breaks the record's own contract or strands its `entrypoint` is refused
   before a byte moves, a plan whose record moved since it was written is refused as stale,
   and every accepted amendment appends `field, from, to, when, plan` to the record's own
-  `amendments` trail. `tests/test_phase22_amend_a_record.py` is red without it.
+  `amendments` trail. A field neither the record nor its kind's schema has ever heard of is
+  refused at the plan — a typo would silently add a second truth.
+  `tests/test_phase22_amend_a_record.py` is red without it.
 - **Retirement that the index honours** (issue #12) — `supersedes` was declared in
   `15_SYSTEM/config/system.json` as "replaces a record; superseded leaves the active index"
   and `link` accepted it, while `index` listed both records and `doctor` printed `errors: 0`

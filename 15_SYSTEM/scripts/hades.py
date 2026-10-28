@@ -228,24 +228,27 @@ def frontmatter(path):
 
 
 def parse_scalar(v):
-    if (v.startswith("[") and v.endswith("]")) or (v.startswith("{") and v.endswith("}")):
-        # A record's relations and amendments are JSON: what one script writes, another has
-        # to be able to read back, or the field is decoration. Hand-written YAML flow lists
-        # are not valid JSON, so the splitter below still gets them.
+    t = v.strip()
+    if t and t[0] in ("[", "{", '"'):
+        # JSON first: a record's relations and amendments are JSON -- what one script
+        # writes, another has to be able to read back, or the field is decoration. Dict
+        # values and lists whose members carry commas or quotes must round-trip exactly,
+        # not be re-split. Hand-written YAML flow lists are not valid JSON, so the
+        # splitter below still gets them.
         try:
-            return json.loads(v)
+            return json.loads(t)
         except ValueError:
             pass
-    if v.startswith("[") and v.endswith("]"):
-        inner = v[1:-1].strip()
+    if t.startswith("[") and t.endswith("]"):
+        inner = t[1:-1].strip()
         return [parse_scalar(x.strip()) for x in inner.split(",") if x.strip()] if inner else []
-    if v in ("true", "false"):
-        return v == "true"
-    if re.match(r"^-?\d+$", v):
-        return int(v)
-    if re.match(r"^-?\d+\.\d+$", v):
-        return float(v)
-    return v.strip("'\"")
+    if t in ("true", "false"):
+        return t == "true"
+    if re.match(r"^-?\d+$", t):
+        return int(t)
+    if re.match(r"^-?\d+\.\d+$", t):
+        return float(t)
+    return t.strip("'\"")
 
 
 def zone_dirs(cfg):
@@ -573,6 +576,11 @@ def cmd_doctor(cfg, sch, as_json=False):
             else:
                 errors.append("missing zone: %s" % z)
             continue
+        if absent_by_boundary(cfg, z, gi):
+            # the zone exists on this machine only as disposable local state -- its
+            # README could never be tracked, so the tracked-plane law stops at the
+            # boundary instead of demanding an untrackable file
+            continue
         if not (d / "README.md").exists():
             errors.append("zone without README: %s" % z)
     recs = list(iter_records(cfg))
@@ -889,6 +897,13 @@ def cmd_set(cfg, sch, args):
         print("REFUSED: '%s' is written by the tool that made the change, not typed into it"
               % args.field)
         return 2
+    known = set(sch.get("common_required", [])) | set(sch.get("common_types", {}))
+    spec = sch["by_kind"].get(rec.get("kind") or "", {})
+    known |= set(spec.get("required", [])) | set(spec.get("types", {})) | set(rec)
+    if args.field not in known:
+        print("REFUSED: unknown field '%s' for kind %s and the record does not carry it "
+              "-- a typo would silently add a second truth" % (args.field, rec.get("kind")))
+        return 2
     value = parse_value(args.value)
     amended = json.loads(json.dumps(rec))
     amended[args.field] = value
@@ -981,6 +996,8 @@ def cmd_apply(cfg, sch, args):
         tp.write_text(to_markdown(obj), encoding="utf-8")
     else:
         dump_json(tp, obj)
+    # scaffolds are written once, at creation: an amendment edits the record, it
+    # does not regenerate the prose bodies a human may already have extended
     if kc["kind"] == "skill":
         if obj.get("entrypoint") == "SKILL.md":
             # a scaffold body only for a skill that has no prose yet: when the pack already
@@ -1003,15 +1020,32 @@ def cmd_apply(cfg, sch, args):
 
 
 def to_markdown(obj):
-    body = {k: v for k, v in obj.items()}
+    """Full-fidelity markdown rendering of a record.
+
+    The markdown layout is round-tripped by iter_records and rewritten by `link` and
+    by amendments, so the file may not drop fields: whatever the record dict carries
+    goes into the frontmatter (dicts as inline JSON), or `link --rel supersedes ...`
+    on a markdown record would silently throw the edge away (issue #13). claim/notes
+    render into the visible body for humans AND stay in the frontmatter, so the
+    roundtrip cannot lose them either.
+    """
+    first = ("id", "kind", "name", "status", "classification", "created_at", "updated_at",
+             "last_verified", "source_url", "observed_at", "topic", "tags")
     front = ["---"]
-    # `notes` and `claim` are in the list because the body is rendered *from* them: a writer
-    # that put the prose only in the body lost it on the next write-back (an amendment or a
-    # link reads the frontmatter, so anything outside it is deleted by being re-rendered).
-    for k in ("id", "kind", "name", "status", "classification", "created_at", "last_verified", "source_url", "observed_at", "topic", "tags", "notes", "claim", "relations", "amendments"):
-        if k in body:
-            v = body[k]
-            front.append("%s: %s" % (k, json.dumps(v, ensure_ascii=False)))
+    emitted = set()
+    for k in first:
+        if k in obj and obj[k] is not None:
+            front.append("%s: %s" % (k, json.dumps(obj[k], ensure_ascii=False)))
+            emitted.add(k)
+    # Every field the record carries rides in the frontmatter, prose included: a rewrite
+    # (an amendment or a link) reads the frontmatter, so a field that only lived in the
+    # rendered body would be deleted by being re-rendered -- what one script writes,
+    # another has to be able to read back whole. The body still renders claim/notes for
+    # humans; the frontmatter copy is so the roundtrip cannot lose them.
+    for k in sorted(obj):
+        if k in emitted or obj[k] is None:
+            continue
+        front.append("%s: %s" % (k, json.dumps(obj[k], ensure_ascii=False)))
     front.append("---")
     text = "\n".join(front) + "\n\n# %s\n\n" % obj.get("name", obj.get("id"))
     if obj.get("claim") or obj.get("notes"):

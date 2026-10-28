@@ -40,6 +40,8 @@ instead of pointing at local state.
 ## The one rule that explains the layout
 `00`–`10` is the **human plane**: readable, citable, canonical. `11` and above is the **machine plane**: definitions in `11_CONTROL`, disposable state in `12_RUNTIME`, quarantine in `13_LAB`, your review shelf in `14_CANDIDATES`, infrastructure in `15_SYSTEM`. Anything the machine produces that is worth keeping must be **promoted** into the human plane with an ID and evidence — never left living only in harness memory.
 
+Registry enumeration matches on **content**, never on a filename: a frontmatter `id` shaped like a registry id plus a declared `kind` (issue #13). Whatever `apply` writes, `doctor` enumerates — a record the tools just created cannot be invisible to `show`, `list`, `link`, `index` or `doctor`, and an ordinary human note (an `id:`/`type:` frontmatter with no declared kind) never becomes a registry record. A gate that reports `errors: 0` over a record it cannot see is a silent gate, not a clean house.
+
 ## The way back is a mechanism, not an intention
 A change that measures worse is not something you note and leave in the tree: fall back to the
 last known good state. `scripts/base.py --save` records that state only when every health gate
@@ -91,9 +93,10 @@ through, because editing the plane every agent reads before acting *is* a struct
 a file edit. `id`, `kind` and `created_at` are immutable: changing one of those makes a different
 record, so file the new one and retire the old with `link --rel supersedes`. A plan is bound to
 the bytes it was written against; if the record moved since, `apply` refuses it as stale rather
-than overwriting work it never saw. Every accepted amendment appends to the record's own
-`amendments` trail (field, from, to, when, plan) — the audit trail lives in the definition, not
-in a chat log.
+than overwriting work it never saw. A field neither the record nor its kind's schema has ever
+heard of is refused at the plan: a typo would silently add a second truth. Every accepted
+amendment appends to the record's own `amendments` trail (field, from, to, when, plan) — the
+audit trail lives in the definition, not in a chat log.
 
 **Retiring a definition is a verdict the index has to honour.** `link --id NEW --rel supersedes
 --to OLD` means OLD leaves the active index: `index` lists it under `superseded` together with the

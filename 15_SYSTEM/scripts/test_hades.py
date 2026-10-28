@@ -578,6 +578,111 @@ def t_status_accounts_every_zone():
         v.close()
 
 
+def t_markdown_and_amendments():
+    """Issues #13 and #12: what `apply` writes, the registry keeps seeing; a wrong
+    record is corrected through plan -> review -> apply --approve; `supersedes`
+    really retires the replaced record instead of being an unused word."""
+    v = Vault()
+    try:
+        c, o = v.hades("new", "--kind", "wiki_note", "--name", "Gates Law",
+                       "--description", "definition body", "--approve")
+        m = re.search(r"APPLIED (WIK-[0-9A-F]+)", o)
+        wid = m.group(1) if m else None
+        wiki_files = v.paths("02_WIKI/**/*.md")
+        on_zone = [p for p in wiki_files if wid in p]
+        check("a markdown-layout record is written as <ID>-<slug>.md",
+              c == 0 and bool(wid) and len(on_zone) == 1, o.strip().replace("\n", " | ")[:170])
+        if not (c == 0 and wid):
+            return
+        c, o = v.hades("show", "--id", wid)
+        check("show finds the file apply just wrote (issue #13)", c == 0 and wid in o, o.strip()[:120])
+        c, o = v.hades("list", "--kind", "wiki_note")
+        check("list --kind counts the markdown record", c == 0 and "records: 1" in o and wid in o,
+              o.strip()[:120])
+        c, o = v.hades("doctor")
+        check("doctor enumerates the markdown record and stays green",
+              c == 0 and "errors: 0 | warnings: 0" in o and "registry records: 1" in o,
+              o.strip()[:150])
+        c, o = v.hades("index")
+        check("index counts one record for the wiki note", c == 0 and bool(re.search(r"indexed 1 records", o)),
+              o.strip()[:120])
+
+        c, o = v.hades("new", "--kind", "wiki_note", "--name", "Gates Law Two",
+                       "--description", "second", "--approve")
+        m = re.search(r"APPLIED (WIK-[0-9A-F]+)", o)
+        wid2 = m.group(1) if m else None
+        if not (c == 0 and wid2):
+            check("a second markdown record applies", False, o.strip().replace("\n", " | ")[:140])
+            return
+        c, o = v.hades("link", "--id", wid2, "--rel", "supersedes", "--to", wid)
+        link_ok = c == 0 and "linked" in o
+        rec_after = v.read(md_file(v, wid2))
+        check("link on a markdown record keeps kind and the edge (issue #13)",
+              link_ok and "supersedes" in rec_after and "wiki_note" in rec_after,
+              (o.strip() + " | file has kind=%s edge=%s" % ("wiki_note" in rec_after, "supersedes" in rec_after))[:170])
+        v.hades("index")
+        cat = v.json_of("15_SYSTEM/generated/catalog.json")
+        rows = {r["id"]: r for r in cat.get("records", [])}
+        retired = {r["id"]: r for r in cat.get("superseded", [])}
+        check("a superseded record leaves the active index (issue #12)",
+              wid in retired and retired.get(wid, {}).get("superseded_by") == wid2
+              and wid2 in rows and cat.get("superseded_count") == 1,
+              json.dumps({"records": sorted(rows), "superseded": cat.get("superseded")},
+                         ensure_ascii=False)[:170])
+        c, o = v.hades("doctor")
+        check("doctor names the retirement and counts only active records",
+              c == 0 and "errors: 0" in o and "superseded (retired from the active index)" in o
+              and wid in o and wid2 in o and bool(re.search(r"registry records: 1\b", o)),
+              o.strip().replace("\n", " | ")[:150])
+        c, o = v.hades("status")
+        check("status counts one record for one thing",
+              c == 0 and "registry records: 2" in o
+              and "superseded (retired from the active index): 1 of 2" in o,
+              o.strip()[:150])
+
+        wiki2 = md_file(v, wid2)
+        before = v.read(wiki2)
+        c, o = v.hades("set", "--id", wid2, "--field", "name", "--value", "Gates Law Renamed")
+        m = re.search(r"PLAN-[0-9A-F]{12}", o)
+        check("set writes an amend plan and prints the diff",
+              c == 0 and bool(m) and "--field name" in o and "apply --plan" in o,
+              o.strip().replace("\n", " | ")[:160])
+        if not (c == 0 and m):
+            return
+        plan_id = m.group(0)
+        c, o = v.hades("apply", "--plan", plan_id)
+        check("an amendment is refused without --approve", c == 2 and "REFUSED" in o, o.strip()[:120])
+        c, o = v.hades("apply", "--plan", plan_id, "--approve")
+        after = v.read(wiki2)
+        check("apply --approve writes the amendment to disk",
+              c == 0 and "AMENDED" in o and "Gates Law Renamed" in after and before != after,
+              o.strip().replace("\n", " | ")[:170])
+        check("the amendment stamps updated_at for the audit trail", "updated_at:" in after, "")
+        c, o = v.hades("doctor")
+        check("doctor stays green after the amendment", c == 0 and "errors: 0" in o,
+              o.strip()[:140])
+
+        snapshot = v.read(wiki2)
+        c, o = v.hades("set", "--id", wid2, "--field", "classification", "--value", "topless")
+        check("an amendment breaking the contract is refused",
+              c == 2 and "REFUSED" in o and "classification" in o, o.strip().replace("\n", " | ")[:160])
+        c, o = v.hades("set", "--id", wid2, "--field", "created_at", "--value", "2000-01-01")
+        check("identity fields cannot be amended", c == 2 and "REFUSED" in o, o.strip()[:120])
+        c, o = v.hades("set", "--id", wid2, "--field", "nams", "--value", "typo")
+        check("an unknown field is refused (a typo is a second truth)", c == 2 and "REFUSED" in o,
+              o.strip()[:120])
+        check("every refused amendment changed nothing on disk", v.read(wiki2) == snapshot, "")
+    finally:
+        v.close()
+
+
+def md_file(v, wid):
+    """The markdown record's file, found by its id -- never by a glob order that the
+    random hex inside the ids decides."""
+    hits = [p for p in v.paths("02_WIKI/**/*.md") if wid in p]
+    return hits[0] if hits else None
+
+
 def guard(fn, *a):
     """A crash in one case must not hide the verdict of the other 40."""
     try:
@@ -626,6 +731,7 @@ def main():
     guard(t_wiki)
     guard(t_archive)
     guard(t_status_accounts_every_zone)
+    guard(t_markdown_and_amendments)
 
     ok = sum(1 for _, p, _ in RESULTS if p)
     bad = len(RESULTS) - ok
