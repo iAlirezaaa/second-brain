@@ -16,7 +16,19 @@ jobs:
         with:
           python-version: "3.9"
       # the ratchet reads state, writes candidates only to 14_CANDIDATES/loop
+      # The cron is the alarm; `11_CONTROL/schedules/SCH-…-improvement-loop.json` is
+      # the rule. A manual dispatch is a human override and always runs.
+      - name: Is the cycle due?
+        id: due
+        if: github.event_name == 'schedule'
+        run: |
+          if python scripts/loop.py --due; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Improvement loop cycle
+        if: github.event_name != 'schedule' || steps.due.outputs.run == 'true'
         run: python scripts/loop.py --no-tests --vault vault-template
         continue-on-error: true # P1 findings must still produce a report commit
       - name: Commit candidate report

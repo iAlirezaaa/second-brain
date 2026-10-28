@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """Continuous improvement loop — one cycle per run (ratchet, not treadmill).
 
-Usage: python scripts/loop.py [--vault path] [--no-tests] [--root path]
+Usage:
+  python scripts/loop.py [--vault path] [--no-tests] [--root path]
+  python scripts/loop.py --due [--target scripts/loop.py] [--now ISO] [--last-run ISO]
 
 A cycle:
   1. Collects improvement signals: integrity failures, test failures,
@@ -11,6 +13,11 @@ A cycle:
      improvements are counted).
   3. Writes a candidate report the HUMAN promotes or rejects.
      (machine plane output -> 14_CANDIDATES/loop/, never edits the human plane)
+
+Whether a cycle is *due* is not decided here: it is a registry record
+(`11_CONTROL/schedules/*.json`, kind `schedule`) and the pure due-math in
+`15_SYSTEM/scripts/backend/schedules.py`. The cron in .github/workflows/loop.yml
+is the alarm; the record is the rule.
 """
 import argparse
 import datetime
@@ -31,7 +38,107 @@ try:
 except AttributeError:
     pass
 
+BACKEND_SCRIPTS = Path(__file__).parent.parent / "15_SYSTEM" / "scripts"
+SCHEDULE_DIR = "11_CONTROL/schedules"
+HISTORY = Path("14_CANDIDATES") / "loop" / "history.json"
+SCHEDULE_KIND = "schedule"
+
 TODO_RE = re.compile(r"\b(TODO|FIXME|XXX)\b", re.IGNORECASE)
+
+
+def _schedules():
+    """The one due-math in the house. Imported, never re-implemented here."""
+    if str(BACKEND_SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(BACKEND_SCRIPTS))
+    from backend import schedules
+    return schedules
+
+
+def schedule_record(root, target):
+    """(record, path) for the schedule that governs `target`; (None, None) when absent.
+
+    A registry record is the rule. `target` is the thing being governed, not a copy of
+    the cadence: two files that both spell "daily at 02:00" would be two clocks again.
+    """
+    folder = Path(root) / SCHEDULE_DIR
+    for path in sorted(folder.glob("*.json")):
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(record, dict) and record.get("kind") == SCHEDULE_KIND \
+                and record.get("target") == target:
+            return record, path
+    return None, None
+
+
+def last_cycle(root):
+    """When the loop last ran, ISO UTC. Rows written before `ran_at` existed carry only
+    a date, which is read as that day's midnight — coarse, and true to what was recorded."""
+    path = Path(root) / HISTORY
+    if not path.is_file():
+        return None
+    try:
+        runs = json.loads(path.read_text(encoding="utf-8")).get("runs", [])
+    except (OSError, ValueError):
+        return None
+    stamps = [str(run.get("ran_at") or (str(run.get("date")) + "T00:00:00Z"))
+              for run in runs
+              if run.get("ran_at") or DATE_RE.match(str(run.get("date") or ""))]
+    return max(stamps) if stamps else None
+
+
+def due_state(root, target="scripts/loop.py", now=None, last_run=None):
+    """Ask the governed schedule whether `target` is due.
+
+    `due` is True or False; it is None only when the question itself is malformed (no
+    record, or a spec the backend refuses). A refused schedule is reported, never guessed:
+    "I could not read the rule" is not the same answer as "run it".
+    """
+    record, path = schedule_record(root, target)
+    if record is None:
+        return {"due": None, "target": target, "reason":
+                "no schedule record governs %r — nothing in the registry says when it is due"
+                % target}
+    if record.get("status") != "active":
+        return {"due": False, "target": target, "record": path, "last_run": last_run,
+                "reason": "the schedule is %s" % record.get("status")}
+    try:
+        sched = _schedules()
+        now_dt = sched.parse_utc(now) if now else \
+            datetime.datetime.now(datetime.timezone.utc)
+        return {"due": sched.is_due(record.get("spec"), last_run, now_dt),
+                "target": target, "record": path, "spec": record.get("spec"),
+                "last_run": last_run, "now": sched.fmt_utc(now_dt),
+                "next": sched.next_run_after(record.get("spec"), now_dt)}
+    except (TypeError, ValueError) as exc:
+        return {"due": None, "target": target, "record": path,
+                "reason": "this schedule cannot be read: %s" % exc}
+
+
+def report_due(root, target, now=None, last_run=None):
+    """Print the verdict; 0 = due, 3 = not due, 1 = refused. Cron is the alarm, this is the rule."""
+    derived = last_run is None
+    state = due_state(root, target, now, last_cycle(root) if derived else (last_run or None))
+    if state["due"] is None:
+        print("REFUSED — %s: %s" % (state["target"], state["reason"]))
+        return 1
+    record = ""
+    if state.get("record") is not None:
+        try:
+            record = " [%s]" % Path(state["record"]).relative_to(root).as_posix()
+        except ValueError:
+            record = " [%s]" % state["record"]
+    was = ("never ran" if derived and state["last_run"] is None
+           else "last run %s" % state["last_run"])
+    if state["due"]:
+        print("DUE — %s under %s%s; %s; next run after %s was %s"
+              % (state["target"], state.get("spec"), record, was, state["now"], state["next"]))
+        return 0
+    print("NOT DUE — %s under %s%s; %s; next run %s%s"
+          % (state["target"], state.get("spec"), record, was, state["next"],
+             "" if state.get("reason") is None else " (%s)" % state["reason"]))
+    return 3
 
 
 def run_health(script, vault_args):
@@ -163,7 +270,10 @@ def ratchet(metrics, history_path):
                 verdicts[name] = f"improved {before} -> {after}"
             else:
                 verdicts[name] = f"stable at {after}"
-    history["runs"].append({"date": datetime.date.today().isoformat(), "metrics": metrics})
+    history["runs"].append({"date": datetime.date.today().isoformat(),
+                            "ran_at": datetime.datetime.now(datetime.timezone.utc)
+                                        .strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "metrics": metrics})
     history_path.write_text(json.dumps(history, indent=1, default=str), encoding="utf-8")
     return verdicts
 
@@ -465,8 +575,17 @@ def main():
     parser.add_argument("--dispose", metavar=("CANDIDATE_ID", "LABEL"), nargs=2, default=None,
                         help="record a decision: --dispose cand-2026-10-27-c1-01 drop --note why")
     parser.add_argument("--note", default="", help="why, in one line")
+    parser.add_argument("--due", action="store_true",
+                        help="ask the governed schedule whether a cycle is due; writes nothing")
+    parser.add_argument("--target", default="scripts/loop.py",
+                        help="the thing whose schedule record to read (with --due)")
+    parser.add_argument("--now", default=None, help="UTC ISO override for the due check (tests)")
+    parser.add_argument("--last-run", default=None,
+                        help="UTC ISO last run; an empty value means 'never ran' (tests/rituals)")
     args = parser.parse_args()
     root = Path(args.root) if args.root else find_root(Path(__file__))
+    if args.due:
+        return report_due(root, args.target, args.now, args.last_run)
     if args.dispose:
         return dispose(root, args.dispose[0], args.dispose[1], args.note)
     vault = Path(args.vault) if args.vault else root / "vault-template"

@@ -95,6 +95,10 @@
       "required": ["schedule", "action"],
       "types": { "schedule": "string", "action": "string", "mode_id": "string", "budget": "object" }
     },
+    "schedule": {
+      "required": ["spec", "target"],
+      "types": { "spec": "object", "target": "string" }
+    },
     "harness": {
       "required": ["runtime_name", "memory_paths", "config_paths"],
       "types": {

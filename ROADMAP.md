@@ -107,15 +107,18 @@ recall@1 / MRR by 0.000 at every weight from 0.05 to 1.0.*
       conditions for revisiting sit in handoff §4. Measuring it also exposed the phase-4 gate:
       four of its five cases were near-ties, re-picked by margin with a 0.5 floor.
 
-## Phase 28 — Scheduler seam: one clock for the rituals · 🔵
+## Phase 28 — Scheduler seam: one clock for the rituals · 🟢
 
 *Source: charter §6 (continuous improvement cycle) + the backend's pure `schedules.is_due`
 math — two clocks exist (nightly loop + backend schedules); one should tell the truth.*
 
-- [ ] **S** `scripts/loop.py` (and the weekly ritual skill) read their due-date from
-      `backend/schedules.is_due` — pure math, no new dependency, one definition of "due".
-- [ ] **S** The loop's cadence lands as a `schedule` record in the registry, so the
-      improvement cycle itself is a governed definition, not a cron comment.
+- [x] **S** `scripts/loop.py --due` imports `backend/schedules.is_due` instead of re-deriving
+      it; exit 0 = due, 3 = not due, 1 = refused (no record, paused, unreadable spec), and the
+      check writes nothing. The weekly ritual skill asks the same function first.
+- [x] **S** The loop's cadence is a governed definition: `SCH-0D1E2F3A` (kind `schedule`,
+      `{"daily_at": "02:00"}` UTC, target `scripts/loop.py`), with `SCH-0D1E2F3B`
+      (`{"every_minutes": 10080}`) governing the weekly ritual. The Actions cron is the alarm;
+      the record is the rule. `tests/test_phase28_schedule_seam.py` adds 14 tests (373 total).
 
 ## Phase 29 — Semantic layer, only behind a flag and only with evidence · ⛔ today
 

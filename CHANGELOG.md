@@ -7,6 +7,17 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **One clock for the rituals** (phase 28, charter §6) — a first-class `schedule` registry kind
+  (`11_CONTROL/schedules/*.json`) holds the spec objects the backend already knows how to read,
+  so the nightly loop (`SCH-0D1E2F3A`, `{"daily_at": "02:00"}` UTC, target `scripts/loop.py`)
+  and the weekly ritual (`SCH-0D1E2F3B`, `{"every_minutes": 10080}`) are governed definitions
+  rather than cron comments. `python scripts/loop.py --due [--target …] [--now …]
+  [--last-run …]` imports `backend/schedules.is_due` (no second definition of "due"), exits
+  0 = due / 3 = not due / 1 = refused (no record, paused, unreadable spec) and writes nothing;
+  history rows now carry `ran_at` so a same-day rerun can be judged. The two skills say the
+  command, and the Actions workflow asks for a verdict only on `schedule` events — a manual
+  dispatch stays a human override. Stated limits: the weekly check derives its last run from
+  `git log --grep='ritual(weekly)'`, and a record says *when*, not that a runner exists.
 - Phases 31–34 — **private source memory**: `15_SYSTEM/scripts/sources.py` imports one
   explicitly selected UTF-8 file (or a reviewed manifest) into `.brain-data/sources/<id>/`
   as authoritative raw bytes plus metadata (kind, origin, filename, import time, format,
