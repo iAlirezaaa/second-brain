@@ -21,7 +21,7 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 395 |
+| tests collected (`python -m unittest discover -s tests`) | 414 |
 | health gates (`python scripts/health.py`) | 8 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
@@ -36,6 +36,18 @@ status: active
 
 ## 2. In-Flight Work
 
+- **Phase 30 shipped on `phase-30-registry-hardening`**: the four registry leftovers from the
+  phase 21–24 handoff are closed in four commits. `b9563ac` — a `supersedes` link now writes a
+  `mode: link` plan (record's `pre_image_sha1`, `--approve` to apply, STALE refusal after a
+  byte change, amendment recorded); additive relations still write through. `710dd20` —
+  `doctor` walks `supersedes` as a directed graph and errors on each cycle
+  (`A -> B -> A`), leaving self-edges to the self-supersession check. `bf65c1e` — all 34
+  kinds own a status set in `system.json` (20 sets added; before, 20 kinds fell back to
+  `default`), and `GUIDE_FA_EN.md` lists them in both languages. `4a5f094` — `probe.py`
+  refuses `scripts/base.py` (recovery belongs to the owner) and `scripts/install.py` (writes
+  outside the repo) by name. 19 tests in `tests/test_phase30_registry_hardening.py`;
+  `test_phase21_registry_enumeration_and_amendments` and `test_phase23_superseded_leaves_the_index`
+  now pass `--approve` where they relied on the direct write.
 - **Phase 29 shipped on `phase/29-vector-seam`**: the semantic layer has a seam and no model.
   `backend/vector.py` holds one `Embedder` interface, pure `cosine`/`rank`, and a sha256
   bag-of-words double (`production = False`) that is deterministic across processes; a test
@@ -263,11 +275,12 @@ status: active
   reader (`source_search`, `lesson_recall`) and private sources have provenance; the map is
   `02_WIKI/reference_maps/eight-memory-planes.md` and `kb.py` now indexes the repo corpus (phase
   27); the manager agent (#21) and two reference maps (#22) are unregistered.
-- **Registry leftovers**: `link` writes without the plan door; `supersedes` has no cycle guard
-  because the single `superseded_by` map makes a cycle unrepresentable; 20 of 34 kinds fall back
-  to `draft|tested|approved|deprecated`. Retirement is now marked in `list`, `search`, `show`
-  and the MCP door (phase 27), but `search` marks only the retired record's own file — a prose
-  note that merely quotes a retired id is not marked.
+- **Registry leftovers are closed except one** (phase 30): a `supersedes` link goes through
+  the plan door, `doctor` errors on a `supersedes` cycle, and all 34 kinds own a status set.
+  What remains: retirement is marked in `list`, `search`, `show` and the MCP door (phase 27),
+  but `search` marks only the retired record's own file — a prose note that merely quotes a
+  retired id is not marked. The cycle walk reports one edge per cycle (the first target), so a
+  record with two superseded targets is not fully walked.
 - **A schedule record says *when*, not that anything will wake it.** The Actions cron is the
   only alarm; a machine with no runner never checks, and a cron line the record does not match
   is invisible to `--due`. The weekly check derives its last run from

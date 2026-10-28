@@ -134,22 +134,28 @@ math — two clocks exist (nightly loop + backend schedules); one should tell th
       activation stays shut even with perfect evidence while no production embedder is
       registered. 22 tests in `tests/test_phase29_vector_seam.py` (395 total).
 
-## Phase 30 — Registry hardening leftovers · 🔵
+## Phase 30 — Registry hardening leftovers · 🟢
 
 *Source: the unification merges that shipped phases 21–24 — the leftovers are named in the
-handoff, not invented here.*
+handoff, not invented here. Shipped on `phase-30-registry-hardening` in four commits
+(`b9563ac`, `710dd20`, `bf65c1e`, `4a5f094`) with 19 new tests in
+`tests/test_phase30_registry_hardening.py`.*
 
-- [ ] **S** `link` goes through the plan door: an edge that retires a record is a structural
-      change and should be reviewable like one (today it writes through, gated but unreviewed).
-- [ ] **S** `supersedes` cycle guard: A superseding B while B supersedes A currently retires
-      both silently — the single `superseded_by` map makes a cycle unrepresentable instead of
-      detected; `doctor` should error on a cycle the way it errors on self-supersession.
-- [ ] **M** per-kind status vocabularies: 20 of 33 kinds fall back to
-      `draft|tested|approved|deprecated` — decide each kind's set, then let the gates enforce
-      what is written.
-- [ ] **S** recovery on the probe's own initiative stays refused unless the owner grants the
-      permission explicitly — reverting a tree from an unattended measurement is a bigger
-      permission than naming one.
+- [x] **S** `link` goes through the plan door: a `supersedes` edge retires its target, so it
+      now writes a `mode: link` plan with the record's `pre_image_sha1`, waits for
+      `apply --plan … --approve`, refuses a changed file and records the amendment. Additive
+      relations still write through — `depends-on` never removes a record from the index.
+- [x] **S** `supersedes` cycle guard: `doctor` walks the relation as a directed graph and
+      errors on each cycle (`A -> B -> A`), with self-edges left to the self-supersession
+      check and dangling targets left alone. The walk is read-only; it does not model a cycle
+      as a legal state.
+- [x] **M** per-kind status vocabularies: all 34 kinds in `system.json` now own a status set
+      (20 sets added; 20 of the 34 kinds used to fall back to `default`). `default` remains
+      only for a kind added without one, and `GUIDE_FA_EN.md` lists every set in both
+      languages.
+- [x] **S** recovery on the probe's own initiative stays refused unless the owner grants the
+      permission explicitly — `scripts/probe.py` refuses `scripts/base.py` (recovery is the
+      owner's decision) and `scripts/install.py` (writes outside the repo) by name.
 
 ## Phase 31 — Private source memory with provenance · 🟢
 
