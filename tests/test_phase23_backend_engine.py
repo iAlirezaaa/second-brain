@@ -146,7 +146,13 @@ class TestToolkitGates(TempVault, unittest.TestCase):
     def test_reads_are_open(self):
         text = default_registry().execute(Context(self.root), "core.fs_read",
                                           {"path": "15_SYSTEM/config/system.json"})
-        self.assertIn("zones", text)
+        content = (self.root / "15_SYSTEM" / "config" / "system.json").read_text(
+            encoding="utf-8", errors="replace")
+        # fs_read is the open read: what comes back is a real prefix of the real file.
+        # Assert on the head, not on a key a later config block can push past the cap --
+        # phase 26's memory_planes moved "zones" past 2000 chars without breaking the read.
+        self.assertTrue(text and content.startswith(text))
+        self.assertIn('"name": "HADES OS"', text)
 
     def test_traversal_refused(self):
         with self.assertRaises(ToolError):
