@@ -10,6 +10,7 @@ Three claims, each judged by a test rather than by a sentence in a README:
      no plugin anywhere in the loop -- and measures its own numbers instead of copying
      the source repo's.
 """
+import json
 import re
 import shutil
 import subprocess
@@ -173,23 +174,37 @@ class TestAnInstalledBrainStandsAlone(unittest.TestCase):
         cls._tmp.cleanup()
 
     def test_the_installed_brain_passes_every_gate_with_no_editor_present(self):
-        """The gate list, not a remembered count: a seventh gate is picked up automatically."""
+        """The gate list, not a remembered count: a seventh gate is picked up automatically.
+
+        The gates must be the *installed* ones. Running the source repo's health.py with
+        `cwd=<install>` judged the repo for every root-only gate and passed a home that had no
+        readers, no map and no registry door (issue #27) — the test looked at the wrong brain.
+        """
         self.assertEqual(self.install.returncode, 0, self.install.stdout + self.install.stderr)
-        result = run_utf8([sys.executable, HEALTH, "--vault", "."], cwd=str(self.target))
+        result = run_utf8([sys.executable, str(self.target / "scripts" / "health.py"),
+                           "--vault", "."], cwd=str(self.target))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        for gate in ("broken links", "frontmatter valid", "shelf candidate",
-                     "MEMORY.md matches", "agree with AGENTS.md",
+        for gate in ("broken links", "frontmatter valid", "8 memory planes mapped",
+                     "shelf candidate", "MEMORY.md matches", "agree with AGENTS.md",
                      "matches the state of this folder"):
             self.assertIn(gate, result.stdout, "%s did not run in the installed brain" % gate)
         self.assertEqual(len([line for line in result.stdout.splitlines() if line.startswith("OK")]),
                          len(health.GATES), "health ran a different number of gates than it claims")
 
+    def test_the_installed_proof_runs_where_it_was_installed(self):
+        """The map a home ships names one test; that test must pass inside the home."""
+        result = run_utf8([sys.executable, "-m", "unittest", "discover", "-s", "tests"],
+                          cwd=str(self.target))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("test_installed_home", (self.target / "tests"
+                                              / "test_installed_home.py").as_posix())
+
     def test_the_installed_brain_measures_itself_rather_than_copying_numbers(self):
         """A copied README that still reports the source repo's counts is a borrowed fact."""
         readme = (self.target / "README.md").read_text(encoding="utf-8")
         self.assertIn("doc_report.py --write", readme)
-        self.assertEqual(installed_measure(readme, "tests collected"), 0,
-                         "the installed brain claims the source repo's test count")
+        self.assertGreaterEqual(installed_measure(readme, "tests collected"), 1,
+                                "the installed brain ships a proof but reports no tests")
         self.assertEqual(installed_measure(readme, "active lessons"), 0,
                          "the installed brain shipped with somebody else's memory")
 
@@ -199,32 +214,67 @@ class TestAnInstalledBrainStandsAlone(unittest.TestCase):
                     "scripts/health.py", "scripts/sync_hosts.py", "scripts/memory.py",
                     "rules/candidate.schema.json", "rules/memory.schema.json",
                     "14_CANDIDATES/README.md", "15_SYSTEM/memory/README.md",
-                    "00_START_HERE/START.md", "skills/loop/SKILL.md"):
-            self.assertTrue((self.target / rel).is_file(), "%s is not in the installed brain" % rel)
+                    "00_START_HERE/START.md", "skills/loop/SKILL.md",
+                    "15_SYSTEM/scripts/hades.py", "15_SYSTEM/scripts/backend/vector.py",
+                    "15_SYSTEM/integrations/local-sources.md",
+                    "02_WIKI/reference_maps/eight-memory-planes.md",
+                    "03_PROJECTS", "tests/test_installed_home.py"):
+            self.assertTrue((self.target / rel).exists(), "%s is not in the installed brain" % rel)
+
+    def test_the_home_keeps_the_same_zone_shape_as_the_source(self):
+        """One shape on every device is what makes a later sync a comparison, not a translation."""
+        cfg = json.loads((self.target / "15_SYSTEM" / "config" / "system.json")
+                         .read_text(encoding="utf-8"))
+        source = json.loads((ROOT / "15_SYSTEM" / "config" / "system.json")
+                            .read_text(encoding="utf-8"))
+        self.assertTrue(cfg.get("home"), "the installed config does not say it is a home")
+        self.assertEqual([z["dir"] for z in cfg["zones"]],
+                         [z["dir"] for z in source["zones"]])
+        for zone in cfg["zones"]:
+            self.assertTrue((self.target / zone["dir"]).is_dir(), zone["dir"])
+        self.assertFalse((self.target / "00_Inbox").exists(),
+                         "the old template folders survived next to the zones")
+
+    def memory(self, *args):
+        """The home's own memory tool: a brain that needs the source repo is not installed."""
+        return run_utf8([sys.executable, str(self.target / "scripts" / "memory.py"),
+                         "--root", str(self.target)] + list(args), cwd=str(self.target))
 
     def test_a_fresh_brain_answers_honestly_rather_than_with_borrowed_lessons(self):
         """The upstream lessons stay upstream: the installed memory starts at NO_ENTRY."""
-        result = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target),
-                           "--recall", "first session"], cwd=str(self.target))
+        result = self.memory("--recall", "first session")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("NO_ENTRY", result.stdout)
         self.assertNotIn("mem-child-output-encoding", result.stdout)
 
     def test_a_fresh_brain_can_learn_a_lesson_and_retrieve_it(self):
-        proof = self.target / "00_Inbox" / "proof.md"
-        proof.write_text("# proof\n", encoding="utf-8")
-        added = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target),
-                         "--add", "--id", "mem-installed", "--cue", "the gate printed nothing",
-                         "--lesson", "print the row and the reason", "--evidence",
-                         "00_Inbox/proof.md", "--confidence", "0.9", "--verdict", "helped"],
-                         cwd=str(self.target))
-        self.assertEqual(added.returncode, 0, added.stdout + added.stderr)
-        recalled = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target),
-                            "--recall", "gate printed nothing"], cwd=str(self.target))
-        self.assertIn("mem-installed", recalled.stdout)
-        checked = run_utf8([sys.executable, str(SCRIPTS / "memory.py"), "--root", str(self.target)],
-                           cwd=str(self.target))
-        self.assertEqual(checked.returncode, 0, checked.stdout)
+        """Learning writes into its own home, so the shared fixture stays pristine.
+
+        A lesson written into the class fixture would leave the later "measures itself"
+        assertion reading a document measured before the ledger changed -- a stale number
+        that the fixture itself caused.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "brain"
+            made = run_utf8([sys.executable, INSTALL, "--target", str(home)], cwd=str(ROOT))
+            self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+            memory = [sys.executable, str(home / "scripts" / "memory.py"),
+                      "--root", str(home)]
+            proof = home / "01_INBOX" / "proof.md"
+            proof.write_text("# proof\n", encoding="utf-8")
+            added = run_utf8(memory + ["--add", "--id", "mem-installed", "--cue",
+                                       "the gate printed nothing", "--lesson",
+                                       "print the row and the reason", "--evidence",
+                                       "01_INBOX/proof.md", "--confidence", "0.9",
+                                       "--verdict", "helped"], cwd=str(home))
+            self.assertEqual(added.returncode, 0, added.stdout + added.stderr)
+            recalled = run_utf8(memory + ["--recall", "gate printed nothing"], cwd=str(home))
+            self.assertIn("mem-installed", recalled.stdout)
+            remeasured = run_utf8([sys.executable, str(home / "scripts" / "doc_report.py"),
+                                   "--root", str(home), "--write"], cwd=str(home))
+            self.assertEqual(remeasured.returncode, 0, remeasured.stdout + remeasured.stderr)
+            checked = run_utf8(memory, cwd=str(home))
+            self.assertEqual(checked.returncode, 0, checked.stdout)
 
 
 def build_root(root):

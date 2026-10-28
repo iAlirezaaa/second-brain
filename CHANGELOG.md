@@ -7,6 +7,18 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **An installed brain is a whole brain** (phase 35, issue #27) — `scripts/install.py` now
+  lays the same sixteen zones the repo uses (read from `15_SYSTEM/config/system.json`) and
+  ships what the gates judge: `15_SYSTEM/scripts` (registry door, backend, MCP),
+  `15_SYSTEM/schemas`, `15_SYSTEM/memory`, `15_SYSTEM/integrations`, `15_SYSTEM/migrations`,
+  `15_SYSTEM/templates`, `02_WIKI/reference_maps`, `AGENTS.md`, `.gitignore` and
+  `tests/test_installed_home.py`. The home's `system.json` says `"home": true` and binds every
+  memory plane's `test` to that one proof, so a fresh install can re-run its own map. The
+  phase-16 test now runs the *installed* `health.py` (it used to run the source repo's script
+  with `cwd=<install>`, so every root-only gate judged the repo and a home with no readers,
+  no map and no registry door passed) and compares the installed zone shape to the source.
+  Measured in a fresh home: 16 zones, 6 plane stores, health 8/8 OK (12 tracked stores, 4
+  disposable absent by design), 5 tests, `NO_ENTRY` from `memory.py --recall`.
 - **Registry hardening leftovers** (phase 30) — a `supersedes` link is a structural change, so
   `hades.py link … --supersedes` now writes a `mode: link` plan carrying the record's
   `pre_image_sha1` and applies only with `apply --plan … --approve`; a file changed after
@@ -227,6 +239,14 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   roadmap) is `02_WIKI/reference_maps/superagi-to-hades-map.md`.
 
 ### Changed
+- **Install layout: the repo's sixteen zones, not the template folders** (phase 35, owner's
+  choice). A new home no longer gets `00_Inbox/`, `10_Projects/`, `20_Notes/`,
+  `30_Resources/`, `90_Agent_Output/`; `vault-template/` is now only the starter
+  (`index.md`, `_templates`). Migration for an existing home: keep your notes where they are
+  and install into a fresh folder (the installer refuses a non-empty target), then move the
+  note folders into `01_INBOX`/`02_WIKI`/`03_PROJECTS` by hand — the installer moves nothing.
+  The zone list is read from `15_SYSTEM/config/system.json`, so a home and this repo stay one
+  shape for a later sync to compare.
 - **The golden retrieval gate's cases are decidable, not coin flips** (the phase-4 gate,
   found while measuring phase 27 item 3) — four of the five cases sat within 0.14 BM25 units
   of their runner-up, and `plan apply approve` lost `START.md` to `GUIDE_FA_EN.md` by 0.0006

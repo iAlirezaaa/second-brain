@@ -100,7 +100,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 414 |
+| tests collected (`python -m unittest discover -s tests`) | 421 |
 | health gates (`python scripts/health.py`) | 8 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
@@ -147,8 +147,8 @@ Owner: Hades 3rd ([@iAlirezaaa](https://github.com/iAlirezaaa))
 
 ## Engine addendum — second-brain engine v0.0.3 · پیوست موتور
 
-> **EN —** Alongside the HADES plane structure, this repo now ships the **second-brain engine v0.0.3**: an agent harness toolkit that enforces the same philosophy as scripts. `vault-template/` holds a fenced-zone starter vault (00_Inbox…90_Agent_Output) the agent reads via `vault-template/AGENTS.md`; `rules/` and the tests are machine-readable; every capability is test-gated. Run the suite with `python -m unittest discover -s tests` and the health check with `python scripts/health.py`. Install into a fresh home with `python scripts/install.py`. The engine inherited the quarantine→promote, gap-register and write-gate patterns — direct implementations of the promotion and safety gates this design already specified.
+> **EN —** Alongside the HADES plane structure, this repo now ships the **second-brain engine v0.0.3**: an agent harness toolkit that enforces the same philosophy as scripts. `vault-template/` holds only the starter pieces (`index.md`, `_templates`); `python scripts/install.py` lays the same sixteen zones the repo uses, read from `15_SYSTEM/config/system.json`, together with the engine (`scripts/`, `15_SYSTEM/scripts/`), the registry schemas, the lesson ledger and all five agent doors. `rules/` and the tests are machine-readable; every capability is test-gated. Run the suite with `python -m unittest discover -s tests` and the health check with `python scripts/health.py`. The engine inherited the quarantine→promote, gap-register and write-gate patterns — direct implementations of the promotion and safety gates this design already specified.
 >
-> **FA —** در کنار ساختار صفحاتِ HADES، این ریپو از این به بعد **موتورِ سکند برین نسخهٔ 0.0.3** را هم دارد: کیت ابزارِ هارنسِ ایجنت که همان فلسفه را با اسکریپت اجرا می‌کند، نه با توصیه. `vault-template/` والتی استارتر با زون‌های حصارکشی‌شده است که ایجنت از `vault-template/AGENTS.md` می‌خواند؛ `rules/` و تست‌ها قابل خواندن ماشین هستند و هر قابلیت با تست محافظت می‌شود. سوت را با `python -m unittest discover -s tests` و سلامت ولت را با `python scripts/health.py` صدا بزنید؛ نصب در خانهٔ نو: `python scripts/install.py`. موتور الگوهای قرنطینه→ارتقا، ثبت‌شکاف جست‌وجو و گیتِ نوشتار را هم دقیق همان جاهایی پیاده کرده که این طراحی خواسته بود.
+> **FA —** در کنار ساختار صفحاتِ HADES، این ریپو از این به بعد **موتورِ سکند برین نسخهٔ 0.0.3** را هم دارد: کیت ابزارِ هارنسِ ایجنت که همان فلسفه را با اسکریپت اجرا می‌کند، نه با توصیه. `vault-template/` فقط قطعات آغازین (`index.md` و `_templates`) را دارد؛ `python scripts/install.py` همان شانزده زون مخزن را از `15_SYSTEM/config/system.json` می‌سازد و موتور (`scripts/` و `15_SYSTEM/scripts/`)، شِماهای رجیستری، دفترِ درس‌ها و هر پنج درِ ایجنت را کنارشان می‌گذارد. `rules/` و تست‌ها قابل خواندن ماشین هستند و هر قابلیت با تست محافظت می‌شود. سوت را با `python -m unittest discover -s tests` و سلامت ولت را با `python scripts/health.py` صدا بزنید.
 >
 > **Maps / نگاشت:** `00_Inbox` ≈ `01_INBOX`، `20_Notes`+`30_Resources` ≈ `02_WIKI`+`15_SYSTEM/templates`، `90_Agent_Output` ≈ `13_LAB`+`14_CANDIDATES`، `promote` ≈ ارتقای `13/14` به صفحهٔ انسان. Two vocabularies, one philosophy: **nothing reaches the human plane un-promoted, nothing breaks a link un-checked.** · دو گویش، یک فلسفه: **هیچ‌چیز بدون ارتقا به صفحهٔ انسان نمی‌رسد، هیچ‌چیز بدون چک لینک نمی‌شکند.**
