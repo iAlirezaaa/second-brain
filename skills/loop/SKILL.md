@@ -13,9 +13,17 @@ human promotes the good candidates (that is the whole promotion gate).
 ## One cycle
 
 ```
+python scripts/loop.py --due           # is a cycle due? (writes nothing)
 python scripts/loop.py                 # full: + test suite
 python scripts/loop.py --no-tests      # fast, e.g. before other work
 ```
+
+The cadence is a registry record — `11_CONTROL/schedules/SCH-…-improvement-loop.json`,
+kind `schedule` — not a cron comment. `--due` reads that record and the last `ran_at` in
+`14_CANDIDATES/loop/history.json` and asks `backend/schedules.is_due`: **exit 0** due,
+**3** not due (it prints the next window), **1** refused (no record, or a spec the backend
+cannot read). The Actions cron is the alarm that wakes the check; the record is the rule.
+A human running a cycle early is an override, not a violation — say so in the report.
 
 The cycle is also scheduled nightly as GitHub Actions `loop` — reports land in
 `14_CANDIDATES/loop/` as commits you can review on GitHub.
