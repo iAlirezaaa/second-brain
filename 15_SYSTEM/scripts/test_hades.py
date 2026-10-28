@@ -614,8 +614,8 @@ def t_markdown_and_amendments():
         if not (c == 0 and wid2):
             check("a second markdown record applies", False, o.strip().replace("\n", " | ")[:140])
             return
-        c, o = v.hades("link", "--id", wid2, "--rel", "supersedes", "--to", wid)
-        link_ok = c == 0 and "linked" in o
+        c, o = v.hades("link", "--id", wid2, "--rel", "supersedes", "--to", wid, "--approve")
+        link_ok = c == 0 and "LINKED" in o
         rec_after = v.read(md_file(v, wid2))
         check("link on a markdown record keeps kind and the edge (issue #13)",
               link_ok and "supersedes" in rec_after and "wiki_note" in rec_after,
