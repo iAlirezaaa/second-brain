@@ -244,14 +244,47 @@ def tool_doctor_status(root, args):
            "active_records": len([1 for _p, r in recs if str(r.get("id")) not in sup]),
            "zones_declared": len(zones),
            "zones_missing": missing,
-           "lessons": len([r for r in active_lessons(lessons)]),
+           "lessons": len(list(memory_ledger.active(lessons))),
            "runs": len(runs),
            "note": "facts only; the gate itself is scripts/health.py"}
     return text_result(json.dumps(out, ensure_ascii=False, indent=1))
 
 
-def active_lessons(rows):
-    return memory_ledger.active(rows)
+def tool_runs_list(root, args):
+    """What the actors did -- the disposable plane, read-only through the door."""
+    import runs as runs_ledger
+    base = runs_ledger.runs_dir(root)
+    rows = []
+    if base.is_dir():
+        for d in sorted(base.iterdir()):
+            run = runs_ledger.load_run(root, d.name)
+            if run is None:
+                continue
+            if args.get("agent") and str(run.get("agent")) != str(args["agent"]):
+                continue
+            rows.append({"run_id": run.get("run_id"), "agent": run.get("agent"),
+                         "kind": run.get("kind"), "status": run.get("status"),
+                         "steps": run.get("steps"), "goal": run.get("goal"),
+                         "promoted": run.get("promoted") or ""})
+    return text_result(json.dumps({"runs": len(rows), "items": rows},
+                                  ensure_ascii=False, indent=1))
+
+
+def tool_runs_show(root, args):
+    import runs as runs_ledger
+    run_id = str(args.get("run") or "").strip()
+    if not run_id:
+        raise ToolRefused("runs_show needs a run id (see runs_list)")
+    run = runs_ledger.load_run(root, run_id)
+    if run is None:
+        raise ToolRefused("no such run %s -- runs are disposable plane state, absent in "
+                          "a fresh clone" % run_id)
+    feed = runs_ledger.read_feed(runs_ledger.runs_dir(root) / run_id)
+    body = json.dumps(run, ensure_ascii=False, indent=1, sort_keys=True)
+    lines = ["%s" % body, "feed: %d step(s)" % len(feed)]
+    for i, s in enumerate(feed, 1):
+        lines.append("  %d. [%s] %s" % (i, s.get("status"), s.get("text")))
+    return text_result("\n".join(lines))
 
 
 SHELF_ROW = """---
@@ -345,6 +378,15 @@ TOOLS = [
      "description": "A structured status readout (records, zones, lessons, runs). Facts "
                     "only -- the gate itself is scripts/health.py.",
      "inputSchema": {"type": "object", "properties": {}}},
+    {"name": "runs_list",
+     "description": "Agent runs from the disposable plane (12_RUNTIME/agent_runs): who ran, "
+                    "status, step count, whether the run was promoted to the shelf.",
+     "inputSchema": {"type": "object", "properties": {
+         "agent": {"type": "string"}}}},
+    {"name": "runs_show",
+     "description": "One agent run by id: identity plus its append-only step feed.",
+     "inputSchema": {"type": "object", "properties": {
+         "run": {"type": "string"}}, "required": ["run"]}},
     {"name": "candidate_propose",
      "description": "File a proposal as a registered row on the quarantine shelf "
                     "(14_CANDIDATES/loop). The only write tool; a human disposes it.",
@@ -361,6 +403,8 @@ TOOL_FUNCS = {
     "registry_list": tool_registry_list,
     "registry_show": tool_registry_show,
     "doctor_status": tool_doctor_status,
+    "runs_list": tool_runs_list,
+    "runs_show": tool_runs_show,
     "candidate_propose": tool_candidate_propose,
 }
 

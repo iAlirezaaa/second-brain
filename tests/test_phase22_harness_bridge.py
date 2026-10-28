@@ -173,7 +173,7 @@ class TestHarnessDoor(TempVault, unittest.TestCase):
         self.addCleanup(c.close)
         return c
 
-    def test_initialize_echoes_protocol_and_lists_the_six_tools(self):
+    def test_initialize_echoes_protocol_and_lists_the_eight_tools(self):
         c = self.client()
         result = initialize(c)
         self.assertEqual("hades-second-brain", result["serverInfo"]["name"])
@@ -181,7 +181,8 @@ class TestHarnessDoor(TempVault, unittest.TestCase):
         r = c.call("tools/list", mid=2)
         names = [t["name"] for t in r["result"]["tools"]]
         self.assertEqual(["vault_search", "memory_recall", "registry_list", "registry_show",
-                          "doctor_status", "candidate_propose"], names)
+                          "doctor_status", "runs_list", "runs_show", "candidate_propose"],
+                         names)
 
     def test_registry_is_visible_through_the_door(self):
         wid = self.new_record("wiki_note", "Door Law")
@@ -280,6 +281,35 @@ class TestHarnessDoor(TempVault, unittest.TestCase):
         self.assertEqual(-32700, r["error"]["code"])
         self.assertIsNone(r["id"])
         self.assertEqual(0, c.close())
+
+    def test_runs_tools_expose_the_disposable_plane_readonly(self):
+        self.runs = load_by_path("runs_phase22b", RUNS)
+
+        def runs_cli(*argv):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                code = self.runs.main(["--root", str(self.root)] + list(argv))
+            return code, buf.getvalue()
+
+        agt = self.new_record("agent", "Feed Runner")
+        code, out = runs_cli("start", "--agent", agt, "--goal", "feed the door")
+        run_id = [ln.split()[1] for ln in out.splitlines() if ln.startswith("RUN ")][0]
+        runs_cli("step", "--run", run_id, "--text", "knock knock")
+        runs_cli("finish", "--run", run_id, "--status", "completed")
+        c = self.client()
+        initialize(c)
+        text, is_err = c.result_text("tools/call", {"name": "runs_list", "arguments": {}})
+        self.assertFalse(is_err, text)
+        self.assertIn(run_id, text)
+        self.assertIn("completed", text)
+        text, is_err = c.result_text("tools/call", {"name": "runs_show",
+                                                    "arguments": {"run": run_id}})
+        self.assertFalse(is_err, text)
+        self.assertIn("knock knock", text)
+        text, is_err = c.result_text("tools/call", {"name": "runs_show",
+                                                    "arguments": {"run": "RUN-00000000"}})
+        self.assertTrue(is_err, text)
+        self.assertIn("no such run", text)
 
     def test_doctor_status_is_facts_not_a_gate(self):
         c = self.client()
@@ -392,6 +422,42 @@ class TestAgentRuns(TempVault, unittest.TestCase):
         self.assertIn("finishing twice", out)
         code, out = self.runs_cli("finish", "--run", run_id, "--status", "paused")
         self.assertEqual(2, code)
+
+    def test_promote_exports_the_feed_into_a_registered_row(self):
+        run_id = self.start_run(goal="learn the latch")
+        self.runs_cli("step", "--run", run_id, "--text", "the latch was open")
+        self.runs_cli("step", "--run", run_id, "--status", "note",
+                      "--text", "wrote the check down")
+        self.runs_cli("finish", "--run", run_id, "--status", "completed")
+        # a running run cannot promote, and an empty feed has nothing to say
+        other = self.start_run(goal="still running")
+        code, out = self.runs_cli("promote", "--run", other)
+        self.assertEqual(2, code)
+        self.assertIn("still running", out)
+        empty = self.start_run(goal="never stepped")
+        self.runs_cli("finish", "--run", empty, "--status", "failed")
+        code, out = self.runs_cli("promote", "--run", empty)
+        self.assertEqual(2, code)
+        self.assertIn("empty feed", out)
+        # the real promotion
+        code, out = self.runs_cli("promote", "--run", run_id)
+        self.assertEqual(0, code, out)
+        cid = out.split()[1]
+        self.assertTrue(cid.startswith("cand-"), out)
+        row = self.root / "14_CANDIDATES" / "loop" / (cid + ".md")
+        self.assertTrue(row.is_file(), out)
+        text = row.read_text(encoding="utf-8")
+        self.assertIn("the latch was open", text)          # the feed is embedded
+        self.assertIn("11_CONTROL/agents/", text)          # evidence cites the actor record
+        self.assertNotIn("12_RUNTIME/", text.split("evidence:")[1].split("---")[0])
+        ledger = (self.root / "14_CANDIDATES" / "loop" / "ledger.jsonl").read_text(encoding="utf-8")
+        self.assertIn(cid, ledger)
+        run = json.loads((self.root / "12_RUNTIME" / "agent_runs" / run_id / "run.json")
+                         .read_text(encoding="utf-8"))
+        self.assertEqual(cid, run["promoted"])
+        code, out = self.runs_cli("promote", "--run", run_id)
+        self.assertEqual(2, code)
+        self.assertIn("promoting twice", out)
 
     def test_list_filters_by_agent_and_absent_plane_is_empty_not_broken(self):
         code, out = self.runs_cli("list")

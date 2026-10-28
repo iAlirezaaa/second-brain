@@ -14,6 +14,7 @@ Commands:
   python 15_SYSTEM/scripts/runs.py finish --run RUN-... --status completed|failed [--summary "..."]
   python 15_SYSTEM/scripts/runs.py list [--agent AGT-...]
   python 15_SYSTEM/scripts/runs.py show RUN-... [--tail 10]
+  python 15_SYSTEM/scripts/runs.py promote --run RUN-... [--dimension domain] [--confidence 0.6]
 
 Everything here lives inside 12_RUNTIME, so it dies at the git boundary by design: runs
 are not evidence. When a run matters, promote what it produced to the shelf
@@ -24,7 +25,9 @@ A run of an actor the registry has never heard of is refused: an unaccounted act
 how a registry starts lying.
 """
 import argparse
+import contextlib
 import importlib.util
+import io
 import json
 import sys
 import uuid
@@ -195,6 +198,134 @@ def cmd_show(root, args):
     return 0
 
 
+PROMOTED_ROW = """---
+id: {cid}
+type: note
+title: 'Loop candidate: an agent run left the disposable plane'
+status: raw
+owner: agent
+topics: [agent-runs, promotion]
+created: {today}
+updated: {today}
+dimension: {dimension}
+cue: {cue}
+lesson: {lesson}
+confidence: {confidence}
+verdict: proposed
+evidence:
+{evidence}
+---
+
+# {cid}
+
+**Promoted from `12_RUNTIME/agent_runs/{run_id}` by `runs.py promote`, {today}.**
+The run directory is disposable by law (it dies at the git boundary), so the feed is
+**embedded here** -- evidence is exported, never cited across the boundary.
+
+- actor: `{agent}` ({kind}, registry record)
+- goal: {goal}
+- outcome: {status}, {steps} step(s), started {started_utc}, ended {ended_utc}
+
+Feed:
+
+{feed_lines}
+
+This row is a proposal, not a decision: `verdict: proposed` is legal on the shelf and
+never promotable. The human reviews, probes and disposes it.
+"""
+
+
+def read_feed(run_id_path):
+    feed = run_id_path / "steps.jsonl"
+    if not feed.is_file():
+        return []
+    rows = []
+    for line in feed.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            rows.append(json.loads(line))
+    return rows
+
+
+def cmd_promote(root, args):
+    """Export a finished run's feed into a registered shelf row.
+
+    12_RUNTIME is behind the git boundary, so a run directory can never be evidence --
+    the row EMBEDS the feed and cites only tracked files. A run still running has not
+    earned a verdict; an empty feed has nothing to say; promoting twice is a second
+    truth.
+    """
+    sys.path.insert(0, str(SRC.parents[1] / "scripts"))
+    import candidate_check
+    run = load_run(root, args.run)
+    if run is None:
+        print("REFUSED: no such run %s" % args.run)
+        return 2
+    if run.get("status") == "running":
+        print("REFUSED: run %s is still running -- finish it first (completed|failed); "
+              "a run without a verdict has not earned a proposal" % args.run)
+        return 2
+    if run.get("promoted"):
+        print("REFUSED: run %s already promoted %s -- promoting twice is a second truth"
+              % (args.run, run["promoted"]))
+        return 2
+    feed = read_feed(runs_dir(root) / args.run)
+    if not feed:
+        print("REFUSED: run %s has an empty feed -- an unnamed run has nothing to "
+              "promote; write the steps first" % args.run)
+        return 2
+    dimension = args.dimension if args.dimension in ("invariant", "domain") else "domain"
+    try:
+        confidence = float(args.confidence if args.confidence is not None else 0.6)
+    except (TypeError, ValueError):
+        print("REFUSED: confidence must be a number in 0..1")
+        return 2
+    if not (0.0 <= confidence <= 1.0):
+        print("REFUSED: confidence must be in 0..1, got %s" % confidence)
+        return 2
+    # evidence points only at tracked files: the actor record and the tool itself
+    evidence = ["15_SYSTEM/scripts/runs.py"]
+    hades = load_hades(root)
+    for p, r in hades.iter_records(hades.config()):
+        if str(r.get("id")) == str(run.get("agent")):
+            evidence.insert(0, hades.rel(p))
+            break
+    shelf = root / "14_CANDIDATES" / "loop"
+    shelf.mkdir(parents=True, exist_ok=True)
+    today = now_utc()[:10]
+    seq = 1 + len(list(shelf.glob("cand-%s-run-*.md" % today)))
+    cid = "cand-%s-run-%02d" % (today, seq)
+    if (shelf / (cid + ".md")).exists():
+        print("REFUSED: row id %s already exists -- refusing to overwrite a proposal" % cid)
+        return 2
+    cue = run.get("goal") or "run %s of %s" % (args.run, run.get("agent"))
+    lesson = "; ".join("step %d [%s]: %s" % (i, s.get("status"), s.get("text"))
+                       for i, s in enumerate(feed, 1))
+    lesson = " ".join(str(lesson).split())[:900]
+    feed_lines = "\n".join("  %d. `%s` [%s] %s" % (i, s.get("utc"), s.get("status"), s.get("text"))
+                           for i, s in enumerate(feed, 1))
+    row = PROMOTED_ROW.format(cid=cid, today=today, dimension=dimension, cue=cue,
+                              lesson=lesson, confidence=confidence,
+                              evidence="\n".join("  - %s" % e for e in evidence),
+                              run_id=args.run, agent=run.get("agent"), kind=run.get("kind"),
+                              goal=run.get("goal") or "(none)", status=run.get("status"),
+                              steps=run.get("steps"), started_utc=run.get("started_utc"),
+                              ended_utc=run.get("ended_utc") or "(still open?)",
+                              feed_lines=feed_lines)
+    path = shelf / (cid + ".md")
+    path.write_text(row, encoding="utf-8")
+    with contextlib.redirect_stdout(io.StringIO()):
+        rc = candidate_check.register(root, str(path))
+    if rc != 0:
+        print("REFUSED: the row was written but the ledger refused it -- the shelf is out "
+              "of balance; a human should look before anything else happens")
+        return 2
+    run["promoted"] = cid
+    save_run(root, run)
+    print("PROMOTED %s -> %s (registered in the ledger; a human decides)" % (cid, path))
+    print("the feed is embedded in the row; the run dir stays disposable")
+    return 0
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="HADES agent-run ledger (disposable plane)")
     parser.add_argument("--root", default=None, help="repo root override (tests)")
@@ -215,6 +346,10 @@ def main(argv=None):
     p = sub.add_parser("show")
     p.add_argument("--run", required=True)
     p.add_argument("--tail", type=int, default=10)
+    p = sub.add_parser("promote")
+    p.add_argument("--run", required=True)
+    p.add_argument("--dimension", default="domain")
+    p.add_argument("--confidence", default=None)
     args = parser.parse_args(argv)
     root = Path(args.root).resolve() if args.root else DEFAULT_ROOT
     if args.cmd == "start":
@@ -225,6 +360,8 @@ def main(argv=None):
         return cmd_finish(root, args)
     if args.cmd == "list":
         return cmd_list(root, args)
+    if args.cmd == "promote":
+        return cmd_promote(root, args)
     return cmd_show(root, args)
 
 

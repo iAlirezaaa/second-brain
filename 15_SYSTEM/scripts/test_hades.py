@@ -706,6 +706,15 @@ def t_harness_bridge():
         check("harness: a finished feed refuses steps", c == 2 and "REFUSED" in o, o.strip()[:140])
         c, o = v.run("runs.py", "list")
         check("harness: list shows the closed run", c == 0 and run_id in o, o.strip()[:140])
+        c, o = v.run("runs.py", "promote", "--run", run_id, "--dimension", "invariant")
+        check("harness: a finished run promotes into a registered row",
+              c == 0 and "PROMOTED cand-" in o, o.strip()[:160])
+        promoted_rows = list((v.root / "14_CANDIDATES/loop").glob("cand-*-run-*.md"))
+        check("harness: the promoted row is on the shelf with the feed embedded",
+              len(promoted_rows) == 1 and "opened the door" in promoted_rows[0].read_text(encoding="utf-8"),
+              str(promoted_rows))
+        c, o = v.run("runs.py", "promote", "--run", run_id)
+        check("harness: promoting twice is refused", c == 2 and "promoting twice" in o, o.strip()[:140])
 
         # the MCP door over the wire, in a subprocess, exactly like a harness talks to it
         server = v.root / "15_SYSTEM/scripts/mcp_server.py"
@@ -729,13 +738,19 @@ def t_harness_bridge():
         send({"jsonrpc": "2.0", "method": "notifications/initialized"})
         send({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
         names = [t["name"] for t in recv()["result"]["tools"]]
-        check("harness: six tools exposed",
+        check("harness: eight tools exposed",
               set(names) == {"vault_search", "memory_recall", "registry_list", "registry_show",
-                             "doctor_status", "candidate_propose"}, str(names)[:140])
+                             "doctor_status", "runs_list", "runs_show", "candidate_propose"},
+              str(names)[:140])
         send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
               "params": {"name": "registry_list", "arguments": {}}})
         text = recv()["result"]["content"][0]["text"]
         check("harness: registry_list sees the seeded agent", agt in text, text[:140])
+        send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+              "params": {"name": "runs_list", "arguments": {}}})
+        text = recv()["result"]["content"][0]["text"]
+        check("harness: runs_list shows the promoted run through the door",
+              run_id in text and '"promoted"' in text, text[:200])
         send({"jsonrpc": "2.0", "id": 4, "method": "tools/call",
               "params": {"name": "doctor_status", "arguments": {}}})
         text = recv()["result"]["content"][0]["text"]
