@@ -45,6 +45,18 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   reader/test/map that no longer exists. Disposable stores (`12_RUNTIME/`, `.brain-data/`,
   `.kb/`) are reported, never required. Gaps filed as #24 (no contradiction detection), #25
   (lessons carry no plane field); #20 keeps the conversation-extraction path and `kb.py` open.
+- **`kb.py` searches this brain's own prose** (phase 27, charter §1) — `ingest` now indexes the
+  tracked, clone-readable human plane instead of `vault-template`: the machine plane
+  (`11_CONTROL/`–`15_SYSTEM/`), the template, dot-folders and rendered agent doors are excluded
+  by the same boundary `common.clone_readable()` declares. Frontmatter is stripped before
+  indexing, so a snippet opens on the first sentence instead of on `id:`/`topics:`; matching
+  folds case and NFKC and maps Arabic `ي`/`ك` to Persian `ی`/`ک`, while displayed text keeps
+  its original bytes. Every hit carries its zone and title; a missing index prints one line
+  instead of answering, and an index built by an older corpus rule is refused until
+  re-ingested. Measured here: 43 notes into a 1.4 MB index, ingest 81 ms, median query
+  3.8 ms over 40 runs (max 5.9 ms); an installed home indexes its own 28 notes. The phase-4 golden gate is repointed at
+  repo paths and `tests/test_phase27_repo_corpus.py` adds ten tests (boundary, installed home,
+  shared golden fixture).
 - Phase 7 — continuous improvement loop: `scripts/loop.py` (one-cycle ratchet:
   integrity/test/inbox/gap/hygiene signals → candidate report → prev-run compare;
   REGRESSED verdicts are loud, P1 exits non-zero), `skills/loop`, and a nightly

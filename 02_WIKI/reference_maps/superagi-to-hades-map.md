@@ -36,7 +36,7 @@ protocol harnesses already speak (MCP over stdio), not a FastAPI service.
 | `AgentExecution` (RUNNING/COMPLETED/…) + steps + feed | per-run DB rows + feed events | **adopted** — phase 1: the disposable run ledger; phase 2: the engine itself (`backend/engine.py` walks declarative steps through the toolkit) | `12_RUNTIME/agent_runs/<RUN-*>/` via `runs.py`; `15_SYSTEM/scripts/backend/engine.py` |
 | Toolkits / Tools | Python tool bundles installed from a marketplace | **adopted (the contract, not the marketplace)** — `backend/tools_kit.py`: BaseTool tuple, registry, and the AgentConfig `tools` list as the actor's real `tool_allowlist` (double write-gate: `--approve` AND the list) | `15_SYSTEM/scripts/backend/tools_kit.py` |
 | Vector memory (Pinecone/Chroma/Qdrant + LlamaIndex) | embeddings behind a paid/remote DB | **logic adopted, vectors deferred** — `backend/ltm.py` keeps the LTM store/fetch seam over SQLite FTS5; embeddings stay behind `vector_search: false` (an owner decision, never a silent dependency) | `15_SYSTEM/scripts/backend/ltm.py`, `scripts/kb.py`, `scripts/memory.py` |
-| Knowledge indexing / Resource manager | ingest docs for the agent to read | **adopt later** — same search seam, `kb.py` gains a repo-corpus ingest | phase 2 |
+| Knowledge indexing / Resource manager | ingest docs for the agent to read | **adopted (phase 27)** — `kb.py` indexes the brain's clone-readable human plane, not the template | phase 27 |
 | Schedules / cron | DB rows + a scheduler worker | **logic adopted** — the nightly `loop` remains the scheduler; `backend/schedules.py` ports the due-math (`every_minutes` / `daily_at`) as pure functions | `11_CONTROL/loops`, `scripts/loop.py`, `15_SYSTEM/scripts/backend/schedules.py` |
 | Marketplace (toolkits/knowledge packs) | install third-party bundles | **refuse** — the shelf + probes are the internal exchange; no network | `14_CANDIDATES/loop` |
 | Telemetry / analytics | LLM-call/token events in a DB | **already here in its strongest form** — measured numbers re-derived by `doc_report.py`, quoted in docs, gated in CI | `scripts/doc_report.py` |
@@ -135,8 +135,9 @@ Done already: the engine, toolkits with allowlists, declarative workflows, sched
 and the LTM seam (see "The backend package"); run → shelf promotion (`runs.py promote`).
 Remaining:
 
-1. **Corpus for the KB** — `kb.py` gains a repo ingest (index the brain itself, not only
-   `vault-template`), and `vault_search` reuses it instead of its in-memory pass.
+1. **Corpus for the KB** — done in phase 27: `kb.py` indexes the brain's clone-readable human
+   plane (43 notes here), template and machine plane excluded. `vault_search` still reuses its
+   own in-memory pass rather than the index.
 2. **Vector embeddings behind the flag** — `vector_search: true` flips on an optional
    adapter (e.g. `fastembed` + `sqlite-vec`, both local & offline-capable); keyword stays
    the zero-dependency fallback. Interface first, dependency optional.
