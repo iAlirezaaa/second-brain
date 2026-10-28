@@ -411,7 +411,7 @@ class TestAgentRuns(TempVault, unittest.TestCase):
         self.assertEqual(2, code)
         code, out = self.runs_cli("step", "--run", run_id, "--text", "")
         self.assertEqual(2, code)
-        self.assertIn("needs --text", out)
+        self.assertIn("step needs text", out)
         code, out = self.runs_cli("finish", "--run", run_id, "--status", "completed")
         self.assertEqual(0, code, out)
         code, out = self.runs_cli("step", "--run", run_id, "--text", "too late")

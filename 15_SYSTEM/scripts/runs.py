@@ -86,78 +86,109 @@ def save_run(root, run):
                     encoding="utf-8")
 
 
-def cmd_start(root, args):
+class RunRefused(Exception):
+    """A runs-law refusal. The CLI prints it as REFUSED; programmatic callers
+    (the backend engine, tests) catch it -- one door, one law, two fronts."""
+
+
+def start_run(root, actor_id, goal=""):
+    """Open a run for a registered actor and return its run dict. The refusal laws:
+    an actor the registry never heard of, and a non-actor kind, are both refused."""
     hades = load_hades(root)
     hit = None
     for p, r in hades.iter_records(hades.config()):
-        if str(r.get("id")) == str(args.agent):
+        if str(r.get("id")) == str(actor_id):
             hit = (p, r)
             break
     if not hit:
-        print("REFUSED: no registry record %s -- a run of an unaccounted actor is how a "
-              "registry starts lying (see `hades.py list --kind agent`)" % args.agent)
-        return 2
+        raise RunRefused("no registry record %s -- a run of an unaccounted actor is how a "
+                         "registry starts lying (see `hades.py list --kind agent`)" % actor_id)
     kind = hit[1].get("kind")
     if kind not in ("agent", "subagent"):
-        print("REFUSED: %s is a %s record -- runs are started for actors (agent/subagent), "
-              "not for %s" % (args.agent, kind, kind))
-        return 2
+        raise RunRefused("%s is a %s record -- runs are started for actors (agent/subagent), "
+                         "not for %s" % (actor_id, kind, kind))
     run_id = "RUN-" + uuid.uuid4().hex[:8].upper()
     target = runs_dir(root) / run_id
     target.mkdir(parents=True, exist_ok=True)
-    run = {"run_id": run_id, "agent": str(args.agent), "kind": kind,
-           "goal": str(args.goal or ""), "status": "running",
+    run = {"run_id": run_id, "agent": str(actor_id), "kind": kind,
+           "goal": str(goal or ""), "status": "running",
            "started_utc": now_utc(), "ended_utc": "", "steps": 0, "summary": ""}
     save_run(root, run)
-    print("RUN %s started | actor %s (%s) | goal: %s" % (run_id, args.agent, kind, run["goal"]))
-    print("append steps:  runs.py step --run %s --text \"...\"" % run_id)
-    print("close it:      runs.py finish --run %s --status completed|failed" % run_id)
+    return run
+
+
+def append_step(root, run_id, status, text):
+    """Append one feed line to a RUNNING run and bump its counter; returns the new
+    count. A finished run's feed is history, not a place to append."""
+    run = load_run(root, run_id)
+    if run is None:
+        raise RunRefused("no such run %s under %s" % (run_id, runs_dir(root).name))
+    if run.get("status") != "running":
+        raise RunRefused("run %s is %s -- a finished run's feed is history, not a place to "
+                         "append" % (run_id, run.get("status")))
+    text = str(text or "").strip()
+    if not text:
+        raise RunRefused("step needs text (an unnamed step is not a feed entry)")
+    status = status if status in ("ok", "fail", "note") else "ok"
+    entry = {"utc": now_utc(), "status": status, "text": text}
+    with (runs_dir(root) / run_id / "steps.jsonl").open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    run["steps"] = int(run.get("steps") or 0) + 1
+    save_run(root, run)
+    return run["steps"]
+
+
+def close_run(root, run_id, status, summary=""):
+    """Finish a run once: completed|failed only. Raises RunRefused on repeat finishes."""
+    run = load_run(root, run_id)
+    if run is None:
+        raise RunRefused("no such run %s" % run_id)
+    if run.get("status") != "running":
+        raise RunRefused("run %s is already %s -- finishing twice is a second truth"
+                         % (run_id, run.get("status")))
+    if status not in ("completed", "failed"):
+        raise RunRefused("finish wants completed|failed (a run ends in one of two "
+                         "states, like its evidence or its excuse)")
+    run["status"] = status
+    run["ended_utc"] = now_utc()
+    if summary:
+        run["summary"] = str(summary)
+    save_run(root, run)
+    return run
+
+
+def cmd_start(root, args):
+    try:
+        run = start_run(root, args.agent, goal=args.goal)
+    except RunRefused as refused:
+        print("REFUSED: %s" % refused)
+        return 2
+    print("RUN %s started | actor %s (%s) | goal: %s" % (run["run_id"], run["agent"],
+                                                         run["kind"], run["goal"]))
+    print("append steps:  runs.py step --run %s --text \"...\"" % run["run_id"])
+    print("close it:      runs.py finish --run %s --status completed|failed" % run["run_id"])
     return 0
 
 
 def cmd_step(root, args):
-    run = load_run(root, args.run)
-    if run is None:
-        print("REFUSED: no such run %s under %s" % (args.run, runs_dir(root).name))
-        return 2
-    if run.get("status") != "running":
-        print("REFUSED: run %s is %s -- a finished run's feed is history, not a place to "
-              "append" % (args.run, run.get("status")))
-        return 2
-    text = str(args.text or "").strip()
-    if not text:
-        print("REFUSED: step needs --text (an unnamed step is not a feed entry)")
+    try:
+        count = append_step(root, args.run, args.status, args.text)
+    except RunRefused as refused:
+        print("REFUSED: %s" % refused)
         return 2
     status = args.status if args.status in ("ok", "fail", "note") else "ok"
-    entry = {"utc": now_utc(), "status": status, "text": text}
-    with (runs_dir(root) / args.run / "steps.jsonl").open("a", encoding="utf-8") as fh:
-        fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    run["steps"] = int(run.get("steps") or 0) + 1
-    save_run(root, run)
-    print("STEP %s #%d [%s] %s" % (args.run, run["steps"], status, text))
+    print("STEP %s #%d [%s] %s" % (args.run, count, status, str(args.text or "").strip()))
     return 0
 
 
 def cmd_finish(root, args):
-    run = load_run(root, args.run)
-    if run is None:
-        print("REFUSED: no such run %s" % args.run)
+    try:
+        run = close_run(root, args.run, args.status, summary=args.summary)
+    except RunRefused as refused:
+        print("REFUSED: %s" % refused)
         return 2
-    if run.get("status") != "running":
-        print("REFUSED: run %s is already %s -- finishing twice is a second truth"
-              % (args.run, run.get("status")))
-        return 2
-    if args.status not in ("completed", "failed"):
-        print("REFUSED: finish wants --status completed|failed (a run ends in one of two "
-              "states, like its evidence or its excuse)")
-        return 2
-    run["status"] = args.status
-    run["ended_utc"] = now_utc()
-    if args.summary:
-        run["summary"] = str(args.summary)
-    save_run(root, run)
     print("RUN %s %s | steps: %d | summary: %s"
-          % (args.run, args.status, run["steps"], run["summary"] or "(none)"))
+          % (args.run, run["status"], run["steps"], run["summary"] or "(none)"))
     return 0
 
 

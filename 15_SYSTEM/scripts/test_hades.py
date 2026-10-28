@@ -715,6 +715,26 @@ def t_harness_bridge():
               str(promoted_rows))
         c, o = v.run("runs.py", "promote", "--run", run_id)
         check("harness: promoting twice is refused", c == 2 and "promoting twice" in o, o.strip()[:140])
+        wf_path = v.root / "15_SYSTEM" / "workflows" / "battery-demo.json"
+        wf_path.parent.mkdir(parents=True, exist_ok=True)
+        wf_path.write_text(json.dumps({"name": "battery demo", "steps": [
+            {"name": "read", "type": "tool_call", "tool": "core.fs_read",
+             "args": {"path": "15_SYSTEM/config/system.json"}},
+            {"name": "stop", "type": "done", "note": "engine walked it"}]}), encoding="utf-8")
+        c, o = v.run("orchestrator.py", "workflow", "validate", "--file", str(wf_path))
+        check("backend: the workflow validator is the gate",
+              c == 0 and "VALID" in o, o.strip()[:140])
+        c, o = v.run("orchestrator.py", "workflow", "run", "--file", str(wf_path), "--agent", agt)
+        check("backend: the engine walks the workflow end to end",
+              c == 0 and "WORKFLOW battery demo -> COMPLETED" in o, o.strip()[:160])
+        feeds = list((v.root / "12_RUNTIME" / "agent_runs").glob("*/steps.jsonl"))
+        check("backend: the run transcript holds the engine feed",
+              any("core.fs_read" in f.read_text(encoding="utf-8") for f in feeds),
+              str(feeds)[:140])
+        c, o = v.run("orchestrator.py", "tool", "call", "--tool", "core.ltm_store",
+                     "--args", '{"text": "sneaky"}', "--agent", agt)
+        check("backend: a write tool refuses an unapproved context",
+              c == 2 and "not approved" in o, o.strip()[:140])
 
         # the MCP door over the wire, in a subprocess, exactly like a harness talks to it
         server = v.root / "15_SYSTEM/scripts/mcp_server.py"
@@ -754,8 +774,10 @@ def t_harness_bridge():
         send({"jsonrpc": "2.0", "id": 4, "method": "tools/call",
               "params": {"name": "doctor_status", "arguments": {}}})
         text = recv()["result"]["content"][0]["text"]
+        runs_count = len([d for d in (v.root / "12_RUNTIME" / "agent_runs").iterdir()
+                          if d.is_dir()])
         check("harness: doctor_status counts the run and the record",
-              '"runs": 1' in text and '"records": 1' in text, text[:200])
+              ('"runs": %d' % runs_count) in text and '"records": 1' in text, text[:200])
         send({"jsonrpc": "2.0", "id": 5, "method": "tools/call",
               "params": {"name": "candidate_propose", "arguments": {
                   "dimension": "invariant", "cue": "the battery spoke to the brain",
