@@ -9,6 +9,10 @@
 پنج فاز به کد امروز، دستورِ اثبات هر بند، و فهرست شکاف‌های باز. نسخهٔ قابل دانلود:
 [second-brain-plan-fa.pdf](downloads/second-brain-plan-fa.pdf).
 
+**توضیحِ کوتاهِ همین ریپو (آمادهٔ کپی در About گیت‌هاب):**
+[REPO_ABOUT_FA.md](00_START_HERE/REPO_ABOUT_FA.md) — متن فارسی، موضوع‌ها، و آنچه نباید در
+توضیح ادعا شود.
+
 **وضعیت ایشیوها، در خود مخزن:** [ISSUES.md](00_START_HERE/ISSUES.md) — هر ایشیو با
 وضعیتِ واقعی‌اش (باز / نیمه / اصلاح‌شده / بسته)، کامیتِ اصلاح و مسیرِ شاهد؛ از
 `15_SYSTEM/config/issues.json` ساخته می‌شود و گیتِ `scripts/issues.py --check` نمی‌گذارد
