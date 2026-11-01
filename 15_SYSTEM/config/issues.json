@@ -1,0 +1,174 @@
+{
+  "repo": "iAlirezaaa/second-brain",
+  "fetched_at": "2026-11-01",
+  "note": "snapshot از api.github.com؛ با scripts/issues.py --fetch مقایسه می‌شود",
+  "issues": [
+    {
+      "number": 3,
+      "title": "Promotion is not gated on measured evidence",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 4,
+      "title": "Test-count badge is hand-typed and already wrong (39 vs 58)",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 5,
+      "title": "write_gate.py --file crashes instead of blocking",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 6,
+      "title": "rules/zones.json points at a zone that does not exist (`02_Index`)",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 7,
+      "title": "No durable repository memory — HANDOFF is transient by design",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 8,
+      "title": "Agent contract is single-host and the installer still points at Obsidian",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 9,
+      "title": "Loop report candidates are untyped free text with no count identity",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 10,
+      "title": "README/START/HANDOFF quote numbers a fresh clone cannot reproduce",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 11,
+      "title": "Candidate evidence can cite gitignored local state, so CI is the first reader to fail",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 12,
+      "title": "Registry is create-only, and the declared supersedes rule is not enforced",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 13,
+      "title": "A markdown-layout record is created invisible: news and wiki_note escape every gate",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 14,
+      "title": "Two contracts claim one file: the note gate judges a registry record as a broken note",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 15,
+      "title": "state_fingerprint counts gitignored, regenerated `15_SYSTEM/generated/` -- an `index` run ages every probe and no clone can reproduce a base",
+      "upstream": "open",
+      "state": "fixed",
+      "commit": "c75bf27",
+      "evidence": [
+        "scripts/common.py",
+        "tests/test_phase36_doors_tell_the_truth.py"
+      ],
+      "note": "۱۵_SYSTEM/generated از هویت حذف شد؛ ایشیو در گیت‌هاب باز است."
+    },
+    {
+      "number": 16,
+      "title": "Refusing human-plane `09_OPERATIONS` says \"denied machine plane\", and AGENTS.md/ACCESS.md/SYSTEM_MAP.md deny a subfolder the config never named",
+      "upstream": "open",
+      "state": "fixed",
+      "commit": "c75bf27",
+      "evidence": [
+        "15_SYSTEM/scripts/hades.py",
+        "AGENTS.md",
+        "tests/test_phase36_doors_tell_the_truth.py"
+      ],
+      "note": "ردکردن حالا نام قانونِ اجراشده و پلینِ زون را می‌گوید و سه سند همان چیزی را می‌گویند که کانفیگ می‌گوید."
+    },
+    {
+      "number": 17,
+      "title": "`memory.py --add --supersedes <unknown id>` writes the row; the ledger only fails at --check, after the render",
+      "upstream": "open",
+      "state": "fixed",
+      "commit": "c75bf27",
+      "evidence": [
+        "scripts/memory.py",
+        "tests/test_phase36_doors_tell_the_truth.py"
+      ],
+      "note": "supersedes ناشناس و خودارجاعی پیش از نوشتن رد می‌شوند."
+    },
+    {
+      "number": 20,
+      "title": "Charter section 5/11: the eight memory planes have no mapping, no conversation-memory reader, and kb.py skips this repo's own prose",
+      "upstream": "open",
+      "state": "partial",
+      "evidence": [
+        "02_WIKI/reference_maps/eight-memory-planes.md",
+        "scripts/plane_check.py",
+        "scripts/kb.py"
+      ],
+      "gap": "نگاشت هشت پلین و گیتش (فاز ۲۶) و جست‌وجوی kb.py روی پیکرهٔ خود مخزن (فاز ۲۷) ساخته شد؛ خواندنِ زندهٔ حافظهٔ گفتگو هنوز ساخته نشده — تنها مسیر موجود، واردکردن صریحِ فایل است."
+    },
+    {
+      "number": 21,
+      "title": "Charter section 7: the manager agent named in the charter is not a registered definition",
+      "upstream": "open",
+      "state": "open",
+      "gap": "مدیرِ نام‌برده در چارتر هیچ تعریفِ ثبت‌شده‌ای در ۱۱_CONTROL/agents ندارد؛ تصمیمش (ثبت یا حذف از چارتر) هنوز گرفته نشده."
+    },
+    {
+      "number": 22,
+      "title": "Charter section 3: only SuperAGI has a standing reference map; harness2 and claude-obsidian live in prose history",
+      "upstream": "open",
+      "state": "open",
+      "gap": "فقط SuperAGI نگاشت مرجع دارد؛ harness2 و claude-obsidian در تاریخچهٔ نثر مانده‌اند."
+    },
+    {
+      "number": 24,
+      "title": "Charter section 5: no memory plane can detect a contradiction",
+      "upstream": "open",
+      "state": "open",
+      "gap": "هیچ پلینی تناقض را تشخیص نمی‌دهد؛ قبل از کد، تعریفِ قابل‌اندازه‌گیریِ «تناقض» لازم است."
+    },
+    {
+      "number": 25,
+      "title": "Charter section 5: lessons are not typed by plane, so error memory is unlabelled",
+      "upstream": "open",
+      "state": "open",
+      "gap": "درس‌ها هنوز فیلد plane/kind ندارند؛ ۲۷ ردیف موجود مهاجرت لازم دارند."
+    },
+    {
+      "number": 27,
+      "title": "Fresh install fails plane_check: the dev system.json is copied into a template-shaped home",
+      "upstream": "closed",
+      "state": "closed"
+    },
+    {
+      "number": 39,
+      "title": "zone_check: an action other than \"edit\" skips the agent_edit_never rule",
+      "upstream": "open",
+      "state": "fixed",
+      "commit": "f73a378",
+      "evidence": [
+        "scripts/zone_check.py",
+        "tests/test_phase3.py"
+      ],
+      "note": "اکشن به مجموعهٔ بسته تبدیل شد و مثال ایشیو حالا رد می‌شود؛ ایشیو در گیت‌هاب باز مانده چون این محیط توکن ندارد."
+    }
+  ]
+}

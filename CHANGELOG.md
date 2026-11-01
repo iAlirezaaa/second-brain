@@ -7,6 +7,19 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **The issue ledger: a status a clone can read** — the brief's "if it is resolved, show it in the
+  repo" had no mechanism, so issue #39 stayed fixed in a commit message and open on GitHub.
+  `15_SYSTEM/config/issues.json` now records all 22 issues with a state (`open` / `partial` /
+  `fixed` / `closed`), the upstream state at the last snapshot, the fix commit, the evidence
+  paths, and — for every row that is not finished — one sentence naming what is missing.
+  `scripts/issues.py` renders `00_START_HERE/ISSUES.md` (Persian), and its `--check` joins the
+  health gates (nine now): a `fixed` row without a commit or without a clone-readable evidence
+  path is refused, so is a `fixed` row that hides why the upstream issue is still open, so is an
+  `open` row with no gap, and so is a page that drifted from the ledger. `--fetch` is the only
+  networked path and it never writes; it prints the drift between the ledger and
+  `api.github.com` when the ledger is a stale snapshot. An installed home has no ledger and the
+  gate stays quiet there, like the other machine-plane gates.
+
 - **Three open issues closed by fixing the sentence, not the permission** — `tests/test_phase36_doors_tell_the_truth.py`.
   **#15** `state_fingerprint` counted `15_SYSTEM/generated/`, so one `hades.py index` aged every
   recorded probe and no clone could reproduce a saved base; regenerated output is now

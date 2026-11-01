@@ -15,7 +15,7 @@
 | measure | now |
 | --- | --- |
 | tests collected (`python -m unittest discover -s tests`) | 438 |
-| health gates (`python scripts/health.py`) | 8 |
+| health gates (`python scripts/health.py`) | 9 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |

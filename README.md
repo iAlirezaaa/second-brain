@@ -9,6 +9,11 @@
 پنج فاز به کد امروز، دستورِ اثبات هر بند، و فهرست شکاف‌های باز. نسخهٔ قابل دانلود:
 [second-brain-plan-fa.pdf](downloads/second-brain-plan-fa.pdf).
 
+**وضعیت ایشیوها، در خود مخزن:** [ISSUES.md](00_START_HERE/ISSUES.md) — هر ایشیو با
+وضعیتِ واقعی‌اش (باز / نیمه / اصلاح‌شده / بسته)، کامیتِ اصلاح و مسیرِ شاهد؛ از
+`15_SYSTEM/config/issues.json` ساخته می‌شود و گیتِ `scripts/issues.py --check` نمی‌گذارد
+صفحه از دفتر جدا بماند یا ردیفِ «اصلاح‌شده» بی‌شاهد باشد.
+
 For explicitly importing and searching local documents or conversation exports, see
 [local source ingestion](15_SYSTEM/integrations/local-sources.md). Imported content is
 private local data, and the MCP source search exposes matches to connected clients.
@@ -119,7 +124,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 | measure | now |
 | --- | --- |
 | tests collected (`python -m unittest discover -s tests`) | 438 |
-| health gates (`python scripts/health.py`) | 8 |
+| health gates (`python scripts/health.py`) | 9 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
