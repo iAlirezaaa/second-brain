@@ -9,6 +9,11 @@ when the target zone is human-owned and the proposal is not approved by the huma
 An {"action": "edit"} into a zone listed in agent_edit_never is rejected even with
 approval — the legal path is a new note in 00_Inbox that a human merges.
 
+The action is a closed set: after normalising it (strip + lowercase) only "create"
+and "edit" are legal. Anything else — "overwrite", "replace", "delete", "update", a
+typo — is rejected outright rather than falling through to the approval branch, so
+the gate cannot be bypassed with a synonym.
+
 The fence file is judged first: a rule that names a zone which does not exist, or
 that leaves a human-owned zone unprotected, is rejected before any proposal is.
 A law nothing enforces is not a law, and a phantom zone protects nothing.
@@ -47,6 +52,14 @@ def check_zones_config(zones_config):
     return problems
 
 
+VALID_ACTIONS = ("create", "edit")
+
+
+def normalise_action(proposal):
+    """The action as the gate sees it: trimmed and lowercased, defaulting to create."""
+    return str(proposal.get("action", "create")).strip().lower()
+
+
 def check_proposals(proposals, zones_config):
     zones = zones_config["zones"]
     create_only = set(zones_config.get("agent_create_only_in", []))
@@ -55,9 +68,13 @@ def check_proposals(proposals, zones_config):
     for i, proposal in enumerate(proposals):
         what = proposal.get("capture", f"proposal#{i}")
         target = proposal.get("target", "")
-        action = proposal.get("action", "create")
+        action = normalise_action(proposal)
         if target not in zones:
             violations.append(f"{what}: target '{target}' is not a known zone")
+        elif action not in VALID_ACTIONS:
+            violations.append(
+                f"{what}: action {proposal.get('action')!r} is not a known action — "
+                f"only 'create' or 'edit' are legal")
         elif action == "edit" and target in never:
             violations.append(
                 f"{what}: editing {target} is never allowed for an agent (agent_edit_never) — "

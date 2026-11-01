@@ -141,6 +141,48 @@ class TestEditVersusCreate(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
 
 
+class TestActionIsAClosedSet(unittest.TestCase):
+    """A gate that defaults to allowed for words it does not know is bypassed by
+    the first synonym, so the action is normalised and then checked against a
+    closed set. Only "create" and "edit" may reach the zone rules."""
+
+    def test_issue_39_example_is_rejected(self):
+        result = zone_check([
+            {"capture": "x", "target": "20_Notes", "action": "overwrite", "approved": True},
+            {"capture": "y", "target": "20_Notes", "action": "Edit", "approved": True},
+        ])
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("not a known action", result.stdout)
+        self.assertIn("never allowed", result.stdout)
+
+    def test_synonyms_are_not_an_escape_hatch(self):
+        for action in ["overwrite", "replace", "delete", "update", "append", "modify"]:
+            result = zone_check_with(FENCE, [
+                {"capture": "x", "target": "20_Notes", "action": action, "approved": True}])
+            self.assertEqual(result.returncode, 1, f"{action!r}\n{result.stdout}")
+            self.assertIn("not a known action", result.stdout)
+
+    def test_case_and_whitespace_cannot_slip_past_the_never_rule(self):
+        for action in ["Edit", "EDIT", " edit", "edit ", "  Edit	"]:
+            result = zone_check_with(FENCE, [
+                {"capture": "x", "target": "20_Notes", "action": action, "approved": True}])
+            self.assertEqual(result.returncode, 1, f"{action!r}\n{result.stdout}")
+            self.assertIn("never allowed", result.stdout)
+
+    def test_normalised_create_is_still_create(self):
+        for action in ["Create", " create ", "CREATE"]:
+            result = zone_check_with(FENCE, [
+                {"capture": "x", "target": "20_Notes", "action": action, "approved": True}])
+            self.assertEqual(result.returncode, 0, f"{action!r}\n{result.stdout}")
+
+    def test_unknown_action_is_refused_even_in_an_agent_zone(self):
+        for action in ["overwrite", "replace", "", None, 7]:
+            result = zone_check_with(FENCE, [
+                {"capture": "x", "target": "00_Inbox", "action": action}])
+            self.assertEqual(result.returncode, 1, f"{action!r}\n{result.stdout}")
+            self.assertIn("not a known action", result.stdout)
+
+
 class TestWriteGate(unittest.TestCase):
     def test_clean_text_passes(self):
         result = write_gate("A perfectly normal note about agent memory.")

@@ -272,6 +272,13 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   was replaced by what is actually in the folder.
 
 ### Fixed
+- `zone_check.py` applied `agent_edit_never` only when `action` was exactly "edit", so
+  "overwrite", "Edit", "replace", "delete", "update" or " edit" fell through to the approval
+  branch and an approved rewrite of a human zone printed OK (issue #39). The action is now a
+  closed set: it is normalised (`str(...).strip().lower()`) and anything that is not `create`
+  or `edit` is rejected as an unknown action before any zone rule runs, so a synonym is no
+  longer a way past the fence. Five tests in `tests/test_phase3.py` hold the line, including
+  the issue's own two-proposal example.
 - A registry record in a human zone was judged as a broken note (issue #14). `apply` writes a `wiki_note` as
   markdown into `02_WIKI`, and an installed brain scans its own root (`health.py --vault .`), so
   the first decision record this repo filed came back `INVALID: missing field: type … invalid
