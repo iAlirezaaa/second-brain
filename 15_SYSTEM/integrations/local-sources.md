@@ -31,6 +31,27 @@ rebuilt. Partial-word queries scan the indexed vocabulary, so latency and storag
 measurement on large real stores. Punctuation-only queries have no matches. This is not
 automatic learning.
 
+## A training set, but only from sources you marked
+
+Importing a source does not make it training data. Marking is a separate, explicit decision,
+and the bare command only previews what it would do:
+
+```text
+python 15_SYSTEM/scripts/sources.py dataset-share SOURCE_ID                # preview, writes nothing
+python 15_SYSTEM/scripts/sources.py dataset-share SOURCE_ID --approve      # the decision
+python 15_SYSTEM/scripts/sources.py dataset-build out/dataset --limit 800  # shareable sources only
+python 15_SYSTEM/scripts/sources.py dataset-verify out/dataset             # re-hash against the manifest
+```
+
+`dataset-build` refuses any imported source that was not marked, and it names the ids it
+refused rather than quietly leaving them out. Every example cites its `source_id` and a byte
+range into that record's own `raw.txt`, so the text can be sliced back out of the record and
+checked; offsets are UTF-8 bytes, which is what keeps a Persian or mixed-script record exact.
+The manifest records ids, kinds, origins, checksums, per-source example counts and a digest,
+so the same records reproduce the same dataset. Nothing is trained here, nothing leaves the
+machine, and no improvement is claimed — the independent eval and before/after report are
+still planned in `ROADMAP.md`.
+
 ## Evidence-backed private lessons
 
 After importing and rebuilding, an agent or person can propose a lesson using an exact

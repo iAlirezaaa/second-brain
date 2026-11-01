@@ -282,7 +282,8 @@ not the old template folders.*
 
 *Source: the owner's brief, phase 4 ("the next phase adds a data-preparation and fine-tuning
 pipeline with an independent evaluation set; a model improvement is never claimed without
-measurable evidence"). Nothing here is built yet, and nothing will be claimed until it is.*
+measurable evidence"). The first step (the dataset builder) shipped in phase 36; the rest is
+still unbuilt, and nothing will be claimed until it is.*
 
 - [x] 🟢 **M** A dataset builder over approved sources only: every training example cites a
       `source_import` id and a byte range, and a source the owner has not marked shareable is
