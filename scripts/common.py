@@ -123,8 +123,12 @@ FINGERPRINT_SKIP_PATHS = ("14_CANDIDATES/loop/probes",)
 # The backups folder joins it for a reason worth stating: recording a known good base is
 # an act of paperwork, and a snapshot that changed the identity it just recorded would make
 # `--save` invalidate its own evidence.
+# `15_SYSTEM/generated/` is paperwork too, and it is the one that used to bite: a single
+# `hades.py index` rewrites the catalogue, so every recorded probe and every saved base
+# went stale by doing nothing but reading the brain (issue #15). It is gitignored and
+# rebuilt from scratch, so it cannot be part of an identity a clone has to reproduce.
 PAPERWORK_SKIP_PATHS = ("14_CANDIDATES/", "12_RUNTIME/", "15_SYSTEM/backups/",
-                        "vault-template/90_Agent_Output/proposals/")
+                        "15_SYSTEM/generated/", "vault-template/90_Agent_Output/proposals/")
 
 # The documented git boundary, restated for one question: could a reader who cloned this
 # repository open this path? A laptop-only file is not evidence -- it is a rumour the author

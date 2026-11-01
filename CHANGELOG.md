@@ -7,6 +7,23 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **Three open issues closed by fixing the sentence, not the permission** — `tests/test_phase36_doors_tell_the_truth.py`.
+  **#15** `state_fingerprint` counted `15_SYSTEM/generated/`, so one `hades.py index` aged every
+  recorded probe and no clone could reproduce a saved base; regenerated output is now
+  paperwork beside the quarantine shelf and the backups folder, and a real edit still moves
+  the identity. **#16** a refused `export` called every denied path "the denied machine plane",
+  which is false for `09_OPERATIONS` (`"plane": "human"`, excluded because it holds client
+  data) and teaches an agent that the folder is disposable; the refusal now names the rule
+  that fired (`denied_for_default_context` / `generated_denied`) and the plane the zone
+  declares, and `AGENTS.md`, `00_START_HERE/ACCESS.md` and `SYSTEM_MAP.md` deny the whole zone
+  the config denies — with a test that compares the three documents to
+  `denied_prefixes()`, so the list cannot split again. **#17** `memory.py --add --supersedes
+  <unknown>` wrote the row and let `--check` refuse a lesson already in the ledger and already
+  rendered into `MEMORY.md`; retirement is validated at the door now (unknown id and
+  self-retirement both refused, nothing written), while the gate keeps its "never held" rule
+  for a phantom that arrives any other way. The HADES battery's export check asserts the new
+  wording: 120/120.
+
 - **A Persian audit of the five-phase brief, with a downloadable copy** — `00_START_HERE/PLAN_FA.md`
   maps each phase of the owner's brief (audit, knowledge core, harnesses and multi-device sync,
   evidence-backed learning, ecosystem and automation) to the roadmap phases that implement it,

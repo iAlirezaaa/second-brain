@@ -7,7 +7,7 @@
 ## پیش‌فرض‌ها (منبع حقیقت: `15_SYSTEM/config/system.json`)
 
 - **خواندن مجاز:** ۰۰ تا ۱۰ + `11_CONTROL`
-- **خواندن ممنوع:** `12_RUNTIME`، `13_LAB`، `14_CANDIDATES`، `15_SYSTEM/generated`، `15_SYSTEM/backups`، `09_OPERATIONS/clients_metadata_only`
+- **خواندن ممنوع:** `12_RUNTIME`، `13_LAB`، `14_CANDIDATES`، `15_SYSTEM/generated`، `15_SYSTEM/backups`، `09_OPERATIONS` (کل ناحیه؛ دادهٔ مشتری)
 - **نوشتن:** فقط به مسیری که نوع رکورد تعیین می‌کند؛ اسکریپت‌ها هیچ‌جا بیرون از رجیستری نمی‌نویسند
 - **classification:** `public` / `internal` / `confidential` / `restricted`؛ پیش‌فرض `internal`
 

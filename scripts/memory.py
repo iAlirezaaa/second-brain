@@ -230,6 +230,20 @@ def add(root, args):
         print("REFUSED  %s is already in the ledger — supersede it (--supersedes) instead of "
               "writing the same label twice" % cid)
         return 1
+    # retirement is validated at the door too (issue #17): a row pointing at an id nobody
+    # holds retires nothing, and the old behaviour wrote it and left `--check` to complain
+    # about a row that was already in the ledger and already rendered into MEMORY.md.
+    if args.supersedes:
+        if args.supersedes == cid:
+            print("REFUSED  %s cannot supersede itself — a row that retires itself retires nothing"
+                  % cid)
+            return 1
+        if args.supersedes not in existing:
+            print("REFUSED  --supersedes %s names no row this ledger holds (it holds: %s) — "
+                  "retirement must point at a lesson that exists, and a refusal after the "
+                  "write is a cleanup task, not a gate"
+                  % (args.supersedes, ", ".join(sorted(existing)) or "nothing"))
+            return 1
     if args.verdict not in VERDICTS:
         print("REFUSED  --verdict %r is not one of %s — a lesson needs a verdict the gate "
               "recognises" % (args.verdict, list(VERDICTS)))

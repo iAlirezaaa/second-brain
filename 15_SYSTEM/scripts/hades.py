@@ -309,6 +309,28 @@ def is_denied(path_rel, cfg):
     return any(path_rel.startswith(d) for d in denied_prefixes(cfg))
 
 
+def denied_reason(path_rel, cfg):
+    """Why `path_rel` is out of the default context, in the config's own vocabulary.
+
+    The old sentence called every denied path a "denied machine plane", which is false for
+    `09_OPERATIONS` (`"plane": "human"`, excluded because it holds client data) and wrong in
+    a way an agent reads as permission to treat the folder as disposable state (issue #16).
+    Two rules can fire, so the reason names the one that did and the plane the zone declares.
+    """
+    for z in cfg["zones"]:
+        if z.get("denied_for_default_context") and path_rel.startswith(z["dir"]):
+            return ("%s is outside the default context: zone %s is declared \"plane\": \"%s\" "
+                    "with denied_for_default_context (excluded from the read scope, not "
+                    "deleted and not denied to the owner)"
+                    % (path_rel, z["dir"], z.get("plane", "?")))
+    for z in cfg["zones"]:
+        if z.get("generated_denied") and path_rel.startswith(z["dir"] + "/generated"):
+            return ("%s is outside the default context: %s/generated is regenerated output "
+                    "(generated_denied), rebuilding it is the way to read it"
+                    % (path_rel, z["dir"]))
+    return "%s is not readable through this door" % path_rel
+
+
 # ---------------------------------------------------------------- validation
 def type_ok(value, t):
     return {
@@ -1469,7 +1491,7 @@ def export_audit(cfg, path, quiet=False):
         raise SystemExit("ERROR: no such path: %s" % path)
     rp = rel(src.resolve()) if str(src).startswith(str(ROOT)) else path
     if is_denied(rp, cfg):
-        return None, ["REFUSED: %s is in the denied machine plane" % rp]
+        return None, ["REFUSED: %s" % denied_reason(rp, cfg)]
     allowed = {".md", ".json", ".txt", ".yaml", ".yml", ".py", ".ps1", ".bat", ".cfg", ".toml"}
     blocked, valid = [], []
     for p in sorted(src.rglob("*")):

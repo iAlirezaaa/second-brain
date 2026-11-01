@@ -151,7 +151,19 @@ class TestDrift(Harness):
         self.assertEqual(len(rows), 2, "the ledger is append-only")
 
     def test_superses_must_point_at_a_real_row(self):
-        self.add(cid="mem-alpha", extra=["--supersedes", "mem-phantom"])
+        # the refusal moved to the door in issue #17: a row citing a phantom is never written,
+        # so the gate cannot be the first reader to notice it
+        refused = self.add(cid="mem-alpha", extra=["--supersedes", "mem-phantom"])
+        self.assertEqual(refused.returncode, 1, refused.stdout)
+        self.assertIn("REFUSED", refused.stdout)
+        self.assertIn("mem-phantom", refused.stdout)
+        self.assertEqual([], self.rows(), "a refused retirement writes nothing")
+        # and the gate still catches a phantom that arrives some other way
+        self.add(cid="mem-alpha")
+        ledger = self.tmp / "15_SYSTEM" / "memory" / "lessons.jsonl"
+        row = json.loads(ledger.read_text(encoding="utf-8").splitlines()[0])
+        row["supersedes"] = "mem-phantom"
+        ledger.write_text(json.dumps(row) + "\n", encoding="utf-8")
         result = memory(self.tmp)
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("never held", result.stdout)

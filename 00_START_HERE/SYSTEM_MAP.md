@@ -49,4 +49,4 @@
 
 ## دسترسی
 
-پیش‌فرض بازیابی: ۰۰ تا ۱۰ و `11_CONTROL`. پیش‌فرض ممنوع: `12_RUNTIME`، `13_LAB`، `14_CANDIDATES`، `15_SYSTEM/generated`، `15_SYSTEM/backups`، و `09_OPERATIONS/clients_metadata_only`. دسترسی از دیده‌شدنِ پوشه استنتاج نمی‌شود؛ `config/system.json` مرجع همین فهرست است و `doctor` آن را با واقعیت روی دیسک مقایسه می‌کند.
+پیش‌فرض بازیابی: ۰۰ تا ۱۰ و `11_CONTROL`. پیش‌فرض ممنوع: `12_RUNTIME`، `13_LAB`، `14_CANDIDATES`، `15_SYSTEM/generated`، `15_SYSTEM/backups`، و `09_OPERATIONS` (کل ناحیه؛ دادهٔ مشتری). دسترسی از دیده‌شدنِ پوشه استنتاج نمی‌شود؛ `config/system.json` مرجع همین فهرست است و `doctor` آن را با واقعیت روی دیسک مقایسه می‌کند.

@@ -447,8 +447,10 @@ def t_refusals():
         check("publish without --approve is refused", c == 2 and "REFUSED" in o, o.strip()[:120])
 
         c, o = v.hades("export", "--path", "12_RUNTIME")
-        check("export of the machine plane is refused",
-              c == 2 and "denied machine plane" in o, o.strip()[:150])
+        # the reason names the rule that fired, not a plane the zone may not declare (#16)
+        check("export of the machine plane is refused and named",
+              c == 2 and "denied_for_default_context" in o and '"plane": "machine"' in o,
+              o.strip()[:150])
 
         c, o = v.hades("export", "--path", "04_INTELLIGENCE")
         blocked = [l for l in o.splitlines() if l.startswith("BLOCKED")]
