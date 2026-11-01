@@ -19,6 +19,8 @@ agent's writes belong under this repo's law: a registered row on the quarantine 
 the human merges. Agent run history is a separate disposable-plane script (runs.py); runs
 die at the git boundary, evidence is promoted to the shelf, never stranded in machine state.
 `lesson_propose` writes private proposals in .brain-data; only a local human can approve them.
+`source_import` records one explicitly named file from inside the brain as a private source
+(raw bytes kept, provenance recorded); it refuses any path outside the brain or in a denied zone.
 """
 import argparse
 import contextlib
@@ -125,6 +127,32 @@ def tool_source_search(root, args):
                                          int(args.get('limit', 10))), ensure_ascii=False)
     except (ValueError, OSError) as exc:
         raise ToolRefused(str(exc))
+
+
+def tool_source_import(root, args):
+    from backend import access, sources
+    path = str(args.get('path') or '').strip()
+    kind = str(args.get('kind') or '').strip()
+    origin = str(args.get('origin') or '').strip()
+    source_format = str(args.get('format') or 'text').strip()
+    if not path or not kind or not origin:
+        raise ToolRefused('source_import needs path, kind and origin -- an unnamed file '
+                          'cannot be cited later')
+    candidate = Path(path) if Path(path).is_absolute() else Path(root) / path
+    if not access.readable(root, candidate):
+        raise ToolRefused('path is outside the brain or inside a denied zone -- this door '
+                          'imports only files the human placed in the brain')
+    try:
+        meta = sources.ingest(root, candidate, kind, origin, source_format)
+    except (ValueError, OSError) as exc:
+        raise ToolRefused(str(exc))
+    try:
+        sources.rebuild(root)
+    except (ValueError, OSError) as exc:
+        raise ToolRefused('source stored as %s but the index rebuild refused: %s -- the raw '
+                          'record is authoritative and a later rebuild can index it'
+                          % (meta.get('id'), exc))
+    return json.dumps(meta, ensure_ascii=False)
 
 
 def tool_lesson_propose(root, args):
@@ -333,6 +361,17 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
                        "limit": {"type": "integer", "minimum": 1, "maximum": 100}},
                      "required": ["query"]}},
+    {"name": "source_import",
+     "description": "Import one explicitly named UTF-8 file from inside the brain as a private "
+                    "source record: raw bytes kept, origin and import time recorded. Duplicate "
+                    "content and origin are idempotent; nothing is scanned or fetched, and paths "
+                    "outside the brain or in denied zones are refused.",
+     "inputSchema": {"type": "object", "properties": {
+         "path": {"type": "string"},
+         "kind": {"type": "string", "enum": ["document", "research", "conversation", "generated"]},
+         "origin": {"type": "string"},
+         "format": {"type": "string", "enum": ["text", "codex-jsonl", "claude-stream-json", "cursor-stream-json"]}},
+         "required": ["path", "kind", "origin"]}},
     {"name": "vault_search",
      "description": "Keyword search (BM25) over the brain's own prose: zones, wiki, skills, "
                     "the shelf, root documents. Rebuilt per call, never stale.",
@@ -371,7 +410,7 @@ TOOLS = [
          "run": {"type": "string"}}, "required": ["run"]}},
     {"name": "candidate_propose",
      "description": "File a proposal as a registered row on the quarantine shelf "
-                    "(14_CANDIDATES/loop). The only write tool; a human disposes it.",
+                    "(14_CANDIDATES/loop). A write tool; a human disposes the row.",
      "inputSchema": {"type": "object", "properties": {
          "dimension": {"type": "string", "enum": ["invariant", "domain"]},
          "cue": {"type": "string"},
@@ -384,6 +423,7 @@ TOOL_FUNCS = {
     "lesson_propose": tool_lesson_propose,
     "lesson_recall": tool_lesson_recall,
     "source_search": tool_source_search,
+    "source_import": tool_source_import,
     "vault_search": tool_vault_search,
     "memory_recall": tool_memory_recall,
     "registry_list": tool_registry_list,

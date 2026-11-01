@@ -1,5 +1,14 @@
 # HADES OS v0.01
 
+**دومغزیِ شخصی و محلی (فارسی):** یک مغزِ مارک‌داون برای یک انسان و چند ایجنت — دانش، پروژه‌ها
+و اجراها در ناحیه‌های شماره‌دار می‌مانند و قانون را اسکریپت اجرا می‌کند، نه تذکر. هارنس‌ها از
+همان پروتکلی وصل می‌شوند که همین حالا حرف می‌زنند (MCP روی stdio، بدون پورت و کلید)، هر
+منبع با منشأ و زمانش بازیابی می‌شود، و هر تغییر پایدار سیستم فقط با تأیید انسان انجام می‌گیرد.
+
+**برنامهٔ مرحله‌ای و ممیزی، به فارسی:** [PLAN_FA.md](00_START_HERE/PLAN_FA.md) — نگاشت
+پنج فاز به کد امروز، دستورِ اثبات هر بند، و فهرست شکاف‌های باز. نسخهٔ قابل دانلود:
+[second-brain-plan-fa.pdf](downloads/second-brain-plan-fa.pdf).
+
 For explicitly importing and searching local documents or conversation exports, see
 [local source ingestion](15_SYSTEM/integrations/local-sources.md). Imported content is
 private local data, and the MCP source search exposes matches to connected clients.
@@ -47,8 +56,10 @@ Four properties this repo is built to keep:
    `15_SYSTEM/scripts/mcp_server.py` — a Model Context Protocol server over stdio, stdlib-only,
    no port, no keys; OpenCode, Claude Desktop and friends register it natively
    (`15_SYSTEM/integrations/`). Read tools are open (`vault_search`, `memory_recall`, the
-   registry, `doctor_status`, the run ledger); `candidate_propose` files on the quarantine
-   shelf, and `lesson_propose` files private source-backed proposals — humans decide. Agent runs
+   registry, `doctor_status`, `source_search`, the run ledger); `source_import` records one
+   file the client names from inside the brain as a private source with its provenance,
+   `candidate_propose` files on the quarantine shelf, and `lesson_propose` files private
+   source-backed proposals — humans decide. Agent runs
    are a disposable ledger (`15_SYSTEM/scripts/runs.py` → `12_RUNTIME/agent_runs/`) that
    refuses actors the registry has never heard of, and `runs.py promote` exports a finished
    run's feed into a registered shelf row — the run dir never becomes evidence, it lives behind
@@ -72,6 +83,13 @@ python 15_SYSTEM/scripts/hades.py doctor   # the HADES plane: zones, manifests, 
 4. [نقشه سیستم](00_START_HERE/SYSTEM_MAP.md) — ناحیه‌ها، شناسه‌ها، رابطه‌ها
 5. [چرخه حیات و ارتقا](00_START_HERE/LIFECYCLE.md) — از ورودی تا تولیدی
 6. [دسترسی و رازها](00_START_HERE/ACCESS.md) — مرز دو صفحه، Git، رمز
+
+**دانلود / Downloads**
+
+| فایل | چیست |
+| --- | --- |
+| [second-brain-plan-fa.pdf](downloads/second-brain-plan-fa.pdf) | سند فارسی برنامهٔ مرحله‌ای و ممیزی، برای خواندن و اشتراک‌گذاری بیرون از گیت‌هاب |
+| [PLAN_FA.md](00_START_HERE/PLAN_FA.md) | همان سند به شکل مارک‌داون، با پیوند به تست و دستور هر بند |
 
 **پژوهش مرتبط:** [قالب دومغزی دو‌صفحه‌ای](00_START_HERE/SECOND_BRAIN_TEMPLATE.md) — مقایسه قالب‌های موجود، الگوی پیشنهادی و نگاشت آن به همین ساختار.
 
@@ -100,7 +118,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 426 |
+| tests collected (`python -m unittest discover -s tests`) | 428 |
 | health gates (`python scripts/health.py`) | 8 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
@@ -122,9 +140,10 @@ idempotent)، `wiki.py` (سایت ناحیه انسان)، `test_hades.py` (تس
 بک‌اندی که ایجنت‌ها صدا می‌زنند، پروتکلی است که هارنس‌ها همین حالا حرف می‌زنند:
 `15_SYSTEM/scripts/mcp_server.py` — سرور MCP روی stdio، فقط کتابخانهٔ استاندارد، بدون
 پورت و کلید و دیمن. ابزارهای خواندن بازند (`vault_search`، `memory_recall`،
-`registry_list`، `registry_show`، `doctor_status`). ابزار `candidate_propose` روی قفسهٔ قرنطینه
-و `lesson_propose` در حافظهٔ خصوصی پیشنهاد ثبت می‌کند — ایجنت پیشنهاد می‌دهد، انسان تصمیم
-می‌گیرد. نمونهٔ اتصال برای OpenCode و Claude Desktop در `15_SYSTEM/integrations/` است.
+`registry_list`، `registry_show`، `doctor_status`، `source_search`). ابزار `source_import`
+یک فایلِ صریحاً انتخاب‌شده را با منشأ و زمان به‌عنوان منبع خصوصی ثبت می‌کند (مسیر بیرون از
+مغز یا در نواحی ممنوع رد می‌شود)، `candidate_propose` روی قفسهٔ قرنطینه و `lesson_propose`
+در حافظهٔ خصوصی پیشنهاد ثبت می‌کند — ایجنت پیشنهاد می‌دهد، انسان تصمیم می‌گیرد. نمونهٔ اتصال برای OpenCode و Claude Desktop در `15_SYSTEM/integrations/` است.
 
 EN — The backend agents call is the protocol harnesses already speak:
 `15_SYSTEM/scripts/mcp_server.py`, a Model Context Protocol server over stdio,

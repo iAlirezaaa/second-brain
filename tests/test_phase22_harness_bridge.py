@@ -180,9 +180,57 @@ class TestHarnessDoor(TempVault, unittest.TestCase):
         self.assertEqual("2025-06-18", result["protocolVersion"])
         r = c.call("tools/list", mid=2)
         names = [t["name"] for t in r["result"]["tools"]]
-        self.assertEqual(["capabilities", "lesson_propose", "lesson_recall", "source_search", "vault_search", "memory_recall", "registry_list", "registry_show",
+        self.assertEqual(["capabilities", "lesson_propose", "lesson_recall", "source_search", "source_import", "vault_search", "memory_recall", "registry_list", "registry_show",
                           "doctor_status", "runs_list", "runs_show", "candidate_propose"],
                          names)
+
+    def test_source_import_records_a_selected_file_with_provenance(self):
+        note = self.root / "02_WIKI" / "concepts" / "import-me.md"
+        note.parent.mkdir(parents=True, exist_ok=True)
+        note.write_text("A unique transcript about zetaloom retrieval", encoding="utf-8")
+        c = self.client()
+        initialize(c)
+        text, is_err = c.result_text("tools/call", {"name": "source_import", "arguments": {
+            "path": "02_WIKI/concepts/import-me.md", "kind": "research",
+            "origin": "harness:session-7"}})
+        self.assertFalse(is_err, text)
+        meta = json.loads(text)
+        self.assertEqual("harness:session-7", meta["origin"])
+        self.assertEqual("research", meta["kind"])
+        self.assertEqual("import-me.md", meta["filename"])
+        self.assertTrue((self.root / ".brain-data" / "sources" / meta["id"] / "raw.txt").is_file())
+        text, is_err = c.result_text("tools/call", {"name": "source_import", "arguments": {
+            "path": "02_WIKI/concepts/import-me.md", "kind": "research",
+            "origin": "harness:session-7"}})
+        self.assertFalse(is_err, text)
+        self.assertEqual(meta["id"], json.loads(text)["id"], "same bytes + origin must be idempotent")
+        text, is_err = c.result_text("tools/call", {"name": "source_search",
+                                                    "arguments": {"query": "zetaloom"}})
+        self.assertFalse(is_err, text)
+        hits = json.loads(text)
+        self.assertEqual(meta["id"], hits[0]["id"])
+        self.assertEqual("harness:session-7", hits[0]["origin"])
+
+    def test_source_import_refuses_paths_outside_the_brain_and_denied_zones(self):
+        elsewhere = tempfile.TemporaryDirectory()
+        self.addCleanup(elsewhere.cleanup)
+        outside = Path(elsewhere.name) / "outside-the-brain.txt"
+        outside.write_text("not yours", encoding="utf-8")
+        c = self.client()
+        initialize(c)
+        for path in [str(outside), "15_SYSTEM/backups/leak.txt",
+                     ".brain-data/sources/x/raw.txt", "02_WIKI/concepts/missing.md", ""]:
+            text, is_err = c.result_text("tools/call", {"name": "source_import",
+                                                        "arguments": {"path": path,
+                                                                      "kind": "document",
+                                                                      "origin": "harness:test"}})
+            self.assertTrue(is_err, "%r was accepted: %s" % (path, text))
+        text, is_err = c.result_text("tools/call", {"name": "source_import", "arguments": {
+            "path": "02_WIKI/concepts/import-me.md", "kind": "research"}})
+        self.assertTrue(is_err, text)
+        self.assertIn("origin", text)
+        self.assertFalse((self.root / ".brain-data").exists(),
+                         "a refused import must not leave a record behind")
 
     def test_registry_is_visible_through_the_door(self):
         wid = self.new_record("wiki_note", "Door Law")

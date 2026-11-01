@@ -7,6 +7,26 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **A Persian audit of the five-phase brief, with a downloadable copy** — `00_START_HERE/PLAN_FA.md`
+  maps each phase of the owner's brief (audit, knowledge core, harnesses and multi-device sync,
+  evidence-backed learning, ecosystem and automation) to the roadmap phases that implement it,
+  gives the command that proves each row, and names every gap that is still open. The same
+  document ships as `downloads/second-brain-plan-fa.pdf`, a shareable PDF built from the
+  markdown, and the README leads with a Persian description and links both. `ROADMAP.md` gains
+  phase 36 — the fine-tuning pipeline the brief defers — as *planned*, with its acceptance
+  criteria (dataset manifest, independent eval, before/after report, recovery path) and its
+  refusal: no "better model" claim without all four.
+- **`source_import`: the harness door records a source, not only reads one** — the brief asks for
+  a stable interface to register as well as search sources from CLI *and* MCP; `source_search`
+  existed and the recording path was CLI-only. `15_SYSTEM/scripts/mcp_server.py` now exposes
+  `source_import` (thirteen tools): one explicitly named UTF-8 file inside the brain becomes a
+  private source record with its raw bytes, kind, origin, filename and import time; the same
+  bytes and origin are idempotent; the index is rebuilt after a successful import; and a path
+  outside the brain or inside a denied zone (`.brain-data`, `.git`, secrets, runtime/lab/
+  candidate/backup) is refused before any record exists. Nothing is scanned or fetched. Two
+  tests in `tests/test_phase22_harness_bridge.py` prove the round trip and the refusals, the
+  HADES battery asserts the thirteen-tool set, and the MCP registry record, integration docs,
+  canon and lesson ledger carry the new door.
 - **An installed brain is a whole brain** (phase 35, issue #27) — `scripts/install.py` now
   lays the same sixteen zones the repo uses (read from `15_SYSTEM/config/system.json`) and
   ships what the gates judge: `15_SYSTEM/scripts` (registry door, backend, MCP),

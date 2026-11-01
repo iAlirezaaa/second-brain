@@ -13,6 +13,7 @@ config shape. Registry record: `MCP-E1807E50` (`11_CONTROL/mcp/`).
 |---|---|---|
 | `vault_search` | read | BM25 keyword search over permitted brain prose; unicode tokenizer, Persian works |
 | `source_search` | read | search explicitly imported private sources; exposes matching content to the client |
+| `source_import` | **write** | record one explicitly named file from inside the brain as a private source (raw bytes kept, provenance recorded, index rebuilt); refuses paths outside the brain or in denied zones |
 | `lesson_propose` | **write** | propose a private source-backed lesson for human review |
 | `lesson_recall` | read | retrieve approved private lessons with evidence |
 | `capabilities` | read | list registry capabilities and suggest matches for a task |

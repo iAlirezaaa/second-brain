@@ -21,7 +21,7 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 426 |
+| tests collected (`python -m unittest discover -s tests`) | 428 |
 | health gates (`python scripts/health.py`) | 8 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
@@ -142,9 +142,9 @@ status: active
     resources; MCP resources now serve only the advertised list.
   - `backend/capabilities.py` + `backend/install_skill.py`: catalogue with origin, permissions,
     harness approval and install state; plan → apply → never replace, `--approve` required.
-- **Doors**: MCP is now 12 tools (`source_search`, `lesson_propose`, `lesson_recall`,
-  `capabilities` added). `tests/test_hades.py` and `tests/test_phase22_harness_bridge.py`
-  assert the 12-tool set.
+- **Doors**: MCP is now 13 tools (`source_search`, `source_import`, `lesson_propose`,
+  `lesson_recall`, `capabilities` added). `tests/test_hades.py` and
+  `tests/test_phase22_harness_bridge.py` assert the 13-tool set.
 - **Measured before this handoff**: 343 unittests OK (1 skipped), 120/120 HADES checks, 7/7
   health gates, 26 lessons, 6 candidate rows on the shelf. Every number is in §1's generated
   block; the gate list is counted there, not typed here.

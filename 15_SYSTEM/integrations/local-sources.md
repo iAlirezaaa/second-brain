@@ -19,7 +19,11 @@ rebuild refuses incomplete source directories and leaves the previous index in p
 re-import also refuses an incomplete existing record instead of overwriting its bytes.
 Inspect and recover the incomplete directory before retrying. The
 `source_search` MCP tool returns matching imported text with its origin and timestamp to
-the connected client: connect only clients trusted to receive that data. Search uses a
+the connected client: connect only clients trusted to receive that data. Its write
+counterpart `source_import` records one file the client names by path — the path must stay
+inside the brain and outside the denied zones (`.brain-data`, `.git`, secrets, runtime /
+lab / candidate / backup zones), the raw bytes are kept, and the index is rebuilt after a
+successful import. Nothing is scanned, globbed or fetched: one path per call. Search uses a
 local BM25-style word ranking, permits partial-word matches and normalizes Arabic/Persian
 variants of yeh and kaf. All query terms must occur; this is not semantic search. Rebuilding
 creates word-frequency tables; older indexes remain readable using a slower text scan until

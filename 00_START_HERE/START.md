@@ -14,7 +14,7 @@
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 426 |
+| tests collected (`python -m unittest discover -s tests`) | 428 |
 | health gates (`python scripts/health.py`) | 8 |
 | registry records (`11_CONTROL/**/*.json`) | 15 |
 | skills in the pack (`skills/*/SKILL.md`) | 10 |
@@ -124,9 +124,9 @@ py -3.10 15_SYSTEM\scripts\hades.py sync --harness HAR-XXXXXXXX
 
 مغز از طریق پروتکل MCP روی stdio صدا زده می‌شود — بدون پورت، کلید و دیمن
 (`15_SYSTEM/scripts/mcp_server.py`؛ نمونهٔ اتصال OpenCode و Claude Desktop در
-`15_SYSTEM/integrations/`). ابزارهای خواندن بازند و تنها ابزار نوشتن
-`candidate_propose` است که یک ردیف ثبت‌شده روی قفسهٔ قرنطینه می‌گذارد — ایجنت
-پیشنهاد می‌دهد، انسان تصمیم می‌گیرد.
+`15_SYSTEM/integrations/`). ابزارهای خواندن بازند؛ `source_import` یک فایلِ صریحاً انتخاب‌شده
+داخل مغز را با منشأ، زمان و بایت‌های خام ثبت می‌کند و `candidate_propose` یک ردیف ثبت‌شده
+روی قفسهٔ قرنطینه می‌گذارد — ایجنت پیشنهاد می‌دهد، انسان تصمیم می‌گیرد.
 
 ```powershell
 py -3.10 15_SYSTEM\scripts\mcp_server.py          # خودِ دروازه؛ هارنس این را اجرا می‌کند

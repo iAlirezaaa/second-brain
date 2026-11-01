@@ -58,7 +58,9 @@ stderr only. Tools:
   shelf (`14_CANDIDATES/loop`), which is where an agent's writes belong. Agents propose;
   humans decide. (`candidate_check.register` prints, so its stdout is captured — a tool
   print must never land on the protocol channel.) `lesson_propose` adds a separate private,
-  evidence-backed proposal; `lesson_recall` reads approved private lessons.
+  evidence-backed proposal; `lesson_recall` reads approved private lessons; `source_import`
+  records one explicitly named file from inside the brain as a private source (raw bytes kept,
+  provenance recorded, index rebuilt) and refuses paths outside the brain or in denied zones.
 
 Resources: `AGENTS.md`, `HANDOFF.md`, `README.md`, `ROADMAP.md`, `00_START_HERE/SYSTEM_MAP.md`,
 — existing files only, restricted to the advertised resource list.
