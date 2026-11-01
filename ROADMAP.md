@@ -284,10 +284,16 @@ not the old template folders.*
 pipeline with an independent evaluation set; a model improvement is never claimed without
 measurable evidence"). Nothing here is built yet, and nothing will be claimed until it is.*
 
-- [ ] 🔵 **M** A dataset builder over approved sources only: every training example cites a
+- [x] 🟢 **M** A dataset builder over approved sources only: every training example cites a
       `source_import` id and a byte range, and a source the owner has not marked shareable is
       refused rather than silently included. The dataset manifest records source ids, counts
-      and a digest, so a training run can be reproduced from records alone.
+      and a digest, so a training run can be reproduced from records alone. Shipped as
+      `15_SYSTEM/scripts/backend/dataset.py` behind `sources.py dataset-share | dataset-build |
+      dataset-verify`: marking is a preview unless `--approve` is passed, `build` slices each
+      record's own `raw.txt` so the cited range reproduces the example text byte for byte,
+      and `dataset-verify` re-hashes a folder against its manifest. Eight tests in
+      `tests/test_phase36_dataset.py` prove the refusal, the byte ranges, the digest and the
+      tamper check.
 - [ ] 🔵 **S** An independent evaluation set in the `tests/fixtures/retrieval-golden.json`
       format, with a gate that refuses any case id appearing in the training manifest — an
       eval that shares examples with training measures memorisation, not retrieval.

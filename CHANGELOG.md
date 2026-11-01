@@ -7,6 +7,21 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **Phase 36, step one: a dataset that refuses what the owner did not offer** — the roadmap's
+  next phase starts with the only part that can be checked without training anything.
+  `15_SYSTEM/scripts/backend/dataset.py` (behind `sources.py dataset-share`, `dataset-build`,
+  `dataset-verify`) builds `examples.jsonl` + `manifest.json` from imported source records: a
+  record must be marked shareable by an explicit `--approve` (the bare command is a preview and
+  writes nothing), an unmarked record is refused with its id instead of being silently
+  included, and every example cites its `source_id` plus a byte range into that record's own
+  `raw.txt` — checked at build time by slicing the bytes back out. The manifest records the
+  source ids, kinds, origins, checksums, per-source example counts and a digest over the
+  examples, so a run reproduces from records alone; `dataset-verify` re-hashes a folder and
+  reports the mismatches. Eight tests in `tests/test_phase36_dataset.py` hold it, including a
+  Persian record (the range is computed in UTF-8 bytes, not characters) and a tampered file.
+  Nothing is trained and no improvement is claimed: the independent eval, the before/after
+  report and the recovery path are still listed as planned.
+
 - **The issue ledger: a status a clone can read** — the brief's "if it is resolved, show it in the
   repo" had no mechanism, so issue #39 stayed fixed in a commit message and open on GitHub.
   `15_SYSTEM/config/issues.json` now records all 22 issues with a state (`open` / `partial` /

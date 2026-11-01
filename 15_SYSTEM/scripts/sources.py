@@ -3,7 +3,7 @@
 import argparse
 import json
 from pathlib import Path
-from backend import sources, source_sync, learning, retrieval_eval, batch
+from backend import sources, source_sync, learning, retrieval_eval, batch, dataset
 
 
 def main():
@@ -51,6 +51,14 @@ def main():
     compare = sub.add_parser('compare-benchmarks', help='compare reports with matching cases and corpus')
     compare.add_argument('baseline', type=Path)
     compare.add_argument('candidate', type=Path)
+    share = sub.add_parser('dataset-share', help='mark one imported source shareable (needs --approve)')
+    share.add_argument('source_id')
+    share.add_argument('--approve', action='store_true')
+    build = sub.add_parser('dataset-build', help='build examples from shareable sources only')
+    build.add_argument('out', type=Path)
+    build.add_argument('--limit', type=int, default=800)
+    verify = sub.add_parser('dataset-verify', help='re-hash a built dataset against its manifest')
+    verify.add_argument('out', type=Path)
     args = parser.parse_args()
     try:
         if args.command == 'import':
@@ -77,13 +85,21 @@ def main():
         elif args.command == 'benchmark':
             cases = json.loads(args.cases.read_text(encoding='utf-8'))
             result = retrieval_eval.run(args.root, cases, args.limit)
+        elif args.command == 'dataset-share':
+            result = dataset.mark_shareable(args.root, args.source_id, args.approve)
+        elif args.command == 'dataset-build':
+            result = dataset.build(args.root, args.out, limit=args.limit)
+        elif args.command == 'dataset-verify':
+            result = dataset.verify(args.out)
         else:
             baseline = json.loads(args.baseline.read_text(encoding='utf-8'))
             candidate = json.loads(args.candidate.read_text(encoding='utf-8'))
             result = retrieval_eval.compare(baseline, candidate)
         print(json.dumps(result, ensure_ascii=True, indent=2))
         failed = isinstance(result, dict) and bool(result.get('error'))
-        return 1 if (args.command == 'verify-copy' and not result['verified']) or failed else 0
+        broken = ((args.command == 'verify-copy' and not result['verified'])
+                  or (args.command == 'dataset-verify' and not result['ok']))
+        return 1 if broken or failed else 0
     except (OSError, ValueError, UnicodeError, KeyError) as exc:
         parser.exit(2, 'ERROR: %s\n' % exc)
 
