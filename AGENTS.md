@@ -42,8 +42,10 @@ must confirm a successful result and review any promotion separately.
 The central orchestrator/toolkit can bind tool calls to an existing Session
 (using --session and --task-id); SBO_REQUIRE_SESSION=1 refuses calls made through
 that toolkit without a Session. This is now a runtime gate, not merely advice.
-Direct MCP tools and external harnesses do NOT yet share this guard: require
-independent adapters and integration tests before claiming global coverage.
+The stdio MCP door also checks session preflight and actor write allowlists
+when strict mode is enabled or session_id is provided. This is not a
+cryptographically authenticated identity or universal host-enforced permission:
+external scripts and harness-native tools still require their own adapters.
 The CLI cannot certify who physically supplied an approval flag. Never claim universal automatic enforcement before the actual harness
 adapter and permission boundary are tested. The existing scripts/handoff.py
 remains the canonical repository-level handoff generator.
