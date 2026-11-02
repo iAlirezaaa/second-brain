@@ -880,6 +880,30 @@ tool inside a denied plane answers with data from it.*
 
 ---
 
+## Phase 50 — The defects a reader finds are worth an issue, not a conversation · 🔵
+
+- [ ] 🔵 **L** Twenty-three defects in this tree were read out of the source, reproduced by hand on
+      this machine, and filed on the issue ledger as `iAlirezaaa/second-brain-os` #41–#63: three P1,
+      thirteen P2, seven P3. Every body names the command that proves it, the file and the line it was
+      read from, and the smallest fix the reporter would accept — and none of them was filed on an
+      agent's say-so. Four of the nine claims an audit pass returned did not reproduce and were
+      dropped, among them the assertion that `scripts/ci_floor.py` claims a doc cross-check it never
+      performs: it reads `README.md` and `00_START_HERE/START.md` and does refuse a disagreement (a
+      planted `3.11` row prints `INVALID … while pyproject.toml requires 3.9` and exits 1). The three
+      P1 rows are the ones that make a green run lie: the nightly report never lands because
+      `.github/workflows/loop.yml` pushes straight to a protected `main`; a failed measurement becomes
+      a document row that `scripts/doc_report.py --check` then certifies as fresh; and five gates
+      answer an empty — or absent — input with the same OK line they use for a clean house, `link_check`
+      among them printing `OK — 0 broken links` for a `--vault` path that does not exist. Work them in
+      severity order, one issue per slice, and close each with the witness its issue already names
+      rather than a rephrasing of it. Where a line number moved because another slice landed first, the
+      issue carries a comment with the number as read at `b450cd5`.
+
+*Filed 2026-11-02 against `64bd3f5`; re-checked against `b450cd5` for the five commits that landed in
+between, and the four whose citations moved carry a comment rather than a silent edit.*
+
+---
+
 ## Distribution & scale (parked) · ⛔/🔵
 
 - [ ] 🔵 multi-host installer flags (`--host codex|opencode|gemini|claude`) — one skill tree,
