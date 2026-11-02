@@ -276,9 +276,34 @@ class LtmStore(Tool):
         return "stored as row %d in .kb/ltm.sqlite (disposable plane; promote to keep)" % row
 
 
+
+class LayaDecide(Tool):
+    """Optional System-1 read-only proposal, never an action executor."""
+    name = "core.laya_decide"
+    behavior = "read_only"
+    description = ("Get typed local Laya decision proposals. Opt-in on Python 3.10+; "
+                   "low-confidence answers require review and never trigger tools.")
+    args_schema = {"type": "object",
+                   "properties": {"state": {}, "questions": {"type": "object"},
+                                  "min_confidence": {"type": "number"},
+                                  "model": {"type": "string"}},
+                   "required": ["state", "questions"]}
+
+    def run(self, root, ctx, args):
+        from . import laya_adapter
+        if not isinstance(args, dict):
+            raise ToolError("laya_decide needs a JSON object")
+        try:
+            return json.dumps(laya_adapter.decide(
+                args.get("state"), args.get("questions"),
+                min_confidence=args.get("min_confidence", laya_adapter.DEFAULT_MIN_CONFIDENCE),
+                model=args.get("model", "auto")), ensure_ascii=False)
+        except laya_adapter.DecisionRefused as exc:
+            raise ToolError(str(exc))
+
 def default_registry():
     reg = Registry()
     for tool in (FsRead(), VaultSearch(), RegistryList(), RegistryShow(),
-                 LtmFetch(), LtmStore()):
+                 LtmFetch(), LtmStore(), LayaDecide()):
         reg.register(tool)
     return reg
