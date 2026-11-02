@@ -66,5 +66,6 @@ or inspect it, then plan again. There is no package download and no network call
 
 Private source data is documented in [local-sources.md](local-sources.md): explicit import,
 rebuildable index, provenance, evidence-backed lessons, retrieval measurement and folder
-transfer with conflicts. That data is not encrypted, not backed up automatically and not
-synchronised by this repo.
+transfer with conflicts. A person can seal the planes it lives in with `python scripts/vault.py
+--seal`, but nothing happens by itself: `encrypted_private_backup` is off, no scheduler runs that
+command, and no restore has been proved on a machine that never held the bytes.

@@ -7,6 +7,22 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **Phase 52, the cipher gets a door, and the door refuses more than it accepts.**
+  `15_SYSTEM/scripts/backend/vault.py` and `scripts/vault.py` put the SBO1 container over the
+  planes `private_planes` names in `15_SYSTEM/config/system.json`: seal, inspect, verify,
+  restore, status and bench. A passphrase comes from a terminal, asked twice, or from a file
+  that must resolve outside the repository — never from argv, where a process list keeps it.
+  `scripts/vault_check.py` joins `GATES` in `scripts/health.py` and judges a witness by its
+  shape, so the flag `encrypted_private_backup` cannot be turned on by naming a file; until a
+  cross-machine restore is proved, the gate's honest line is that nothing claims the private
+  planes are backed up. Refusals are a closed tuple, and a test walks the module's syntax tree
+  to prove every rule is both declared and raised. Found by testing rather than reading: on
+  Windows a redirected stdin answers `isatty()` with True for the NUL device, so an
+  `isatty()`-only guard would have hung CI in `getpass` instead of refusing it. `safe_rel`
+  moved from `scripts/base.py` up to `scripts/common.py`, so the installer, the known-good
+  backup and the vault resolve paths under one rule. Symlinks inside the scope are refused
+  rather than sealed, a damaged container is named without hiding the good ones, and a failed
+  open moves no bytes and leaves no temporary file.
 - **Phase 51, the cipher exists before anything is allowed to say it protects.**
   `15_SYSTEM/scripts/backend/crypto.py` implements ChaCha20-Poly1305 (RFC 8439) with a
   scrypt/PBKDF2 derivation layer and a versioned container — `SBO1`, kdf id, kdf params, salt, a

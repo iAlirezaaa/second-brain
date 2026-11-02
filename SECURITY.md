@@ -41,9 +41,12 @@ Read this before you rely on it:
   this build can run; if it cannot, it says so and stops instead of falling back to something
   weaker. The versioned format is what lets an audited engine replace this one later without
   rewriting the bytes on disk.
-- **Nothing is sealed yet.** There is no command over the real planes and no cross-machine restore
-  proof, so "encryption at rest" is a primitive available here, not a protection this repo currently
-  provides. See `ROADMAP.md`, Phase 51, for exactly what is missing.
+- **A seal command exists; the restore proof does not cross machines yet.** `scripts/vault.py` seals
+  and opens the planes the `private_planes` of `15_SYSTEM/config/system.json` names, and
+  `scripts/vault_check.py` refuses to let `encrypted_private_backup` be on without a witness judged by
+  its shape. So "encryption at rest" is now a surface someone can call — on the machine that holds
+  the key — while §8's *regular restore test*, on a machine that never saw the bytes, is still open.
+  See `ROADMAP.md`, Phase 52, for exactly what is missing.
 
 ## Expectations
 

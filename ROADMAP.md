@@ -975,12 +975,14 @@ missing for it to be called a backup.*
       phase: brief §14 requires every Job to carry identity, permission, status, last-run, retry
       policy, resource limit, report and stop method, and no such record exists in this repo. A timer
       wrapped around a cipher is a scheduled unverified restore.
-- [ ] 🔵 **M** what this phase deliberately did not do, so nobody reads it as protection yet: nothing
-      real is sealed. There is no seal/unseal surface over the private planes, no cross-machine
-      restore proof, no verification record under `11_CONTROL/`, and all six feature flags in
-      `15_SYSTEM/config/system.json` are still `false`. The debt row D-2 of
-      `00_START_HERE/CONSTITUTION.md` stays written exactly as it is until a command seals a plane a
-      human can read back on another machine.
+- [ ] 🔵 **M** what this phase deliberately did not do, so nobody reads it as protection yet: the
+      primitive now has a caller — `scripts/vault.py` seals and opens the planes named in the
+      `private_planes` of `15_SYSTEM/config/system.json`, and Phase 52 is the record of that — but
+      there is still no cross-machine restore proof and no verification record under `11_CONTROL/`,
+      so `encrypted_private_backup` stays `false` beside `vector_search`, `live_orchestration`,
+      `external_ingestion`, `filesystem_acl_enforcement`, `automated_backup_scheduling` and
+      `github_autosync`. The debt row D-2 of `00_START_HERE/CONSTITUTION.md` stays written exactly as
+      it is until a command seals a plane a human can read back on another machine.
 
 *Measured 2026-11-02: `python 15_SYSTEM/scripts/backend/crypto.py --selftest` green; the phase test
 green on this tree and red on the primitive's first draft; `python -m unittest discover -s tests` grew
@@ -988,6 +990,67 @@ by the cases in `tests/test_phase51_chacha20_poly1305.py` and `python scripts/do
 regenerated the measured blocks of `README.md`, `HANDOFF.md` and `00_START_HERE/START.md`, while
 `python scripts/health.py` reported the verdict it had already reported — a primitive with no caller
 cannot move a gate, and the row above says that is the point.*
+
+---
+
+## Phase 52 — The cipher gets a door, and the door refuses more than it accepts · 🟢
+
+*Source: brief §8 «بکاپ رمزنگاری‌شده و آزمون منظم Restore» and §16, which asks a bootstrap to be able
+to create an encrypted private vault. Phase 51 left a primitive with no caller, and a gate cannot
+notice that: a gate judges a surface, and there was none. This phase builds the surface over the
+planes config names — and stops there. `encrypted_private_backup` stays `false`, because the restore
+has been proved between two directories on the machine that sealed the bytes, not on a machine that
+never saw them, and a witness written by the machine holding the key is not evidence.*
+
+- [x] 🔵 **L** `15_SYSTEM/scripts/backend/vault.py` — the mechanism behind one seam: `plane_list` (the
+      scope is read from `private_planes`, never guessed), `collect` (walk, and refuse a symlink
+      rather than seal a pointer that a restore could follow out of the vault), `seal`, `inspect`,
+      `verify`, `restore`, `rows`, `status`, `bench` and `gate`. Only Phase 51's `SBO1` container
+      holds bytes; every index line lives in the journal beside it, which is inside the gitignored
+      backup plane, so a shelf cannot leak the paths it protects.
+- [x] 🔵 **M** `scripts/vault.py` — the one command a person types: `--seal`, `--unseal NAME --into
+      DIR`, `--verify`, `--list`, `--status`, `--bench`, `--selftest`. A passphrase comes from a
+      terminal, asked twice, or from `--passphrase-file` — and a file that resolves inside the
+      repository is refused, because a key stored next to the ciphertext it protects would ride the
+      clone this feature exists to make safe and would be sealed inside its own container. Never from
+      argv, where a process list and a CI log both keep it.
+- [x] 🔵 **M** `scripts/vault_check.py`, appended to `GATES` in `scripts/health.py` and to
+      `ROOT_ONLY_GATES` — the three-door shape `scripts/vector_check.py` established: flag off, one
+      OK line saying plainly that nothing claims the private planes are backed up; flag on, the gate
+      demands a witness and judges its **shape**, never its file name; a witness that exists but is
+      incomplete is INVALID with each missing key named, exit 1.
+- [x] 🔵 **S** `private_planes` in `15_SYSTEM/config/system.json` is the seal scope, and it is
+      deliberately **not** a `zones` entry: a zone would widen `denied_prefixes()` for every reader at
+      once and rewrite the door that `tests/test_phase36_doors_tell_the_truth.py` measures, for a
+      reason that has nothing to do with backups.
+- [x] 🔵 **M** the bug class reading did not find — and this time it was a platform, not a cipher. On
+      Windows a redirected run answers `sys.stdin.isatty()` with **True** for the NUL device, so an
+      `isatty()`-only guard walked straight into `getpass` and waited there for a person who was not
+      there: CI would have hung rather than failed. `_passphrase` now requires a console on stdout as
+      well and otherwise refuses by name, so an agent gets `REFUSED: … (rule: passphrase source)`.
+- [x] 🔵 **S** `safe_rel` moved up from `scripts/base.py` to `scripts/common.py`, and
+      `scripts/base.py` imports it, so the installer, the known-good backup and the vault resolve
+      `..` and absolute paths under one rule instead of three quietly different ones.
+- [x] 🔵 **S** every refusal is a member of the closed tuple `RULES` in
+      `15_SYSTEM/scripts/backend/vault.py`, and the phase test walks the module's syntax tree to
+      assert that each rule raised somewhere is declared and each declared rule is raised somewhere —
+      the list cannot drift into decoration.
+- [x] 🔵 **M** what the shelf guarantees, measured rather than assumed: oldest-first rotation, a
+      damaged container named on `--list` while the good ones are still listed, a failed open that
+      moves nothing and leaves no `.tmp` behind, and a `state_fingerprint` for the restored tree that
+      `scripts/common.py` computes the same way before and after.
+- [ ] 🔵 **M** what this phase deliberately did not do: no verification record under `11_CONTROL/`, no
+      cross-machine restore job, no flag flip, and no seal path inside `scripts/base.py`. Those are
+      one change, not four — a witness is only worth its weakest side, so the record, the CI pair and
+      the flip land in the same commit or not at all. A shared evidence-gate library stays unmade
+      until a second gate needs it rather than being factored around one.
+
+*Measured 2026-11-03: `python scripts/vault.py --selftest` green; `python scripts/vault_check.py`
+green with its inert verdict; `python scripts/health.py` prints a vault line where it printed none,
+which is exactly the difference Phase 51 could not close; `python -m unittest discover -s tests` green
+with the cases of `tests/test_phase52_vault_seals_the_private_plane.py` added, one skipped because it
+needs a symlink privilege this Windows host does not grant; `python scripts/doc_report.py --write`
+regenerated the measured blocks of `README.md`, `HANDOFF.md` and `00_START_HERE/START.md`.*
 
 ---
 

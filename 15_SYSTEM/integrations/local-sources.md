@@ -69,7 +69,7 @@ only. Evaluation checks the source checksum, exact quote, and whether the chosen
 retrieves the source. It does not establish that the interpretation is true, useful, or
 improves performance. A human must review the proposal and explicitly approve it. Pending
 and approved records stay in `.brain-data/learning`, not the tracked public memory ledger.
-They require secure backup outside Git.
+They can be sealed with `python scripts/vault.py --seal` — a command a person runs, not a schedule: nothing seals them by itself, and no restore has been proved on a machine that never held the bytes.
 
 `sources.py benchmark CASES.json` measures mean recall and mean reciprocal rank on a
 separately curated JSON array such as `[{"query":"restore", "expected_ids":["SOURCE_ID"]}]`.
