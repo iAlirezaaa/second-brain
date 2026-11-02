@@ -14,7 +14,9 @@ change lands and the version has not been released yet.
 
 The first release that answers the whole brief: the repo keeps its own version, tells a stranger
 how to work in it, judges its own designs with reviewers that share no context with the author,
-and borrows only the schemas peers proved. 696 tests, 12 gates, 0 open issues.
+and borrows only the schemas peers proved. 696 tests, 12 gates, 0 open issues. The number is
+derived, not chosen: 137 commits after `v0.0.3`, the highest level in their subjects is `feat`, so
+`python scripts/version.py --bump minor` wrote `0.1.0` into `VERSION` and `pyproject.toml`.
 
 ### Added
 - **Phase 44, three of six rows: peer practices that cost no dependency** —
