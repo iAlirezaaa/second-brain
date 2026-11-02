@@ -48,7 +48,7 @@ def _validate(state, questions, threshold, model):
         serialized = json.dumps(state, ensure_ascii=False, allow_nan=False)
     except (TypeError, ValueError):
         raise DecisionRefused("state must be JSON serializable")
-    if not serialized or len(serialized) > MAX_STATE_CHARS:
+    if not serialized or (isinstance(state, str) and not state.strip()) or len(serialized) > MAX_STATE_CHARS:
         raise DecisionRefused("state is empty or exceeds the 12000-character local decision budget")
     if not isinstance(questions, dict) or not 1 <= len(questions) <= MAX_QUESTIONS:
         raise DecisionRefused("questions must contain 1 to 8 typed questions")
@@ -64,6 +64,11 @@ def _validate(state, questions, threshold, model):
         instruction = q.get("instructions")
         if not isinstance(instruction, str) or not 1 <= len(instruction.strip()) <= 512:
             raise DecisionRefused("question instructions must be 1-512 characters")
+        if q["type"] == "score":
+            levels = q.get("criteria")
+            if (not isinstance(levels, list) or not 2 <= len(levels) <= MAX_OPTIONS or
+                    not all(isinstance(level, str) and level.strip() and len(level) <= 512 for level in levels)):
+                raise DecisionRefused("score requires 2-20 ordered criteria levels")
         if q["type"] == "choice":
             criteria = q.get("criteria")
             if (not isinstance(criteria, dict) or not 2 <= len(criteria) <= MAX_OPTIONS
@@ -88,7 +93,7 @@ def decide(state, questions, min_confidence=DEFAULT_MIN_CONFIDENCE, model="auto"
         try:
             library = importlib.import_module("laya")
         except ImportError:
-            raise DecisionRefused("Laya not installed: python -m pip install '.[laya]'")
+            raise DecisionRefused("Laya not installed: python -m pip install -r requirements-laya.txt")
         try:
             router = library.Router()
         except Exception as exc:
@@ -107,9 +112,9 @@ def decide(state, questions, min_confidence=DEFAULT_MIN_CONFIDENCE, model="auto"
             raise DecisionRefused("Laya response is missing answer %s" % key)
         kind = question["type"]
         value = answer.get(kind)
-        valid = (value in question["criteria"] if kind == "choice" else
+        valid = (isinstance(value, str) and value in question["criteria"] if kind == "choice" else
                  isinstance(value, (int, float)) and not isinstance(value, bool) and
-                 math.isfinite(value) and (kind == "score" or 0.0 <= value <= 1.0))
+                 math.isfinite(value) and (0.0 <= value <= len(question["criteria"]) - 1 if kind == "score" else 0.0 <= value <= 1.0))
         raw_conf = answer.get("answer_confidence", answer.get("confidence"))
         conf = (float(raw_conf) if isinstance(raw_conf, (int, float)) and
                 not isinstance(raw_conf, bool) and math.isfinite(raw_conf) and
