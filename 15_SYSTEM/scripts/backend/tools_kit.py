@@ -8,6 +8,11 @@ and the args are deterministic JSON. Write-gating is double: a writes-tool needs
 APPROVED context (CLI `--approve`) AND its qualified name in the actor's allowlist.
 An actor with an empty allowlist gets zero write tools -- default deny, like everywhere
 else in this repo. Read tools stay open.
+
+Phase 44 adds the third thing a client needs to know about a tool, which the `writes` flag
+alone never said: its *behaviour* (`read_only` / `idempotent` / `destructive`, one closed
+vocabulary declared here and read by the MCP door's `--check-tools` audit). `writes` says
+whether the gate bites; the tag says what a call can cost.
 """
 import importlib.util
 import json
@@ -22,12 +27,31 @@ class ToolError(Exception):
     """A tool refused its arguments or failed -- surfaces as a failed step, never a crash."""
 
 
+# Phase 44: every tool says what kind of act it is, from one closed vocabulary. Basic Memory
+# answers "what may a harness call" with progressive tool discovery; the useful part of that is
+# the tag, not the AGPL code around it. The three names are read by `mcp_server.py --check-tools`
+# and cross-checked against the actor registry, so they are a gate and not a comment:
+#   read_only    -- cannot change any state; safe to call at any time, any number of times.
+#   idempotent   -- writes, and what it writes is fixed by its arguments: calling it again cannot
+#                   overwrite or remove state that already exists (it either dedupes by content
+#                   or appends a row nothing else points at). The tag never claims byte-identical
+#                   results: a second `core.ltm_store` call is a second row, which is still not a
+#                   destructive act.
+#   destructive  -- writes that can overwrite or remove state the caller did not create in this
+#                   same call. Nothing in the shipped toolkit is tagged destructive today.
+# A class that declares no tag at all is carried as the worst case (`destructive`) rather than
+# silently reading as harmless, and the audit names it for inheriting instead of declaring.
+BEHAVIOR_TAGS = ("destructive", "idempotent", "read_only")
+UNDECLARED_TAG = "destructive"
+
+
 class Tool:
     """The BaseTool contract: a qualified name, a description, a JSON args schema,
-    a `writes` flag, and one deterministic `run`."""
+    a `writes` flag, a behaviour tag, and one deterministic `run`."""
     name = ""
     description = ""
     writes = False
+    behavior = UNDECLARED_TAG          # each tool declares its own; the default is worst case
     args_schema = {"type": "object", "properties": {}}
 
     def run(self, root, ctx, args):
@@ -53,12 +77,29 @@ class Registry:
     def register(self, tool):
         if not tool.name:
             raise ToolError("a tool needs a qualified name (e.g. core.fs_read)")
+        if tool.behavior not in BEHAVIOR_TAGS:
+            raise ToolError("tool %s declares behaviour %r, which is not one of the closed set "
+                            "%s -- an invented tag cannot be cross-checked against an actor's "
+                            "tool_allowlist" % (tool.name, tool.behavior, list(BEHAVIOR_TAGS)))
+        if tool.behavior == "read_only" and tool.writes:
+            raise ToolError("tool %s is tagged read_only but its write gate bites (writes=True) "
+                            "-- one tool, two truths about what it does" % tool.name)
         if tool.name in self._tools:
             raise ToolError("duplicate tool %s" % tool.name)
         self._tools[tool.name] = tool
 
     def names(self):
         return sorted(self._tools)
+
+    def rows(self):
+        """What the audit reads: name, declared tag, write flag, and whether the class declared
+        the tag itself or inherited the worst-case default."""
+        out = []
+        for name in self.names():
+            tool = self._tools[name]
+            out.append({"name": name, "behavior": tool.behavior, "writes": bool(tool.writes),
+                        "declared": "behavior" in vars(type(tool))})
+        return out
 
     def get(self, qualified):
         if qualified not in self._tools:
@@ -107,6 +148,7 @@ def bind_hades(root):
 
 class FsRead(Tool):
     name = "core.fs_read"
+    behavior = "read_only"
     description = ("Read a file inside this vault (first 2000 chars). Paths outside the "
                    "root are refused -- the guard is the tool's, not the caller's.")
     args_schema = {"type": "object",
@@ -129,6 +171,7 @@ class FsRead(Tool):
 
 class VaultSearch(Tool):
     name = "core.vault_search"
+    behavior = "read_only"
     description = "BM25 keyword search over the brain's prose (the same index the MCP door uses)."
     args_schema = {"type": "object",
                    "properties": {"query": {"type": "string"}, "limit": {"type": "integer"}},
@@ -152,6 +195,7 @@ class VaultSearch(Tool):
 
 class RegistryList(Tool):
     name = "core.registry_list"
+    behavior = "read_only"
     description = "List registry records (optionally by kind), with the active/superseded split."
     args_schema = {"type": "object", "properties": {"kind": {"type": "string"}}}
 
@@ -172,6 +216,7 @@ class RegistryList(Tool):
 
 class RegistryShow(Tool):
     name = "core.registry_show"
+    behavior = "read_only"
     description = "One registry record by id, as the registry enumerates it."
     args_schema = {"type": "object",
                    "properties": {"id": {"type": "string"}},
@@ -191,6 +236,7 @@ class RegistryShow(Tool):
 
 class LtmFetch(Tool):
     name = "core.ltm_fetch"
+    behavior = "read_only"
     description = "Fetch the actor's long-term memory by relevance (FTS5 over .kb/ltm.sqlite)."
     args_schema = {"type": "object",
                    "properties": {"query": {"type": "string"}, "k": {"type": "integer"}},
@@ -211,9 +257,11 @@ class LtmFetch(Tool):
 class LtmStore(Tool):
     name = "core.ltm_store"
     writes = True
+    behavior = "idempotent"
     description = ("Store a fact/lesson in the actor's long-term memory (.kb/ltm.sqlite -- "
                    "the disposable plane; promote to the shelf to keep it). Writes: needs "
-                   "--approve AND a place in the actor's tool_allowlist.")
+                   "--approve AND a place in the actor's tool_allowlist. Behaviour "
+                   "idempotent: it appends a row and overwrites or deletes nothing.")
     args_schema = {"type": "object",
                    "properties": {"text": {"type": "string"}, "source": {"type": "string"}},
                    "required": ["text"]}

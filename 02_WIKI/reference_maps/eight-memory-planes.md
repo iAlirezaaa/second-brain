@@ -28,7 +28,7 @@ were measured on 2026-10-28 with `hades.py list`, `memory.py --list` and `doctor
 | repository | `HANDOFF.md`, `CHANGELOG.md`, `MEMORY.md` | — | `scripts/handoff.py`, `scripts/doc_report.py`, `scripts/memory.py --render` | every host reads `HANDOFF.md` §1 before acting (`AGENTS.md`) | `tests/test_phase18_measured_docs.py` |
 | agent | `11_CONTROL/agents/<AGT-id>/agent.json` + `OVERVIEW.md` | `.kb/ltm.sqlite` (FTS5 store/fetch, `backend/ltm.py`) | `hades.py plan --kind agent` | `hades.py list --kind agent`, MCP `registry_list` | `tests/test_phase17_control_plane.py` |
 | task | `09_OPERATIONS/tasks/TSK-*.json` | `12_RUNTIME/agent_runs/<RUN>/{run.json,steps.jsonl}` | `hades.py plan --kind task`; `runs.py start/step` | `runs.py list/show`, MCP `runs_list`/`runs_show` | `tests/test_phase22_harness_bridge.py` |
-| error | `15_SYSTEM/memory/lessons.jsonl` | — | `memory.py --add` (a lesson whose evidence does not open, whose plane is missing or unmapped, or whose verdict contradicts a live lesson is refused at the door) | `memory.py --recall`, `memory.py --contradictions`, MCP `memory_recall` | `tests/test_phase15_repo_memory.py`; the `plane` field (issue #25) and the contradiction rule (issue #24) are proven by `tests/test_phase40_lesson_planes_and_contradictions.py` and refused by `memory.py --check` |
+| error | `15_SYSTEM/memory/lessons.jsonl` | — | `memory.py --add` (a lesson whose evidence does not open, whose plane is missing or unmapped, whose verdict contradicts a live lesson, or whose validity window cannot be read is refused at the door) | `memory.py --recall`, `memory.py --contradictions`, `memory.py --windows`, MCP `memory_recall` | `tests/test_phase15_repo_memory.py`; the `plane` field (issue #25) and the contradiction rule (issue #24) are proven by `tests/test_phase40_lesson_planes_and_contradictions.py` and refused by `memory.py --check`; the `verified_at`/`expires` window (phase 44) by `tests/test_phase44_lesson_validity_windows.py` |
 | decision | `02_WIKI/decisions/`, `09_OPERATIONS/decisions/` | — | plan door, then `hades.py set` for amendments | `hades.py show/list`, `hades.py search --query` | `tests/test_phase22_amend_a_record.py` |
 | knowledge | `02_WIKI/**`, `skills/**` | `.kb/kb.sqlite` (currently `vault-template` only) | plan door, `scripts/promote.py` | `hades.py search --query` (BM25 over repo prose), `wiki.py` | `tests/test_retrieval_golden.py` |
 | conversation | `15_SYSTEM/integrations/local-sources.md` (the contract) | `.brain-data/{sources,learning}` | `sources.py import/batch`, explicit selection only | `source_search` MCP, `sources.py search`, `lesson_recall` | `tests/test_sources.py` |
@@ -126,3 +126,59 @@ refused — the conflict became a decision, which is exactly what `supersedes` i
 active conflict ever lands, `--check` refuses it and the human decides whether to supersede,
 correct the evidence, or file it on `14_CANDIDATES/loop/` as a candidate note; the gate surfaces
 the disagreement, it never silently edits the history that produced it.
+
+## A lesson states how long it is certain for (phase 44)
+
+Graphiti and Zep keep two clocks on every edge: when a fact was discovered and when it stops
+being true. The LLM that would have to decide the second one is refused by charter §2, but the
+window itself is free, so a lesson row may now carry two optional calendar days:
+
+| field | means | absent means |
+|---|---|---|
+| `verified_at` | the day a person last re-checked this row's evidence | nobody re-checked it |
+| `expires` | the last day the claim still counts as certain | **evergreen** — the row states no window |
+
+The rule, in one line and enforced by `scripts/memory.py`: **no `expires` = evergreen;
+`expires >= today` = current; `expires < today` = stale; a field that is not a `YYYY-MM-DD` day,
+a `verified_at` in the future, or an `expires` that closes before it opened = invalid.**
+
+A stale row is a *named gate row*, not a quiet one:
+
+```
+python scripts/memory.py --check      # INVALID  STALE mem-<id>: expires YYYY-MM-DD, N day(s) past…
+python scripts/memory.py --windows    # the measured counts, one line per dated claim
+python scripts/memory.py --recall "…" # [id | verdict | conf] the lesson  [STALE: expires …]
+```
+
+`--check` refuses (exit 1, so `health.py` goes red) and `--recall` marks the answer, because a
+claim a reader holding only this clone cannot re-check must never be reported as merely OK. What
+the gate does **not** do is edit: the row, its line in `MEMORY.md` and its bytes in
+`lessons.jsonl` survive the refusal — retiring a claim is a human act through
+`--add --supersedes`, re-verifying one is a human act through `--verified-at`/`--expires` on a new
+row. A superseded row that is stale is reported by `--windows` and not refused, since it is not
+presented as certainty anywhere.
+
+One rule, two readers: the machine plane's door has no separate memory of its own —
+`mcp_server.py`'s `memory_recall` tool calls `memory.recall()` and appends the same
+`memory.recall_mark()`, so an agent asking the ledger a question sees the identical
+`[STALE: expires …, re-check before applying]` suffix a human sees in `--recall`, and the row is
+still returned. `tools/list` says so in the tool's own description
+(`tests/test_phase44_lesson_validity_windows.py::TheDoorMarksTheWindowToo`).
+
+**The measurement behind the default, not a wish.** `python scripts/memory.py --windows` on this
+repo, 2026-11-02: **27 row(s): 27 evergreen, 0 current, 0 stale, 0 invalid** — 0 of 27 shipped
+lessons are stale, because none of them carries either field. That is why `absent = evergreen` is
+the default: the alternative (key the rule on the existing `date` field and call anything older
+than N days stale) would have aged every row by a claim the row never made — `date` is when the
+lesson was written, not when it stops being true. No date was written into
+`15_SYSTEM/memory/lessons.jsonl` to make the gate bite; the refusals above are proven with
+fixtures (`tests/test_phase44_lesson_validity_windows.py`), and there is no `--migrate-window`
+command, because migrating would mean inventing 27 windows nobody observed.
+
+## What a lesson's tags are NOT
+
+The window is about a *claim*, not about a tool. The behaviour tags a phase-44 harness door
+carries (`read_only` / `idempotent` / `destructive`, cross-checked against an actor's
+`tool_allowlist`) live in `15_SYSTEM/scripts/mcp_server.py --check-tools` and
+`backend/tools_kit.py`; they are listed here only so the two vocabularies are not confused for
+one another.

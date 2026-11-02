@@ -12,7 +12,8 @@ one protocol for reaching a brain: MCP over stdio. So the backend here is one sc
 
 Wire format: newline-delimited JSON-RPC 2.0 on stdin/stdout (MCP stdio transport),
 logs on stderr only. Supported: initialize, ping, tools/list, tools/call,
-resources/list, resources/read, single messages and batched arrays.
+resources/list, resources/read, single messages and batched arrays. `tools/list` reports each
+tool's behaviour tag, so a harness can read what a call costs before it makes one.
 
 Read tools are open. `candidate_propose` writes where an
 agent's writes belong under this repo's law: a registered row on the quarantine shelf --
@@ -21,6 +22,19 @@ die at the git boundary, evidence is promoted to the shelf, never stranded in ma
 `lesson_propose` writes private proposals in .brain-data; only a local human can approve them.
 `source_import` records one explicitly named file from inside the brain as a private source
 (raw bytes kept, provenance recorded); it refuses any path outside the brain or in a denied zone.
+
+Phase 44 — behaviour tags. Every tool this door exposes declares one tag from a closed set
+(`read_only` / `idempotent` / `destructive`, the vocabulary declared once in
+`backend/tools_kit.py`), and `tools/list` carries it on the wire, so a harness decides what to
+touch by reading the door instead of guessing: Basic Memory's progressive tool discovery reduced
+to the one part worth stealing, none of its AGPL code. The tags are a gate, not a comment.
+`--check-tools` audits them and cross-checks them against the actor registry: a tool reachable
+with a missing or invented tag, a tool declared with nothing behind it, a door and an engine that
+tag the same capability differently, and an agent `tool_allowlist` naming a tool no door carries a
+tag for are each a refusal. Exit 0 means every reachable tool is legible; it does not mean the
+house is healthy (that is scripts/health.py).
+
+  python 15_SYSTEM/scripts/mcp_server.py --check-tools [--root DIR]   # the audit, no stdio
 """
 import argparse
 import contextlib
@@ -44,6 +58,7 @@ sys.path.insert(0, str(_HERE.parents[1] / "scripts"))  # common / memory / candi
 import common  # noqa: E402
 import memory as memory_ledger  # noqa: E402
 import candidate_check  # noqa: E402
+from backend.tools_kit import BEHAVIOR_TAGS, default_registry  # noqa: E402
 
 HADES_PATH = _HERE / "hades.py"
 PROTOCOL_VERSION = "2025-06-18"
@@ -113,8 +128,9 @@ def tool_memory_recall(root, args):
         return text_result("no lesson matched %r" % query)
     lines = []
     for row in rows:
-        lines.append("%s [verdict %s, confidence %s]" % (row.get("id"), row.get("verdict"),
-                                                         row.get("confidence")))
+        lines.append("%s [verdict %s, confidence %s]%s" % (row.get("id"), row.get("verdict"),
+                                                           row.get("confidence"),
+                                                           memory_ledger.recall_mark(row)))
         lines.append("  cue: %s" % row.get("cue"))
         lines.append("  lesson: %s" % row.get("lesson"))
     return text_result("\n".join(lines))
@@ -346,22 +362,22 @@ def tool_candidate_propose(root, args):
 
 
 TOOLS = [
-    {"name": "capabilities", "description": "List or suggest registered capabilities; never installs or grants permissions.",
+    {"name": "capabilities", "behavior": "read_only", "description": "List or suggest registered capabilities; never installs or grants permissions.",
      "inputSchema": {"type": "object", "properties": {"task": {"type": "string"},
                      "harness_id": {"type": "string"}, "limit": {"type": "integer", "minimum": 1, "maximum": 100}}}},
-    {"name": "lesson_propose", "description": "Propose a private lesson with an exact source quote; human approval is separate.",
+    {"name": "lesson_propose", "behavior": "idempotent", "description": "Propose a private lesson with an exact source quote; human approval is separate.",
      "inputSchema": {"type": "object", "properties": {"source_id": {"type": "string"},
                      "quote": {"type": "string"}, "lesson": {"type": "string"},
                      "query": {"type": "string"}}, "required": ["source_id", "quote", "lesson", "query"]}},
-    {"name": "lesson_recall", "description": "Recall approved private lessons with their source evidence.",
+    {"name": "lesson_recall", "behavior": "read_only", "description": "Recall approved private lessons with their source evidence.",
      "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
                      "limit": {"type": "integer", "minimum": 1, "maximum": 100}}, "required": ["query"]}},
-    {"name": "source_search",
+    {"name": "source_search", "behavior": "read_only",
      "description": "Search explicitly imported private sources, including their origin and import time.",
      "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
                        "limit": {"type": "integer", "minimum": 1, "maximum": 100}},
                      "required": ["query"]}},
-    {"name": "source_import",
+    {"name": "source_import", "behavior": "idempotent",
      "description": "Import one explicitly named UTF-8 file from inside the brain as a private "
                     "source record: raw bytes kept, origin and import time recorded. Duplicate "
                     "content and origin are idempotent; nothing is scanned or fetched, and paths "
@@ -372,43 +388,44 @@ TOOLS = [
          "origin": {"type": "string"},
          "format": {"type": "string", "enum": ["text", "codex-jsonl", "claude-stream-json", "cursor-stream-json"]}},
          "required": ["path", "kind", "origin"]}},
-    {"name": "vault_search",
+    {"name": "vault_search", "behavior": "read_only",
      "description": "Keyword search (BM25) over the brain's own prose: zones, wiki, skills, "
                     "the shelf, root documents. Rebuilt per call, never stale.",
      "inputSchema": {"type": "object", "properties": {
          "query": {"type": "string"},
          "limit": {"type": "integer", "minimum": 1, "maximum": 20}},
          "required": ["query"]}},
-    {"name": "memory_recall",
+    {"name": "memory_recall", "behavior": "read_only",
      "description": "Recall the repo's own lessons (cue/lesson/evidence/confidence) for a "
-                    "situation. Read this before repeating a mistake.",
+                    "situation. Read this before repeating a mistake. A lesson whose validity "
+                    "window has passed is still returned and marked STALE, never dropped.",
      "inputSchema": {"type": "object", "properties": {
          "query": {"type": "string"},
          "limit": {"type": "integer", "minimum": 1, "maximum": 20}},
          "required": ["query"]}},
-    {"name": "registry_list",
+    {"name": "registry_list", "behavior": "read_only",
      "description": "List registry records (optionally by kind), with the active/superseded "
                     "split the index enforces.",
      "inputSchema": {"type": "object", "properties": {
          "kind": {"type": "string"}}}},
-    {"name": "registry_show",
+    {"name": "registry_show", "behavior": "read_only",
      "description": "One registry record by id, as the registry enumerates it.",
      "inputSchema": {"type": "object", "properties": {
          "id": {"type": "string"}}, "required": ["id"]}},
-    {"name": "doctor_status",
+    {"name": "doctor_status", "behavior": "read_only",
      "description": "A structured status readout (records, zones, lessons, runs). Facts "
                     "only -- the gate itself is scripts/health.py.",
      "inputSchema": {"type": "object", "properties": {}}},
-    {"name": "runs_list",
+    {"name": "runs_list", "behavior": "read_only",
      "description": "Agent runs from the disposable plane (12_RUNTIME/agent_runs): who ran, "
                     "status, step count, whether the run was promoted to the shelf.",
      "inputSchema": {"type": "object", "properties": {
          "agent": {"type": "string"}}}},
-    {"name": "runs_show",
+    {"name": "runs_show", "behavior": "read_only",
      "description": "One agent run by id: identity plus its append-only step feed.",
      "inputSchema": {"type": "object", "properties": {
          "run": {"type": "string"}}, "required": ["run"]}},
-    {"name": "candidate_propose",
+    {"name": "candidate_propose", "behavior": "idempotent",
      "description": "File a proposal as a registered row on the quarantine shelf "
                     "(14_CANDIDATES/loop). A write tool; a human disposes the row.",
      "inputSchema": {"type": "object", "properties": {
@@ -433,6 +450,166 @@ TOOL_FUNCS = {
     "runs_show": tool_runs_show,
     "candidate_propose": tool_candidate_propose,
 }
+
+
+# ---------------------------------------------------------------- behaviour-tag audit (phase 44)
+def engine_rows():
+    """Every tool the engine toolkit reaches, with the tag its own class declared."""
+    return default_registry().rows()
+
+
+def agent_rows(root):
+    """The actor registry as the door sees it: its id, its tool_allowlist, the file it came from.
+
+    An unreadable record comes back carrying `error` instead of being skipped: a gate that nods at
+    a record it cannot read is a silent gate, not a clean house.
+    """
+    root = Path(root)
+    base = root / "11_CONTROL" / "agents"
+    rows = []
+    if not base.is_dir():
+        return rows
+    for path in sorted(base.glob("*/agent.json")):
+        rel = path.relative_to(root).as_posix()
+        try:
+            rec = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except ValueError as exc:
+            rows.append({"id": path.parent.name, "tool_allowlist": [], "path": rel,
+                         "error": "agent.json is not JSON (%s)" % exc})
+            continue
+        allow = rec.get("tool_allowlist")
+        row = {"id": str(rec.get("id") or path.parent.name),
+               "tool_allowlist": [str(n) for n in allow] if isinstance(allow, list) else [],
+               "path": rel, "error": ""}
+        if not isinstance(allow, list):
+            row["error"] = ("tool_allowlist is %s, not a list -- a grant the gate cannot read is "
+                            "a refusal, not a deny" % type(allow).__name__)
+        rows.append(row)
+    return rows
+
+
+def destructive_names(door, engine):
+    """Every tool tagged destructive on either door. The count is a measurement a reviewer can
+    re-run, not a sentence in a document: today it is empty, and a test pins that."""
+    out = [str(row.get("name")) for row in door if row.get("behavior") == "destructive"]
+    out += [str(row.get("name")) for row in engine if row.get("behavior") == "destructive"]
+    return sorted(set(out))
+
+
+def audit_tags(door, funcs, engine, agents):
+    """Refusal strings for the tag cross-check -- pure over the rows it is handed, so a broken
+    fixture and the shipped house are judged by the same code.
+
+    Four families, each with a test that breaks one row on purpose and reads the refusal:
+      * the door's own declaration: missing tag, invented tag, duplicate, declared but
+        unreachable, reachable but undeclared;
+      * the engine toolkit's: missing, inherited instead of declared, or a tag that contradicts
+        the `writes` flag that actually gates the call;
+      * drift between the two doors over one capability (`core.vault_search` and `vault_search`
+        must not disagree about what the same act costs);
+      * the actor registry: an allowlist entry no door declares is a grant backed by no tag, and
+        an engine tool tagged destructive that the harness door carries no tag for may not be
+        granted at all -- a destructive act a client cannot see is not a permission, it is a hole.
+    """
+    problems = []
+    declared = {}
+    for row in door:
+        name = str(row.get("name") or "")
+        tag = row.get("behavior")
+        if not name:
+            problems.append("UNNAMED TOOL: a door entry with no name carries no tag -- %r" % (row,))
+            continue
+        if tag is None:
+            problems.append("UNTAGGED %s: the harness door exposes it with no behaviour tag -- a "
+                            "client cannot tell a read from a write" % name)
+        elif tag not in BEHAVIOR_TAGS:
+            problems.append("BAD TAG %s: behaviour %r is not one of the closed set %s -- an "
+                            "invented tag cannot be cross-checked against an actor's allowlist"
+                            % (name, tag, list(BEHAVIOR_TAGS)))
+        if name in declared:
+            problems.append("DUPLICATE %s: the door declares it twice, so two tags can quietly "
+                            "disagree about one tool" % name)
+        declared[name] = tag
+    reachable = set(str(n) for n in funcs)
+    for name in sorted(reachable - set(declared)):
+        problems.append("UNDECLARED %s: reachable through the door but never listed, so it "
+                        "carries no behaviour tag for the client that calls it" % name)
+    for name in sorted(set(declared) - reachable):
+        problems.append("PHANTOM %s: declared on the door with no function behind it -- a tool a "
+                        "client can list and never call" % name)
+    engine_by_name = {}
+    for row in engine:
+        name = str(row.get("name") or "")
+        tag = row.get("behavior")
+        writes = bool(row.get("writes"))
+        if tag not in BEHAVIOR_TAGS:
+            problems.append("ENGINE TAG %s: no behaviour tag the closed set recognises (it "
+                            "carries %r)" % (name, tag))
+        elif not row.get("declared", True):
+            problems.append("ENGINE TAG %s: the class declares no behaviour tag of its own, so it "
+                            "is carried as the worst case %r -- declare one of %s"
+                            % (name, tag, list(BEHAVIOR_TAGS)))
+        if tag == "read_only" and writes:
+            problems.append("ENGINE TAG %s: tagged read_only while the write gate bites "
+                            "(writes=True) -- the tag and the gate are two truths" % name)
+        if tag in ("idempotent", "destructive") and not writes:
+            problems.append("ENGINE TAG %s: tagged %s while the write gate never bites "
+                            "(writes=False) -- the tag and the gate are two truths"
+                            % (name, tag))
+        engine_by_name[name] = tag
+    for name, tag in sorted(engine_by_name.items()):
+        capability = name.split(".", 1)[1] if "." in name else name
+        door_tag = declared.get(capability)
+        if door_tag is not None and door_tag != tag:
+            problems.append("TAG DRIFT %s: the harness door tags it %r, the engine toolkit tags it "
+                            "%r -- one capability cannot be two kinds of act"
+                            % (capability, door_tag, tag))
+    for row in agents:
+        cid = str(row.get("id") or "(no id)")
+        if row.get("error"):
+            problems.append("AGENT %s: %s (%s) -- an actor record the gate cannot read governs "
+                            "nothing" % (cid, row["error"], row.get("path", "")))
+        for name in row.get("tool_allowlist") or []:
+            door_tag = declared.get(name)
+            engine_tag = engine_by_name.get(name)
+            if door_tag is None and engine_tag is None:
+                problems.append("ALLOWLIST %s: %r is not a tool any shipped door declares, so no "
+                                "behaviour tag backs the grant" % (cid, name))
+            elif engine_tag == "destructive" and door_tag is None:
+                problems.append("DESTRUCTIVE GRANT %s: %r is tagged destructive by the engine "
+                                "toolkit and the harness door carries no tag for it -- an actor "
+                                "may not hold a destructive tool the client cannot see"
+                                % (cid, name))
+    return problems
+
+
+def check_tools(root):
+    """The door audits itself: print what every reachable tool is, then refuse what cannot be
+    cross-checked. Facts first, verdict last -- the shape `doctor_status` already uses."""
+    engine = engine_rows()
+    agents = agent_rows(root)
+    for row in sorted(TOOLS, key=lambda item: item["name"]):
+        print("  door    %-18s %s" % (row["name"], row.get("behavior")))
+    for row in engine:
+        print("  engine  %-18s %s%s" % (row["name"], row["behavior"],
+                                        " (writes)" if row["writes"] else ""))
+    problems = audit_tags(TOOLS, set(TOOL_FUNCS), engine, agents)
+    for problem in problems:
+        print("INVALID  %s" % problem)
+    if problems:
+        print("REFUSED: %d problem(s) in the behaviour tags of the tools these doors expose "
+              "(closed set: %s)" % (len(problems), ", ".join(BEHAVIOR_TAGS)))
+        return 1
+    if not agents:
+        print("note: no agent records under 11_CONTROL/agents here -- this brain ships no actor "
+              "registry, so the tool_allowlist cross-check has nothing to judge (stated out loud "
+              "rather than passed silently)")
+    print("OK — %d door tool(s) tagged, %d engine tool(s) tagged, %d agent record(s) "
+          "cross-checked, %d destructive tool(s) (%s)"
+          % (len(TOOLS), len(engine), len(agents), len(destructive_names(TOOLS, engine)),
+             ", ".join(BEHAVIOR_TAGS)))
+    return 0
+
 
 RESOURCE_FILES = [
     ("AGENTS.md", "text/markdown", "The canon: laws every agent must follow"),
@@ -560,8 +737,14 @@ def serve(root):
 def main():
     parser = argparse.ArgumentParser(description="HADES second-brain MCP server (stdio)")
     parser.add_argument("--root", default=None, help="repo root override (tests)")
+    parser.add_argument("--check-tools", action="store_true", dest="check_tools",
+                        help="audit the behaviour tag of every tool these doors expose and "
+                             "cross-check it against the actor registry, then exit; no stdio "
+                             "session is opened")
     args = parser.parse_args()
     root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parents[2]
+    if args.check_tools:
+        return check_tools(root)
     return serve(root)
 
 

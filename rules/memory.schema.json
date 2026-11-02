@@ -1,7 +1,7 @@
 {
-  "version": 2,
+  "version": 3,
   "applies_to": ["15_SYSTEM/memory/lessons.jsonl", "MEMORY.md"],
-  "why": "The repo is supposed to get smarter, which needs a memory with the same spine as the candidate shelf: a lesson is a claim, a claim cites evidence, and evidence has to open. Version 2 adds the two charter-section-5 gates that made the memory honest rather than merely readable: a plane field so a lesson is typed by kind (issue #25) and a measured, enforced contradiction rule so no two active lessons can disagree silently (issue #24). scripts/memory.py reads every key below; nothing here is decorative.",
+  "why": "The repo is supposed to get smarter, which needs a memory with the same spine as the candidate shelf: a lesson is a claim, a claim cites evidence, and evidence has to open. Version 2 added the two charter-section-5 gates that made the memory honest rather than merely readable: a plane field so a lesson is typed by kind (issue #25) and a measured, enforced contradiction rule so no two active lessons can disagree silently (issue #24). Version 3 adds the validity window (phase 44): an optional verified_at and expires, so a claim whose window has passed is a named gate row instead of a silent certainty. scripts/memory.py reads every key below; nothing here is decorative.",
   "record": {
     "id": {"type": "string", "means": "mem-<slug>, unique in the ledger. Reusing a label conflates two lessons."},
     "date": {"type": "string", "means": "ISO 8601 UTC. Memory that cannot be ordered cannot be aged or superseded."},
@@ -13,7 +13,16 @@
     "plane": {"type": "string", "means": "which memory plane the lesson is about: one of the eight ids declared in 15_SYSTEM/config/system.json -> memory_planes (project, repository, agent, task, error, decision, knowledge, conversation), or the stated value 'unclassified' when the row's source and topics do not decide. This is issue #25: before the field existed the map's claim that the error plane holds lessons was honest-but-weak, because a lesson from a failed run looked identical to a lesson from a design choice until you read the prose. The vocabulary is read from the config, never retyped here -- there is no second taxonomy."},
     "topics": {"type": "string_list", "optional": true, "means": "retrieval handles; --recall reads them, and the contradiction rule (issue #24) treats a shared topic as one of the four conditions."},
     "source": {"type": "string", "optional": true, "means": "where the lesson came from (a chat, an issue, a commit). A provenance line, not evidence. --migrate-planes and the --add default read it to decide a plane."},
-    "supersedes": {"type": "string", "optional": true, "means": "the id of the lesson this one retires. Superseded rows stay in the ledger for the record and drop out of MEMORY.md's active table. A pair that contradicts but is linked by supersedes is reported as resolved, not refused (issue #24)."}
+    "supersedes": {"type": "string", "optional": true, "means": "the id of the lesson this one retires. Superseded rows stay in the ledger for the record and drop out of MEMORY.md's active table. A pair that contradicts but is linked by supersedes is reported as resolved, not refused (issue #24)."},
+    "verified_at": {"type": "day", "optional": true, "means": "the calendar day (YYYY-MM-DD) a person last re-checked this row's evidence. It is a statement about the check, not about the claim: an absent field means nobody re-checked it, and the gate never invents a day. A value in the future, or one after `expires`, is invalid and refused -- a window that closed before it opened is a typo, and a verification that has not happened yet is a fabrication."},
+    "expires": {"type": "day", "optional": true, "means": "the last calendar day (YYYY-MM-DD) on which this claim still counts as certain. Absent means EVERGREEN: the row states no window, so nothing can pass. Present and today or later means current. Present and in the past means STALE, which is a named gate row: --check refuses it, --windows counts it, --recall marks it, and MEMORY.md keeps the line. The gate never deletes, rewrites or hides a stale row -- retiring a claim is a human act through --add --supersedes, and re-verifying it is a human act through --verified-at/--expires on a new row."}
+  },
+  "validity_window": {
+    "status": "shipped and enforced (phase 44); Graphiti's bi-temporal edge reduced to two date fields, with no LLM in the write path",
+    "rule": "no expires = evergreen | expires >= today = current | expires < today = stale | unreadable or impossible window = invalid. Compared on calendar days, in the reader's today, with the repo's own date.today(); no timezone arithmetic a clone could disagree about.",
+    "why_stale_is_refused": "A claim whose window has passed may still be true -- but a reader holding only this clone cannot re-check it, and reporting it as merely OK is how a memory starts certifying what it can no longer open. The refusal names the row, the days past, and the two human acts that resolve it (re-verify, or supersede).",
+    "measured_on_the_shipped_ledger": "2026-11-02, `python scripts/memory.py --windows`: 27 row(s), 27 evergreen, 0 current, 0 stale, 0 invalid. Not one shipped row carries either field, so the default had to be `absent = evergreen` -- a rule keyed on the existing `date` field would have called rows aged, which is a different claim than an expired window, and the honest answer to 'how many are stale under your rule' is zero because no row stated a window to pass. No date was written into lessons.jsonl to make the gate bite.",
+    "enforced_by": "python scripts/memory.py --check (invalid window per row, stale as a named refusal) and --windows (the report with its numbers); --add refuses a broken window before the write; --recall marks a stale answer instead of hiding it. The machine plane's reader obeys the same rule: mcp_server.py's memory_recall tool calls memory.recall() and appends memory.recall_mark(), so an agent sees the identical STALE suffix and the row is still returned."
   },
   "contradiction": {
     "status": "measured and enforced (issue #24)",
@@ -26,10 +35,12 @@
     "every evidence entry resolves on disk, as a URL, or as a probe id",
     "every row carries a plane in the mapped vocabulary (or the stated 'unclassified'); an unlabelled lesson is refused by --add and by --check (issue #25)",
     "no two ACTIVE lessons may contradict -- same plane + shared topic + cue-overlap Jaccard >= 0.50 + opposite verdict is a refusal, not a cleanup task (issue #24)",
+    "a window field is either absent or a YYYY-MM-DD day that is not in the future and does not close before it opens; --add refuses it before the write and --check refuses the row that arrived by hand (phase 44)",
+    "a stale lesson is reported, never edited: --check names 'STALE <id>' and the ledger bytes, MEMORY.md's line and the row's own history survive the refusal -- deleting a stale claim to go green replaces one lie with a quieter one (phase 44)",
     "MEMORY.md is a rendering: every active row appears in it and every mem-* id in it exists in the ledger",
     "supersedes points at a row the ledger actually holds",
     "the ledger is append-only -- a lesson is retired by superseding it, never by deleting the line"
   ],
-  "empty_is_legal": "--recall with no hits prints NO_ENTRY and exits 0. Saying 'nothing in memory applied' is data; inventing a lesson to fill the silence is how the memory starts lying.",
-  "enforced_by": "python scripts/memory.py --check (plane field and contradiction rule), wired into scripts/health.py; python scripts/memory.py --contradictions reports the numbers behind each judgement"
+  "empty_is_legal": "--recall with no hits prints NO_ENTRY and exits 0. Saying 'nothing in memory applied' is data; inventing a lesson to fill the silence is how the memory starts lying. The same rule reads the other way: an absent window is a stated absence, so it is evergreen -- not stale, and not a date to be filled in.",
+  "enforced_by": "python scripts/memory.py --check (plane field, contradiction rule, validity windows), wired into scripts/health.py; python scripts/memory.py --contradictions reports the numbers behind each judgement; python scripts/memory.py --windows reports the state of every dated claim"
 }

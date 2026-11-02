@@ -16,14 +16,24 @@ Usage:
   python scripts/memory.py --recall "probe fingerprint stale"      # retrieve, ordered
   python scripts/memory.py --add --id mem-x --cue ... --lesson ... --evidence a.md,b.md \
       --confidence 0.9 --verdict helped [--source "chat 2026-10-27"] [--plane error] \
-      [--supersedes mem-y]
+      [--supersedes mem-y] [--verified-at 2026-11-02] [--expires 2026-12-01]
   python scripts/memory.py --render                                # rebuild MEMORY.md
   python scripts/memory.py --check                                 # the gate (health runs it)
   python scripts/memory.py --list                                  # ids and cues, no prose
   python scripts/memory.py --contradictions                       # pairs that disagree, measured
+  python scripts/memory.py --windows                # every dated claim and the state of its window
   python scripts/memory.py --migrate-planes [--write]             # type the rows that predate #25
 
 Exit 0 = memory is trustworthy as written, 1 = a row or the index broke the contract.
+
+A lesson may also say how long it is certain for (phase 44, Graphiti's bi-temporal edge minus
+the LLM that would have to build it): `verified_at` is the day a person last re-checked the
+evidence, `expires` is the last day the claim still counts as certain. The rule is one sentence:
+**no `expires` = evergreen; `expires` in the past = stale.** A stale row is a named gate row
+(`STALE <id>`), never a silent certainty and never a deletion -- the ledger is append-only, so the
+gate refuses and `--recall` marks the row while a human re-checks it. An unreadable window (not a
+`YYYY-MM-DD` day, verified in the future, closed before it opened) is `invalid` and refused too:
+a broken window is not the same thing as no window.
 """
 import argparse
 import datetime
@@ -153,6 +163,166 @@ def active(rows):
     return [row for row in rows if str(row.get("id")) not in superseded]
 
 
+# --- validity windows (issue: phase 44, "a claim a clone cannot re-check") -------------------
+# Graphiti keeps two clocks on every edge: when it was discovered and when it stops being true.
+# The LLM that extracts those edges is refused here (charter section 2), the window is free: two
+# optional day fields on the row. The rule is deliberately boring and written down in
+# rules/memory.schema.json and 02_WIKI/reference_maps/eight-memory-planes.md:
+#
+#   evergreen  no `expires` at all -- the row claims nothing dated, so nothing can go stale.
+#              This is the default, and the shipped ledger is 27/27 evergreen (measured 2026-11-02
+#              with `--windows`): no date was invented to make a number appear.
+#   current    `expires` >= today (its last day is still a day it is certain).
+#   stale      `expires` < today -- the row may still be true, but nobody holding a clone can
+#              re-check it, so it is named as a gate row and marked in `--recall`. It is NEVER
+#              deleted, rewritten or dropped from the index: a gate that edits the ledger to go
+#              green has replaced one lie with another.
+#   invalid    a window that cannot be read as a day, a `verified_at` in the future, or an
+#              `expires` that closes before it opened. Refused, and never treated as evergreen:
+#              a broken window is not the same thing as no window.
+DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+WINDOW_FIELDS = ("verified_at", "expires")
+WINDOW_STATES = ("evergreen", "current", "stale", "invalid")
+
+
+def parse_day(value):
+    """A `YYYY-MM-DD` calendar day, or None. Windows are days because a window that opens on a
+    microsecond is not something a person can re-check by hand."""
+    text = str(value or "").strip()
+    if not DAY_RE.match(text):
+        return None
+    try:
+        return datetime.date.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+def window_state(row, today=None):
+    """The row's own state under the rule above, judged on the row's text and one date."""
+    today = today or datetime.date.today()
+    stated = {field: row.get(field) for field in WINDOW_FIELDS if row.get(field) not in (None, "")}
+    if not stated:
+        return "evergreen"
+    parsed = {}
+    for field, value in stated.items():
+        day = parse_day(value)
+        if day is None:
+            return "invalid"
+        parsed[field] = day
+    if parsed.get("verified_at") and parsed["verified_at"] > today:
+        return "invalid"
+    if "verified_at" in parsed and "expires" in parsed and parsed["expires"] < parsed["verified_at"]:
+        return "invalid"
+    if "expires" not in parsed:
+        return "evergreen"          # verified but with no stated end: still a claim of no window
+    return "current" if parsed["expires"] >= today else "stale"
+
+
+def window_field_problems(row, today=None):
+    """The format contract for the two window fields, as refusal lines."""
+    if window_state(row, today) != "invalid":
+        return []
+    cid = str(row.get("id") or "(no id)")
+    stated = ", ".join("%s=%r" % (field, row.get(field)) for field in WINDOW_FIELDS
+                       if row.get(field) not in (None, ""))
+    return ["%s: validity window (%s) is not a legal window — each field must be a YYYY-MM-DD "
+            "day, verified_at may not name a day that has not happened yet, and expires may not "
+            "close before it opens. An unreadable window is refused, never treated as evergreen"
+            % (cid, stated)]
+
+
+def stale_rows(rows, today=None, include_retired=False):
+    """Every row whose window has passed, with the number behind the judgement.
+
+    Active rows only unless `include_retired` is set: a superseded row is not presented as
+    certainty anywhere, so the gate reports it instead of refusing the house over it.
+    """
+    today = today or datetime.date.today()
+    pool = rows if include_retired else active(rows)
+    out = []
+    for row in pool:
+        if window_state(row, today) != "stale":
+            continue
+        expired = parse_day(row.get("expires"))
+        out.append({"id": str(row.get("id")), "expires": str(row.get("expires")),
+                    "days_past": (today - expired).days,
+                    "retired": row not in active(rows)})
+    return out
+
+
+def window_problems(rows, today=None):
+    """Refusal lines for stale claims: named rows, never edits."""
+    return ["STALE %s: expires %s, %d day(s) past its window — this row says nothing that a "
+            "reader holding only this clone can re-check, so it is no longer a certainty. "
+            "Re-check its evidence and file the row that replaces it (--add --id ... "
+            "--supersedes %s), or give it a new --expires through the same door; the gate names "
+            "the row, it does not delete or rewrite it" % (row["id"], row["expires"],
+                                                           row["days_past"], row["id"])
+            for row in stale_rows(rows, today)]
+
+
+def recall_mark(row, today=None):
+    """The window marker `--recall` and the MCP door put on a stale answer.
+
+    The row is still shown -- it is the reason the row exists -- but never as a certainty: the
+    reader who asked the memory a question has to see that the answer's window has passed.
+    """
+    today = today or datetime.date.today()
+    if window_state(row, today) != "stale":
+        return ""
+    expired = parse_day(row.get("expires"))
+    if expired is None:
+        return ""
+    return "  [STALE: expires %s, %d day(s) past — re-check before applying]" % (
+        row.get("expires"), (today - expired).days)
+
+
+def window_counts(rows, today=None):
+    """{state: n} over every row, for the report and the OK line."""
+    counts = dict((state, 0) for state in WINDOW_STATES)
+    for row in rows:
+        counts[window_state(row, today)] += 1
+    return counts
+
+
+def report_windows(root):
+    """Measure, then judge: the state of every row's window, and the totals on one line."""
+    today = datetime.date.today()
+    rows, problems = read_lessons(root)
+    counts = window_counts(rows, today)
+    print("window rule (phase 44): no expires = evergreen | expires >= today = current | "
+          "expires < today = stale | unreadable = invalid  (today: %s)" % today.isoformat())
+    for row in rows:
+        state = window_state(row, today)
+        if state == "evergreen" and not row.get("verified_at"):
+            continue                      # the shipped default is not a finding, it is the rule
+        print("  %-44s %-10s verified_at=%-10s expires=%-10s"
+              % (str(row.get("id")), state, row.get("verified_at") or "-",
+                 row.get("expires") or "-"))
+    print("%d row(s): %d evergreen, %d current, %d stale, %d invalid"
+          % (len(rows), counts["evergreen"], counts["current"], counts["stale"],
+             counts["invalid"]))
+    retired = [row for row in stale_rows(rows, today, include_retired=True) if row["retired"]]
+    for row in retired:
+        print("  (retired) %s expired %s — kept for the record, not refused" % (row["id"],
+                                                                                row["expires"]))
+    for problem in problems:
+        print("INVALID  %s" % problem)
+    for row in rows:
+        for problem in window_field_problems(row, today):
+            print("INVALID  %s" % problem)
+    for problem in window_problems(rows, today):
+        print(problem)
+    refusals = ([p for row in rows for p in window_field_problems(row, today)] +
+                window_problems(rows, today))
+    if refusals or problems:
+        print("REFUSED: %d lesson(s) carry a window that is stale or unreadable" % len(refusals))
+        return 1
+    print("OK — every dated claim in the ledger is inside its window; %d evergreen row(s) state "
+          "no window at all" % counts["evergreen"])
+    return 0
+
+
 def check_row(row, root, seen, allowed=None):
     problems = []
     cid = str(row.get("id") or "")
@@ -192,6 +362,9 @@ def check_row(row, root, seen, allowed=None):
     if date and not re.match(r"^\d{4}-\d{2}-\d{2}T", date):
         problems.append("%s: date %r is not ISO 8601 — memory that cannot be ordered is a list"
                         % (cid, date))
+    # validity window (phase 44): the format is a row contract, so it is judged here; whether the
+    # window has *passed* is a ledger-level verdict, named by check() through window_problems.
+    problems += window_field_problems(row)
     evidence = row.get("evidence")
     evidence = [evidence] if isinstance(evidence, str) else list(evidence or [])
     for entry in evidence:
@@ -236,6 +409,7 @@ def check(root):
         problems += check_row(row, root, seen, allowed)
     problems += check_index(root, rows)
     problems += contradiction_problems(rows)
+    problems += window_problems(rows)
     return rows, problems
 
 
@@ -286,6 +460,17 @@ def render(root, rows):
         for row in retired:
             lines.append("- `%s` superseded by `%s` — %s" % (row.get("id"), row.get("supersedes"),
                                                              row.get("cue")))
+    # A stale row keeps its place in the active table -- deleting it from the rendering would be
+    # the same silence as deleting it from the ledger -- but it is named here as well, so a reader
+    # of the human plane sees the window before the claim. No stale row, no section: the shipped
+    # rendering is byte-identical to what it was before the window rule existed.
+    stale = stale_rows(rows)
+    if stale:
+        lines += ["", "## Out of date (window passed; the row is kept, the certainty is not)", ""]
+        for row in stale:
+            lines.append("- `%s` expired `%s` (%d day(s) ago) — re-check its evidence before "
+                         "applying it, or supersede it" % (row["id"], row["expires"],
+                                                           row["days_past"]))
     lines += ["", "## How a lesson gets here", "",
               "A lesson is a candidate row that was measured: see",
               "`rules/candidate.schema.json` and `skills/loop/SKILL.md`. The verdict column is",
@@ -426,6 +611,15 @@ def add(root, args):
         print("REFUSED  --confidence %s is outside 0..1" % confidence)
         return 1
     evidence = [item.strip() for item in (args.evidence or "").split(",") if item.strip()]
+    # the window, refused at the door like the plane and the verdict (issue #17's lesson): a row
+    # whose window cannot be read must never reach the ledger, and a row whose author says nothing
+    # gets no field at all -- absent means evergreen, so inventing a date would be the lie.
+    verified_at = str(args.verified_at or "").strip()
+    expires = str(args.expires or "").strip()
+    for problem in window_field_problems({"id": cid, "verified_at": verified_at,
+                                          "expires": expires}):
+        print("REFUSED  %s" % problem)
+        return 1
     row = {
         "id": cid,
         "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -438,6 +632,10 @@ def add(root, args):
         "topics": [item.strip() for item in (args.topics or "").split(",") if item.strip()],
         "source": args.source or "",
     }
+    if verified_at:
+        row["verified_at"] = verified_at
+    if expires:
+        row["expires"] = expires
     if args.supersedes:
         row["supersedes"] = args.supersedes
     if not evidence:
@@ -451,8 +649,9 @@ def add(root, args):
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
     rendered = render(root, read_lessons(root)[0])
-    print("ADDED %s [plane: %s] -> %s (+ %s)" % (cid, plane, path.relative_to(root).as_posix(),
-                                                 rendered.relative_to(root).as_posix()))
+    print("ADDED %s [plane: %s, window: %s] -> %s (+ %s)"
+          % (cid, plane, "expires %s" % expires if expires else "evergreen (none stated)",
+             path.relative_to(root).as_posix(), rendered.relative_to(root).as_posix()))
     return 0
 
 
@@ -559,11 +758,22 @@ def main():
                         help="memory plane (one of system.json -> memory_planes, or "
                              "'unclassified'); when omitted the row's --source/topics decide it")
     parser.add_argument("--supersedes", default=None)
+    parser.add_argument("--verified-at", default="", dest="verified_at", metavar="YYYY-MM-DD",
+                        help="the day a person last re-checked this row's evidence (phase 44); "
+                             "omit it entirely when nobody re-checked it -- a blank window is a "
+                             "refusal, an absent one is evergreen")
+    parser.add_argument("--expires", default="", metavar="YYYY-MM-DD",
+                        help="the last day this claim counts as certain (phase 44); when it is "
+                             "past, --check names the row STALE and --recall marks it. Omit it "
+                             "for a claim that states no window.")
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--contradictions", action="store_true",
                         help="report measured conflict pairs (same plane+topic, high cue "
                              "overlap, opposite verdict); refuse on an active pair")
+    parser.add_argument("--windows", action="store_true",
+                        help="report the validity window of every dated claim (phase 44); "
+                             "refuse when one is stale or unreadable")
     parser.add_argument("--migrate-planes", action="store_true", dest="migrate_planes",
                         help="type the rows that predate the plane field, deterministically "
                              "from source/topics; prints what it would do")
@@ -579,6 +789,9 @@ def main():
 
     if args.contradictions:
         return report_contradictions(root)
+
+    if args.windows:
+        return report_windows(root)
 
     if args.add:
         for field in ("cue", "lesson", "evidence"):
@@ -604,18 +817,22 @@ def main():
                   "lesson is how the memory starts lying." % args.recall)
             return 0
         for row in found:
-            print("[%s | %s | conf %s] %s" % (row.get("id"), row.get("verdict"),
-                                              row.get("confidence"), row.get("lesson")))
+            print("[%s | %s | conf %s] %s%s" % (row.get("id"), row.get("verdict"),
+                                                row.get("confidence"), row.get("lesson"),
+                                                recall_mark(row)))
             print("    when: %s" % row.get("cue"))
             print("    evidence: %s" % ", ".join(row.get("evidence") or []))
         return 0
 
     rows, problems = check(root)
+    counts = window_counts(rows)
     if args.as_list:
         for row in active(rows):
             print("%s\t%s" % (row.get("id"), row.get("cue")))
     if args.as_json:
         print(json.dumps({"lessons": len(rows), "active": len(active(rows)),
+                          "evergreen": counts["evergreen"], "current": counts["current"],
+                          "stale": counts["stale"], "invalid_window": counts["invalid"],
                           "problems": problems}, ensure_ascii=False, indent=1))
         return 1 if problems else 0
     if args.check or not args.as_list:
@@ -625,8 +842,9 @@ def main():
             print("REFUSED: the repo memory does not meet its own contract "
                   "(rules/memory.schema.json)")
             return 1
-        print("OK — %d lesson(s), %d active; MEMORY.md matches the ledger."
-              % (len(rows), len(active(rows))))
+        print("OK — %d lesson(s), %d active, %d carrying a stated window; "
+              "MEMORY.md matches the ledger."
+              % (len(rows), len(active(rows)), counts["current"] + counts["stale"]))
         return 0
     return 0
 
