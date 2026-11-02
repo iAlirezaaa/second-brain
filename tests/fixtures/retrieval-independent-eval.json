@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "name": "independent-eval",
+  "provenance": "Curated by hand on 2026-10-29 for ROADMAP phase 36's independent eval gate. It is a tests/fixtures/retrieval-golden.json-style fixture (documents plus named expectations) extended with a per-case id, which is what dataset.leak_check needs to refuse shared identifiers. Every case's expectation comes from this fixture's own document text, written here and opened here at authoring time: each query's terms appear in exactly the document named by `expected` and in no other document in this file. No text is quoted from retrieval-golden.json, from any built dataset manifest, or from any source record under .brain-data; the disjointness that matters (eval vs training) is proved by tests/test_phase42_independent_eval_gate.py, which also ingests these documents and measures recall and MRR on them. Document origins carry the `fixture-independent:` prefix so they cannot collide with the `fixture:` origins of the golden set or with real import origins.",
+  "documents": [
+    {"name": "hive", "origin": "fixture-independent:hive", "text": "A hive keeps its honeybees clustered and warm through the winter."},
+    {"name": "lighthouse", "origin": "fixture-independent:lighthouse", "text": "The lighthouse keeper polished the Fresnel lens at dusk."},
+    {"name": "sourdough", "origin": "fixture-independent:sourdough", "text": "Sourdough needs a starter, flour and patience before the bake."},
+    {"name": "glacier", "origin": "fixture-independent:glacier", "text": "A glacier grinds solid granite into fine dust over centuries."},
+    {"name": "kettle", "origin": "fixture-independent:kettle", "text": "A kettle whistles the moment the water below reaches a boil."},
+    {"name": "orchard", "origin": "fixture-independent:orchard", "text": "The orchard grafting knife stays sterile between scions."}
+  ],
+  "cases": [
+    {"id": "independent-eval-01", "query": "honeybees winter", "expected": "hive", "expected_because": "honeybees and winter appear only in this fixture's hive document"},
+    {"id": "independent-eval-02", "query": "lighthouse lens", "expected": "lighthouse", "expected_because": "lighthouse and lens appear only in this fixture's lighthouse document"},
+    {"id": "independent-eval-03", "query": "sourdough starter", "expected": "sourdough", "expected_because": "sourdough and starter appear only in this fixture's sourdough document"},
+    {"id": "independent-eval-04", "query": "glacier granite", "expected": "glacier", "expected_because": "glacier and granite appear only in this fixture's glacier document"},
+    {"id": "independent-eval-05", "query": "kettle whistles", "expected": "kettle", "expected_because": "kettle and whistles appear only in this fixture's kettle document"},
+    {"id": "independent-eval-06", "query": "grafting scions", "expected": "orchard", "expected_because": "grafting and scions appear only in this fixture's orchard document"}
+  ]
+}

@@ -6,8 +6,11 @@ cites a `source_import` id and a byte range in that record's own `raw.txt`, a so
 marked is refused instead of silently included, and the manifest records ids, counts and a
 digest so a run can be reproduced from records alone.
 
-Nothing here leaves the machine, and nothing here decides that a model got better -- that
-needs the independent eval and the before/after report still listed as planned.
+Nothing here leaves the machine. `leak_check` is the eval side of the gate: an independent
+evaluation set may not share a single identifier -- case id, source id, origin -- with the
+manifest this builder produced, because an eval that shares examples with training measures
+memorisation, not retrieval. Whether a change is *better* is still not decided here: that is
+`retrieval_eval.claim`, which needs the leak-gated eval, repeats, a margin and a saved base.
 """
 import hashlib
 import json
@@ -172,3 +175,88 @@ def verify(out):
                             % (entry['id'], counted.get(entry['id'], 0), entry['examples']))
     return {'ok': not problems, 'problems': problems, 'digest': actual,
             'examples': len(rows)}
+
+
+def training_index(out):
+    """Every identifier a built dataset publishes: source ids, origins and example ids.
+
+    The eval leak gate needs the full set, and it reads it through `verify` first: a
+    tampered folder cannot hide a trained id by editing its manifest, because the
+    manifest has to agree with the examples before anything is banned from the eval.
+    """
+    out = Path(out)
+    report = verify(out)
+    if not report['ok']:
+        raise ValueError('dataset %s does not verify against its manifest: %s'
+                         % (out, '; '.join(report['problems'])))
+    manifest = json.loads((out / 'manifest.json').read_text(encoding='utf-8'))
+    rows = [json.loads(line) for line
+            in (out / 'examples.jsonl').read_bytes().decode('utf-8').splitlines() if line.strip()]
+    return {'digest': manifest['digest'],
+            'source_ids': {entry['id'] for entry in manifest['sources']},
+            'origins': {entry['origin'] for entry in manifest['sources']},
+            'example_ids': {row['id'] for row in rows if isinstance(row, dict) and row.get('id')}}
+
+
+def load_eval_cases(path):
+    """(cases, documents) from an eval file: a retrieval-golden-style fixture or a case list."""
+    data = json.loads(Path(path).read_text(encoding='utf-8'))
+    if isinstance(data, list):
+        cases, documents = data, []
+    elif isinstance(data, dict) and isinstance(data.get('cases'), list):
+        cases, documents = data['cases'], data.get('documents') or []
+    else:
+        raise ValueError('an eval file is a retrieval-golden-style fixture with cases, '
+                         'or a plain list of cases')
+    known = {doc.get('name') for doc in documents if isinstance(doc, dict)}
+    for index, case in enumerate(cases):
+        if not isinstance(case, dict) or not str(case.get('query', '')).strip():
+            raise ValueError('eval case %d needs a nonempty query' % index)
+        name = case.get('expected')
+        if name is not None and name not in known:
+            raise ValueError('eval case %s names document %r that the fixture does not define'
+                             % (case.get('id') or index, name))
+        if name is None and not case.get('expected_ids'):
+            raise ValueError('eval case %s needs expected or expected_ids' % (case.get('id') or index))
+    return cases, documents
+
+
+def case_identifiers(case, documents):
+    """What one eval case touches: its own id, its expected source ids, its document origin."""
+    known = {doc.get('name'): doc for doc in documents if isinstance(doc, dict)}
+    identifiers = []
+    if case.get('id'):
+        identifiers.append(str(case['id']))
+    identifiers += [str(item) for item in (case.get('expected_ids') or [])]
+    name = case.get('expected')
+    if name is not None:
+        identifiers.append(str(name))
+        origin = (known.get(name) or {}).get('origin')
+        if origin:
+            identifiers.append(str(origin))
+    return [item for item in identifiers if item]
+
+
+def leak_check(out, cases_path):
+    """Refuse an eval set that shares any identifier with a built dataset's training manifest.
+
+    An eval that shares examples with training measures memorisation, not retrieval, so a
+    case whose id, expected source id or expected document origin appears in the manifest
+    (or in the example ids beside it) is named and refused. This is the same rule the
+    roadmap states for the independent eval, made reachable from `sources.py
+    dataset-eval-gate DATASET_DIR EVAL_JSON`.
+    """
+    cases, documents = load_eval_cases(cases_path)
+    index = training_index(out)
+    banned = index['source_ids'] | index['origins'] | index['example_ids']
+    leaks = []
+    for case in cases:
+        case_id = str(case.get('id') or case['query'])
+        for identifier in case_identifiers(case, documents):
+            if identifier in banned:
+                leaks.append({'case': case_id, 'identifier': identifier,
+                              'why': 'appears in the training manifest of dataset %s' % out})
+    return {'ok': not leaks, 'leaks': leaks, 'cases': len(cases),
+            'dataset_digest': index['digest'],
+            'note': 'an eval that shares examples with training measures memorisation, '
+                    'not retrieval; every listed identifier is banned'}

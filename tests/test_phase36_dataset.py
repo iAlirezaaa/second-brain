@@ -109,5 +109,66 @@ class EveryExampleCitesAByteRange(DatasetHarness):
             dataset.build(self.root, self.root / "out", limit=40)
 
 
+INDEPENDENT_EVAL = ROOT / "tests" / "fixtures" / "retrieval-independent-eval.json"
+
+
+class TheEvalMustNotTouchTheTrainingManifest(DatasetHarness):
+    """Phase 36, second step: the gate that keeps the independent eval out of the dataset.
+
+    An eval that shares examples with training measures memorisation, not retrieval, so
+    `leak_check` refuses any case whose id, expected source id or expected document origin
+    appears in the built dataset's manifest or example feed.
+    """
+
+    def build(self):
+        for meta in (self.first, self.second):
+            dataset.mark_shareable(self.root, meta["id"], approved=True)
+        return dataset.build(self.root, self.root / "out", limit=40)
+
+    def write_eval(self, payload):
+        path = self.root / "eval.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return path
+
+    def test_the_training_index_lists_every_source_id_origin_and_example_id(self):
+        manifest = self.build()
+        index = dataset.training_index(self.root / "out")
+        self.assertIn(self.first["id"], index["source_ids"])
+        self.assertIn("codex:session-1", index["origins"])
+        self.assertTrue(any(row.startswith(self.first["id"] + ":") for row in index["example_ids"]))
+        self.assertEqual(manifest["digest"], index["digest"])
+
+    def test_the_shipped_independent_fixture_is_disjoint_from_a_built_dataset(self):
+        self.build()
+        result = dataset.leak_check(self.root / "out", INDEPENDENT_EVAL)
+        self.assertTrue(result["ok"], result["leaks"])
+        self.assertIn("memorisation", result["note"])
+
+    def test_a_case_whose_id_is_a_training_source_id_is_refused_by_name(self):
+        self.build()
+        source_id = self.second["id"]
+        cases = self.write_eval({"cases": [{"id": source_id, "query": "whatever",
+                                            "expected_ids": ["c" * 64]}]})
+        result = dataset.leak_check(self.root / "out", cases)
+        self.assertFalse(result["ok"])
+        self.assertEqual(source_id, result["leaks"][0]["identifier"])
+        self.assertEqual(source_id, result["leaks"][0]["case"])
+
+    def test_a_case_pointing_at_a_trained_origin_is_refused(self):
+        self.build()
+        cases = self.write_eval({
+            "documents": [{"name": "chat", "origin": "codex:session-1", "text": "t"}],
+            "cases": [{"id": "sneaky", "query": "chat", "expected": "chat"}]})
+        result = dataset.leak_check(self.root / "out", cases)
+        self.assertFalse(result["ok"])
+        self.assertIn("codex:session-1", [leak["identifier"] for leak in result["leaks"]])
+
+    def test_a_case_naming_a_document_the_fixture_does_not_define_is_refused(self):
+        self.build()
+        cases = self.write_eval({"cases": [{"id": "ghost", "query": "q", "expected": "nope"}]})
+        with self.assertRaises(ValueError):
+            dataset.leak_check(self.root / "out", cases)
+
+
 if __name__ == "__main__":
     unittest.main()

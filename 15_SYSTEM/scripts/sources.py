@@ -51,6 +51,11 @@ def main():
     compare = sub.add_parser('compare-benchmarks', help='compare reports with matching cases and corpus')
     compare.add_argument('baseline', type=Path)
     compare.add_argument('candidate', type=Path)
+    compare.add_argument('--claim', action='store_true',
+                         help='publish an improvement verdict: needs --margin and a saved known-good base; '
+                              'each path may then hold a JSON list of repeat reports')
+    compare.add_argument('--margin', type=float, default=0.0,
+                         help='recall and MRR gain every repeat must reach before IMPROVEMENT is published')
     share = sub.add_parser('dataset-share', help='mark one imported source shareable (needs --approve)')
     share.add_argument('source_id')
     share.add_argument('--approve', action='store_true')
@@ -59,6 +64,10 @@ def main():
     build.add_argument('--limit', type=int, default=800)
     verify = sub.add_parser('dataset-verify', help='re-hash a built dataset against its manifest')
     verify.add_argument('out', type=Path)
+    gate = sub.add_parser('dataset-eval-gate',
+                          help='refuse an eval set sharing any id with a built dataset manifest')
+    gate.add_argument('dataset', type=Path)
+    gate.add_argument('cases', type=Path)
     args = parser.parse_args()
     try:
         if args.command == 'import':
@@ -91,14 +100,30 @@ def main():
             result = dataset.build(args.root, args.out, limit=args.limit)
         elif args.command == 'dataset-verify':
             result = dataset.verify(args.out)
+        elif args.command == 'dataset-eval-gate':
+            result = dataset.leak_check(args.dataset, args.cases)
         else:
             baseline = json.loads(args.baseline.read_text(encoding='utf-8'))
             candidate = json.loads(args.candidate.read_text(encoding='utf-8'))
-            result = retrieval_eval.compare(baseline, candidate)
+            base = retrieval_eval.known_good_base(args.root)
+            if args.claim:
+                baselines = baseline if isinstance(baseline, list) else [baseline]
+                candidates = candidate if isinstance(candidate, list) else [candidate]
+                result = retrieval_eval.claim(baselines, candidates, args.margin, base)
+            else:
+                result = retrieval_eval.compare(baseline, candidate)
+                # the way back travels with every comparison report, not only with a claim
+                result['recover'] = (retrieval_eval.recover_command(base['stamp'])
+                                     if base else None)
+                result['base_saved'] = bool(base)
         print(json.dumps(result, ensure_ascii=True, indent=2))
         failed = isinstance(result, dict) and bool(result.get('error'))
         broken = ((args.command == 'verify-copy' and not result['verified'])
-                  or (args.command == 'dataset-verify' and not result['ok']))
+                  or (args.command == 'dataset-verify' and not result['ok'])
+                  or (args.command == 'dataset-eval-gate' and not result['ok'])
+                  or (args.command == 'compare-benchmarks' and (
+                      result['verdict'] != 'IMPROVEMENT' if args.claim
+                      else result['verdict'] == 'regressed')))
         return 1 if broken or failed else 0
     except (OSError, ValueError, UnicodeError, KeyError) as exc:
         parser.exit(2, 'ERROR: %s\n' % exc)
