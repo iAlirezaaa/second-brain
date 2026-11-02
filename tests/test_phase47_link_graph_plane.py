@@ -30,7 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 import link_check  # noqa: E402
-from base import SNAPSHOT_ROOT  # noqa: E402
+from common import SNAPSHOT_ROOT  # noqa: E402
 
 BASE_STAMP = "20261102T000000Z"
 

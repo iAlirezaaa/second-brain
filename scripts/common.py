@@ -74,6 +74,31 @@ def run_utf8(argv, cwd=None):
                           encoding="utf-8", errors="replace")
 
 
+# Where `scripts/base.py --save` lays a known-good base: a byte-for-byte copy of the vault,
+# kept so the owner can roll back. The constant lives here rather than in `base.py` because
+# `base.py` imports this module, and every reader that walks the tree has to be able to ask
+# the same question without importing the writer.
+SNAPSHOT_ROOT = "15_SYSTEM/backups/known-good"
+
+
+def is_recorded_base(rel):
+    """True when a vault-relative path points into a copy taken by `base.py --save`.
+
+    Three readers walk the tree — the link graph, the full-text index and the nightly loop —
+    and all three judge files that `iter_markdown` deliberately does not filter. A recorded
+    base answers to each of them as if the author had written the note twice: the graph sees a
+    stem collision it never drew, and the loop reports one phantom orphan per copied note,
+    because `15_SYSTEM/backups/...` names no zone in `rules/zones.json`. Measured on this
+    repo's live tree on 2026-11-02 with one base recorded, the loop called 84 of its 174
+    "orphans for the owner to file" copies of files the owner had already filed.
+
+    One predicate, because a law a reader has to be told twice is a law that will be told once.
+    It takes a *relative* path: judge a base as its own vault and its own links still resolve.
+    """
+    text = str(rel).replace("\\", "/").strip("/")
+    return text == SNAPSHOT_ROOT or text.startswith(SNAPSHOT_ROOT + "/")
+
+
 def iter_markdown(vault):
     for path in sorted(Path(vault).rglob("*.md")):
         yield path

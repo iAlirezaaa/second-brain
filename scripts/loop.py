@@ -4,6 +4,7 @@
 Usage:
   python scripts/loop.py [--vault path] [--no-tests] [--root path]
   python scripts/loop.py --due [--target scripts/loop.py] [--now ISO] [--last-run ISO]
+  python scripts/loop.py --readout [--vault path]   (prints what it judged, writes nothing)
 
 A cycle:
   1. Collects improvement signals: integrity failures, test failures,
@@ -26,13 +27,14 @@ import json
 import re
 import sqlite3
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import candidate_check
 import schema_stamp
-from common import (DATE_RE, clone_readable, find_root, iter_markdown, load_json,
-                   parse_frontmatter, run_utf8, state_fingerprint)
+from common import (DATE_RE, clone_readable, find_root, is_recorded_base, iter_markdown,
+                    load_json, parse_frontmatter, run_utf8, state_fingerprint)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -157,14 +159,29 @@ def run_tests():
     return {"returncode": result.returncode, "summary": summary}
 
 
+def declared_zones():
+    """The zone names the orphan rule judges by: the keys of `rules/zones.json`.
+
+    Read as a set, so the caller cannot tell an absent file from an empty fence without
+    saying so. Note that this is *not* the `zones` list in `15_SYSTEM/config/system.json`
+    (a list of `dir`/`plane` records the installer lays); the two declare different names,
+    and `--readout` prints which one this rule actually used.
+    """
+    rules = Path(__file__).parent.parent / "rules" / "zones.json"
+    if not rules.is_file():
+        return None
+    return set(json.loads(rules.read_text(encoding="utf-8"))["zones"])
+
+
 def vault_signals(vault, proposals_glob):
     signals = {"stale_inbox": [], "orphans": [], "awaiting_approval": [], "inbox_status_lived": 0}
-    zones = None
-    rules = Path(__file__).parent.parent / "rules" / "zones.json"
-    if rules.is_file():
-        zones = set(json.loads(rules.read_text(encoding="utf-8"))["zones"])
+    zones = declared_zones()
     for path in iter_markdown(vault):
         rel = path.relative_to(vault).as_posix()
+        # a recorded base is a copy of the vault, not live state: counting it would make the
+        # nightly loop tell the owner to file notes they already filed
+        if is_recorded_base(rel):
+            continue
         text = path.read_text(encoding="utf-8", errors="replace")
         fm, _ = parse_frontmatter(text)
         in_zone = next((p for p in rel.split("/")[:-1] if zones and p in zones), None)
@@ -185,6 +202,37 @@ def vault_signals(vault, proposals_glob):
                         f"{Path(proposal_file).name}:{proposal.get('capture', '?')}")
         except (json.JSONDecodeError, OSError):
             signals["awaiting_approval"].append(f"{Path(proposal_file).name}: UNREADABLE")
+    return signals
+
+
+def signals_readout(vault, proposals_glob):
+    """Report mode: the plane this loop judges, and what it left standing outside every zone.
+
+    Every line names the root it was measured on. That naming is the point: an orphan count
+    read off the project's own tree and an orphan count read off `vault-template` are two
+    different facts, and the nightly job only ever sees the second one. No history, no
+    candidate, no report is written here — a readout that moved the ratchet would be a run.
+    """
+    vault = Path(vault)
+    signals = vault_signals(vault, proposals_glob)
+    walked = list(iter_markdown(vault))
+    copies = [p for p in walked if is_recorded_base(p.relative_to(vault).as_posix())]
+    zones = declared_zones()
+    print("loop readout over %s" % vault)
+    print("  markdown walked: %d | copies inside a recorded base, excluded: %d | judged live: %d"
+          % (len(walked), len(copies), len(walked) - len(copies)))
+    print("  signals: %d orphan(s), %d stale inbox, %d awaiting approval, %d inbox note(s)"
+          % (len(signals["orphans"]), len(signals["stale_inbox"]),
+             len(signals["awaiting_approval"]), signals["inbox_status_lived"]))
+    print("  zone names the orphan rule read from rules/zones.json: %s"
+          % ("(none — the file is absent, so every note is zoned)" if zones is None
+             else ", ".join(sorted(zones))))
+    by_top = Counter((rel.split("/")[0] if "/" in rel else "(repo root)")
+                     for rel in signals["orphans"])
+    if by_top:
+        print("  orphaned notes by top folder — none of these names is in the fence above:")
+        for name, count in by_top.most_common():
+            print("    %-24s %d" % (name, count))
     return signals
 
 
@@ -587,6 +635,10 @@ def main():
     parser.add_argument("--now", default=None, help="UTC ISO override for the due check (tests)")
     parser.add_argument("--last-run", default=None,
                         help="UTC ISO last run; an empty value means 'never ran' (tests/rituals)")
+    parser.add_argument("--readout", action="store_true",
+                        help="print the plane this loop judges — the root walked, the recorded-base "
+                             "copies excluded, the signals left, and the orphan count per top folder "
+                             "beside the zone names the rule read; writes nothing")
     args = parser.parse_args()
     root = Path(args.root) if args.root else find_root(Path(__file__))
     if args.due:
@@ -598,6 +650,9 @@ def main():
         print(f"vault not found: {vault}")
         return 1
     proposals_glob = str(vault / "90_Agent_Output" / "proposals" / "*.json")
+    if args.readout:
+        signals_readout(vault, proposals_glob)
+        return 0
     history_path = root / "14_CANDIDATES" / "loop" / "history.json"
     history_path.parent.mkdir(parents=True, exist_ok=True)
     cycle = 1

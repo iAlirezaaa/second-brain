@@ -34,8 +34,8 @@ import sys
 from pathlib import Path, PurePosixPath
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import (PAPERWORK_SKIP_PATHS, find_root, run_utf8, state_fingerprint,
-                    tree_inventory)
+from common import (PAPERWORK_SKIP_PATHS, SNAPSHOT_ROOT, find_root, run_utf8,
+                    state_fingerprint, tree_inventory)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -43,7 +43,6 @@ except AttributeError:
     pass
 
 STAMP_RE = re.compile(r"^\d{8}T\d{6}Z$")
-SNAPSHOT_ROOT = "15_SYSTEM/backups/known-good"
 BASES_JOURNAL = "14_CANDIDATES/loop/bases.jsonl"
 RECOVERY_JOURNAL = "14_CANDIDATES/loop/recovery.jsonl"
 KEEP = 5          # bases on disk; the journal keeps every line, the bytes get rotated

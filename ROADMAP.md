@@ -755,14 +755,47 @@ repo does not yet do.*
       to its scope instead of letting it widen into a general silence. Run it with
       `python -m unittest tests.test_phase47_link_graph_plane`; the test count is that command's to
       print, not this file's.
-- [ ] 🔵 **S** the same class of blind spot, still open: the search plane and the graph plane disagree
-      about what the corpus is. `scripts/kb.py` keeps one exclusion list (`NOT_CORPUS`) and the
-      recorded base is not on it, so a full-text index built on a machine that has recorded a base
-      returns each note once per snapshot, while the link gate this commit just fixed refuses to count
-      those copies at all; `scripts/loop.py` walks the tree the same unfiltered way. What is missing:
-      one declared notion of "the plane that is judged", shared by the graph, the index and the loop,
-      with each of them naming which root it measured — and a vault gate that can be pointed at the
-      owner's real notes by default instead of only by `--vault`.
+- [x] 🔵 **S** the same class of blind spot, closed — and the row that predicted it was half wrong,
+      so the correction belongs in the record rather than being quietly deleted. It named the index:
+      `scripts/kb.py` keeps one exclusion list (`NOT_CORPUS`) and the recorded base is not on it, so a
+      full-text index built on a machine that had just recorded a base "must" return each note once per
+      snapshot. Measured, it does not. `kb.py:56` declares
+      `MACHINE_PLANE = ("11_CONTROL/", "12_RUNTIME/", "13_LAB/", "14_CANDIDATES/", "15_SYSTEM/")` and
+      the snapshot root lives under `15_SYSTEM/`, so the index drops the whole plane for a reason that
+      has nothing to do with the base: `kb.corpus` on the real tree is **58 files, 0 inside a base**.
+      The reader that *was* still lying is the nightly loop. `scripts/loop.py::vault_signals` walked the
+      tree the unfiltered way and reported **174 orphans, 84 of them copies inside one recorded base** —
+      which is the job telling the owner, every night, to file notes they had already filed. Now one
+      predicate decides what the live plane is: `common.SNAPSHOT_ROOT` and `common.is_recorded_base(rel)`;
+      `scripts/base.py` imports the constant instead of restating the literal, and both
+      `link_check.link_targets` and `loop.vault_signals` call the predicate; the index needed no change,
+      because the index was never the one lying. After:
+      `python scripts/loop.py --readout --vault .` on the tree that holds base `20261102T145801Z` prints
+      **189 markdown walked, 89 copies excluded, 100 judged live — 90 orphans, 0 inside a base**, and
+      `python scripts/link_check.py --vault . --readout` judges the same 100. Source: brief §2 principle
+      three (a claim a measurement disproves is corrected where it stands) and §17 (a fix is a test).
+- [x] 🔵 **S** `tests/test_phase48_one_plane_law.py` — written red first, on a fixture with a base copied
+      into it, and pinned by the guards that must not loosen with it: the loop's orphan and stale-inbox
+      counts stop naming snapshot paths, a recorded base opened as its own vault still reports its own
+      notes, and two *live* notes that genuinely share a stem stay ambiguous instead of binding to
+      whichever path sorts first. Run it with `python -m unittest tests.test_phase48_one_plane_law`;
+      the test count is that command's to print, not this file's.
+- [ ] 🔵 **S** the residual the fix exposed, now printed by a command instead of argued. Pointed at this
+      repo's own tree, `python scripts/loop.py --readout --vault .` reports **90 live orphans** and
+      prints the fence it judged by: `00_Inbox`, `10_Projects`, `20_Notes`, `30_Resources`,
+      `90_Agent_Output` — the five keys of `rules/zones.json`. Not one of those five names is a folder
+      in this repo: the tree has `01_INBOX` and `03_PROJECTS`, and the readout's histogram puts **79 of
+      the 90 in seven top folders the fence never names** (`00_START_HERE` 14, `skills` 14,
+      `11_CONTROL` 12, `02_WIKI` 10, `14_CANDIDATES` 10, repo root 10, `15_SYSTEM` 9) with the remaining
+      11 spread over `03_PROJECTS` (2) and one each in nine more. Pointed at the shipped default
+      `vault-template`, the same rule reports **0**, because the template is the structure the fence was
+      written for. So the number is not 90 life notes lost — it is one rule reading a map of a different
+      tree, and a second map nobody compares it to: `doc_report.py:68` and `install.py:191` read the
+      16-entry `zones` list in `15_SYSTEM/config/system.json` (each entry keyed `dir`/`plane`), and the
+      two sets share **no name**. What is missing is one declared home for the project's own plumbing —
+      or an orphan rule that reads the map the installer lays — with the readout printing the *life*
+      notes left orphaned separately from the machine's, so the nightly advice to the owner means their
+      notes and nothing else. Source: brief §4 and §19 stage 1.
 - [ ] 🔵 **L** the debt table closed, in the order the owner's brief sets: encrypted backup with a
       real restore test (§8), the per-agent boundary at the door that actually serves reads
       (§8/§9), the record model and entity statuses the personal brain needs (§4/§6), the durable
