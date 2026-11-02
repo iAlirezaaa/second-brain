@@ -61,9 +61,11 @@ preflight at the central toolkit boundary. Pass --session SES-... and optionally
 \`SBO_REQUIRE_SESSION=1\` to reject sessionless central-registry tool calls.
 A session's tool activity is recorded as payload-free hashes in the local
 event journal; closing a session still requires a fresh handoff and human
-review. Direct MCP server tools and other host processes **do not yet**
-inherit this toolkit gate; do not treat the environment switch as a
-universal permission barrier. See \`00_START_HERE/CLI_VNEXT.md\`.
+review. Direct MCP server tools **now also honor the session gate** when strict mode
+is enabled, and session-bound MCP writes require the actor's registered tool
+allowlist. External harness processes that do not pass through the MCP door or
+central toolkit still need their own adapters. Agent IDs are self-asserted by
+local clients, not authenticated user identities. See \`00_START_HERE/CLI_VNEXT.md\`.
 
 ## What this is
 
@@ -166,7 +168,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 986 |
+| tests collected (`python -m unittest discover -s tests`) | 996 |
 | health gates (`python scripts/health.py`) | 16 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
