@@ -434,6 +434,19 @@ and borrows only the schemas peers proved. 692 tests, 12 gates, 0 open issues.
   was replaced by what is actually in the folder.
 
 ### Fixed
+- The version gate refused a folder for a tag it cannot carry. `is_repo_checkout` counts a
+  `pyproject.toml` as repo paperwork, and `tests/test_phase20_known_good_base.py` builds its
+  fixture clone by copying the tracked files — a manifest with no `.git`. The gate ran there,
+  `git` could not name a tag, and the answer was `VERSION 0.1.0 is not tagged and CHANGELOG.md's
+  [Unreleased] declares nothing`: found while cutting this release, and it turned the twelve
+  base/fingerprint tests red because a copy that keeps no history has no way to pass it except
+  to write a changelog entry for a change nobody made. `check()` now judges the tag half only
+  where history is readable, and `--check` states the skip in its OK line rather than going quiet
+  about it (a silent skip is the failure mode this gate was built for). Both real refusals stand: a
+  folder with `.git` whose version is untagged still demands a declaring `## [Unreleased]`, and a
+  checkout whose manifest is missing still refuses by name. Four tests in
+  `tests/test_phase37_version_gate.py` (`TestACopyThatCarriesNoHistory`) hold the new line, and the
+  two tests that assert the old refusal now build a folder that actually keeps a `.git`.
 - `zone_check.py` applied `agent_edit_never` only when `action` was exactly "edit", so
   "overwrite", "Edit", "replace", "delete", "update" or " edit" fell through to the approval
   branch and an approved rewrite of a human zone printed OK (issue #39). The action is now a

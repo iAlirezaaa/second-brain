@@ -117,12 +117,14 @@ class TestVersionGate(unittest.TestCase):
     def test_missing_changelog_section_is_named(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = fixture(tmp, changelog="# Changelog\n\n## [9.9.8] — 2026-09-01\n")
+            (root / ".git").mkdir()  # the tag rule is a history rule; see TestACopyThatCarriesNoHistory
             problems = "\n".join(gate.check(root))
             self.assertIn("no [Unreleased] section", problems)
 
     def test_unreleased_that_declares_nothing_is_named(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = fixture(tmp, changelog="# Changelog\n\n## [Unreleased]\n\n### Added\n")
+            (root / ".git").mkdir()
             problems = "\n".join(gate.check(root))
             self.assertIn("declares nothing", problems)
 
@@ -222,6 +224,59 @@ class TestAnInstalledHomeMakesNoVersionClaim(unittest.TestCase):
             self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
             self.assertIn("REFUSED", result.stdout)
             self.assertNotIn("Traceback", result.stderr)
+
+
+class TestACopyThatCarriesNoHistory(unittest.TestCase):
+    """A file-copy of the repo is a checkout's paperwork with no checkout inside it.
+
+    Found while releasing 0.1.0: `tests/test_phase20_known_good_base.py` builds its fixture clone
+    by copying the tracked files, so the folder holds `pyproject.toml` and no `.git`.
+    `is_repo_checkout` calls that a repo — the manifest is the other half of its test — so the
+    gate ran, `git` could not name a tag, and the answer was "VERSION 0.1.0 is not tagged and
+    CHANGELOG.md's [Unreleased] declares nothing". A true sentence about nothing: the folder
+    carries no tags, can carry none, and the release it describes *is* tagged in the repo that
+    copied it. The only way to satisfy it was to write a change into the changelog that had not
+    been made, which is the fabrication the gate exists to catch.
+
+    So the tag half is judged where history is readable and stated absent where it is not. Both
+    refusals below stay: a checkout whose git cannot answer for the tag still refuses, and a
+    checkout with work after its tag and an empty `[Unreleased]` still refuses.
+    """
+
+    EMPTY_RELEASE = ("# Changelog\n\n## [Unreleased]\n\nNothing unreleased.\n\n"
+                     "## [9.9.9] - 2026-01-01\n\n### Added\n- **the release**\n")
+
+    def run_gate(self, root, *args):
+        return common.run_utf8([sys.executable, str(ROOT / "scripts" / "version.py"),
+                                "--root", str(root), *args], cwd=str(ROOT))
+
+    def test_an_untagged_copy_without_history_is_not_a_defect(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = fixture(tmp)                      # pyproject + VERSION + README, no .git
+            (root / "CHANGELOG.md").write_text(self.EMPTY_RELEASE, encoding="utf-8")
+            self.assertEqual([], gate.check(root), gate.check(root))
+
+    def test_the_check_says_which_half_it_could_not_read(self):
+        """Silence about a skip is the silent gate this repo already refuses."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = fixture(tmp)
+            (root / "CHANGELOG.md").write_text(self.EMPTY_RELEASE, encoding="utf-8")
+            result = self.run_gate(root, "--check")
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            for reason in ("no git metadata", "tag"):
+                self.assertIn(reason, result.stdout, result.stdout)
+
+    def test_a_checkout_that_keeps_history_and_has_no_tag_still_refuses(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = fixture(tmp)
+            (root / ".git").mkdir()
+            (root / "CHANGELOG.md").write_text(self.EMPTY_RELEASE, encoding="utf-8")
+            self.assertIn("declares nothing", "\n".join(gate.check(root)))
+
+    def test_the_real_release_commit_is_not_judged_by_the_copy_rule(self):
+        """The shipped folder has history, a tag at HEAD and an empty `[Unreleased]`: green."""
+        self.assertTrue((ROOT / ".git").exists(), "this test only means something in a clone")
+        self.assertEqual([], gate.check(ROOT), gate.check(ROOT))
 
 
 if __name__ == "__main__":

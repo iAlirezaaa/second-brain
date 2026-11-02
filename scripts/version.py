@@ -16,7 +16,9 @@ So the number is derived, not remembered:
 * `--check` refuses when `VERSION`, `pyproject.toml`, the README title, the README badge and the
   changelog disagree, or when work is committed after the released tag with an empty
   `## [Unreleased]` section — which is the same silent-gate failure in the other direction:
-  shipped code that no changelog admits to.
+  shipped code that no changelog admits to. The tag half needs a history to read: a folder with
+  a manifest and no `.git` (a file-copy of this repo, not a clone of it) is told so in the OK
+  line instead of being refused for a tag it cannot carry.
 * `--bump` never tags and never pushes. It writes `VERSION` and prints the two commands a human
   runs to make the release; a tag is a published promise and this repo keeps promises for the
   owner to make.
@@ -183,6 +185,24 @@ def unreleased_is_empty(root):
         r"^- \*\*", body, re.MULTILINE)
 
 
+def has_git_metadata(root):
+    """True when this folder keeps a history of its own, so a tag is something it could have.
+
+    `is_repo_checkout` counts a packaging manifest as repo paperwork, and a manifest with no
+    `.git` is a real shape: a file-copy of the repo (`tests/test_phase20_known_good_base.py`
+    builds its fixture clone exactly that way). Such a folder holds no tags and can hold none, so
+    the tag half of `check` has nothing to read about it — and the only way to satisfy the demand
+    would be to declare a change in the changelog that was never made, which is the fabrication
+    this gate exists to catch. A folder that does keep `.git` is judged in full, including the
+    case where git cannot answer for the tag at all.
+    """
+    return (Path(root) / ".git").exists()
+
+
+NO_HISTORY_SKIP = ("no git metadata in this folder: it keeps no history, so whether the version "
+                   "is tagged is not a question about it and the tag half is not judged here")
+
+
 def check(root):
     """Every way this folder can claim two different versions. [] means the number is one."""
     version = declared_version(root)
@@ -197,6 +217,8 @@ def check(root):
     elif pyproject != version:
         problems.append("pyproject.toml says %s but VERSION says %s" % (pyproject, version))
     problems += ["README: " + line for line in readme_cites(root, version)]
+    if not has_git_metadata(root):
+        return problems
 
     headings = changelog_headings(root)
     tag_exists = bool(git(root, "rev-parse", "-q", "--verify", "v%s" % version))
@@ -303,8 +325,9 @@ def main():
             print("REFUSED: this folder claims more than one version")
             return 1
         commits = commits_since(root, tag)
-        print("OK — one version everywhere: %s (tag %s, %d commit(s) since, next level %s)"
-              % (version, tag or "(none)", len(commits), highest_level(commits)))
+        print("OK — one version everywhere: %s (tag %s, %d commit(s) since, next level %s)%s"
+              % (version, tag or "(none)", len(commits), highest_level(commits),
+                 "" if has_git_metadata(root) else " — " + NO_HISTORY_SKIP))
         return 0
     report(root)
     problems = check(root)
