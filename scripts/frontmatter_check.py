@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import DATE_RE, find_root, iter_notes, load_json, parse_frontmatter
+from common import DATE_RE, find_root, iter_notes, load_json, parse_frontmatter_checked
 
 # every gate prints its verdict in UTF-8, so a Persian path or an em dash in a refusal reaches
 # the reader as text instead of as mojibake on a Windows console
@@ -112,7 +112,9 @@ def validate_note(fm, schema):
 
 def validate_file(path, schema):
     text = path.read_text(encoding="utf-8", errors="replace")
-    fm, _ = parse_frontmatter(text)
+    fm, _, syntax_errors = parse_frontmatter_checked(text)
+    if syntax_errors:
+        return syntax_errors
     if not fm:
         return ["missing frontmatter block"]
     return validate_note(fm, schema)
@@ -130,8 +132,10 @@ def main():
     records = 0
     for path in iter_notes(vault):
         text = path.read_text(encoding="utf-8", errors="replace")
-        fm, _ = parse_frontmatter(text)
-        if is_registry_record(fm, registry):
+        fm, _, syntax_errors = parse_frontmatter_checked(text)
+        if syntax_errors:
+            problems = syntax_errors
+        elif is_registry_record(fm, registry):
             problems = validate_record(fm, registry)
             records += 1
         elif claims_a_kind(fm, registry):
