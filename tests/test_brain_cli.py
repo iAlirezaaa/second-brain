@@ -34,6 +34,7 @@ class BrainCLITests(unittest.TestCase):
         for task in brain.view(self.root, session)["tasks"]:
             if task["category"] == "handoff":
                 brain.handoff(self.root, session, "reviewed", "follow up", "none")
+                continue
             brain.finish(self.root, session, task["id"], "02_WIKI/proof.md")
 
     def test_first_move_creates_todo_and_skill_snapshot(self):
@@ -148,6 +149,25 @@ class BrainCLITests(unittest.TestCase):
     def test_no_data_is_honest_empty_retrieval(self):
         result = brain.adhd(self.root, "nonsenseunmatchedidentifier")
         self.assertEqual([], result["bridges"])
+
+    def test_handoff_automatically_completes_its_own_task(self):
+        sid = self.opened()
+        brain.handoff(self.root, sid, "progress report", "keep working", "")
+        tasks = brain.view(self.root, sid)["tasks"]
+        self.assertEqual("done", tasks[-1]["state"])
+        self.assertTrue(brain.view(self.root, sid)["handoff_written"])
+
+    def test_handoff_directory_symlink_refused(self):
+        sid = self.opened()
+        directory = self.root / ".brain-data" / "operator"
+        elsewhere = self.root / "elsewhere"
+        elsewhere.mkdir()
+        try:
+            (directory / "handoffs").symlink_to(elsewhere, target_is_directory=True)
+        except OSError:
+            self.skipTest("symlink privilege unavailable")
+        with self.assertRaisesRegex(brain.Refused, "cannot be a symlink"):
+            brain.handoff(self.root, sid, "summary", "next step", "")
 
     def test_private_storage_symlink_refused(self):
         if not hasattr(Path, "symlink_to"):
