@@ -169,6 +169,28 @@ class SessionRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(brain.Refused, "1-1000"):
             brain.timeline(self.root, self.sid, limit=0)
 
+    def test_storage_and_handoff_are_private_on_posix(self):
+        if os.name == "nt":
+            self.skipTest("Windows ACLs require a separate permission test")
+        brain.handoff(self.root, self.sid, "private notes", "resume", "none")
+        paths = [self.root / ".brain-data",
+                 self.root / ".brain-data" / "operator",
+                 self.root / ".brain-data" / "operator" / "sessions.sqlite3",
+                 self.root / ".brain-data" / "operator" / "handoffs" / (self.sid + ".md")]
+        for path in paths:
+            self.assertEqual(0, path.stat().st_mode & 0o077,
+                             "%s must not be accessible by group/other users" % path)
+
+    def test_skill_draft_is_private_on_posix(self):
+        if os.name == "nt":
+            self.skipTest("Windows ACLs require a separate permission test")
+        self.ready()
+        brain.handoff(self.root, self.sid, "private notes", "resume", "")
+        result = brain.close(self.root, self.sid, "partial")
+        path = self.root / result["draft_skill"]
+        self.assertTrue(path.is_file())
+        self.assertEqual(0, path.stat().st_mode & 0o077)
+
     def test_no_open_work_task_means_no_execution(self):
         self.ready()
         brain.finish(self.root, self.sid, self.work_id, "02_WIKI/evidence.md")
