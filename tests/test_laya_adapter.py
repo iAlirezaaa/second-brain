@@ -58,6 +58,12 @@ class LayaAdapterTests(unittest.TestCase):
         self.assertIsNone(result["answers"]["destination"]["value"])
         self.assertEqual(result["status"], "review_required")
 
+    def test_score_needs_ordered_levels(self):
+        with patch.dict(os.environ, {"SBO_LAYA_ENABLED": "1"}):
+            with self.assertRaisesRegex(laya_adapter.DecisionRefused, "score requires"):
+                laya_adapter.decide("x", {"priority": {"type": "score",
+                                           "instructions": "How important?"}}, router=FakeRouter())
+
     def test_invalid_questions_rejected_before_any_model_call(self):
         with patch.dict(os.environ, {"SBO_LAYA_ENABLED": "1"}):
             with self.assertRaisesRegex(laya_adapter.DecisionRefused, "2-20"):
