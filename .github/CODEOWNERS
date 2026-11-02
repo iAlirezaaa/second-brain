@@ -1,0 +1,25 @@
+# One human owns the merges; agents may propose, never approve (charter §7, §13).
+# The brain's gates are the review layer — this file names who is accountable when they speak.
+
+*                                  @iAlirezaaa
+
+# The canon and every projection of it: a rule change is a human decision.
+AGENTS.md                          @iAlirezaaa
+scripts/sync_hosts.py              @iAlirezaaa
+
+# The doors that judge the repo: a gate that can be edited by whoever it judges is not a gate.
+scripts/health.py                  @iAlirezaaa
+scripts/promote.py                 @iAlirezaaa
+scripts/version.py                 @iAlirezaaa
+scripts/ci_floor.py                @iAlirezaaa
+scripts/write_gate.py              @iAlirezaaa
+scripts/zone_check.py              @iAlirezaaa
+rules/                             @iAlirezaaa
+
+# What CI runs, and the registry the control plane governs.
+.github/workflows/                 @iAlirezaaa
+11_CONTROL/                        @iAlirezaaa
+15_SYSTEM/config/                  @iAlirezaaa
+
+# Generated numbers and the disposable shelf: reviewable, but never the source of a claim.
+14_CANDIDATES/                     @iAlirezaaa
