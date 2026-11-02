@@ -26,6 +26,33 @@ of expiring quietly.
 
 **The charter outranks the task.** When a requested change conflicts with a law in it — independence from any app, one place per file, learn from the error and record it — the charter wins and the conflict goes to `14_CANDIDATES/loop/` as a finding, with the section number it conflicts with. An agent that quietly follows the task and skips the law has not solved a problem; it has created the defect the law exists to prevent.
 
+## vNext session discipline (CLI prototype)
+
+Before beginning new agent work, inspect relevant skills and create a durable
+task-first session with python scripts/brain.py start --goal "..." --actor human
+(or an existing registered AGT-XXXXXXXX ID). The command creates an initial
+To-Do list including skill review, planning, bounded work, verification
+and mandatory handoff. Add discovered work using the add command; record
+completed steps with an inspectable evidence path. Before closing any
+session, use the handoff command with a truthful summary, blockers and
+next action. The close command generates a **draft skill proposal** after
+every session. Do not treat that draft as an approved SKILL.md; the user
+must confirm a successful result and review any promotion separately.
+
+The central orchestrator/toolkit can bind tool calls to an existing Session
+(using --session and --task-id); SBO_REQUIRE_SESSION=1 refuses calls made through
+that toolkit without a Session. This is now a runtime gate, not merely advice.
+The stdio MCP door also checks session preflight and actor write allowlists
+when strict mode is enabled or session_id is provided. This is not a
+cryptographically authenticated identity or universal host-enforced permission:
+external scripts and harness-native tools still require their own adapters.
+The CLI cannot certify who physically supplied an approval flag. Never claim universal automatic enforcement before the actual harness
+adapter and permission boundary are tested. The existing scripts/handoff.py
+remains the canonical repository-level handoff generator.
+
+See 00_START_HERE/CLI_VNEXT.md, PRODUCT_VNEXT.md and AGENT_TEAM_VNEXT.md.
+A red health gate, higher-order access rule or human instruction always wins.
+
 ## Independence from any app
 The system runs on Python 3.9+ standard library only — no Obsidian, no IDE, no network,
 no paid service. Every state transition has a script behind it, and the tests prove the

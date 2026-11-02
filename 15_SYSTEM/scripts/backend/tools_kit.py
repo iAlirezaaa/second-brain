@@ -18,6 +18,7 @@ import importlib.util
 import json
 from pathlib import Path
 from .access import readable
+from . import session_bridge
 
 _HAD = Path(__file__).resolve().parent.parent / "hades.py"
 _HADES = None
@@ -62,12 +63,15 @@ class Context:
     """Who is acting, and what they are allowed to do. `allow_writes` comes from an
     explicit human `--approve`; `allowlist` comes from the actor's registry record."""
 
-    def __init__(self, root, actor_id="", actor_kind="", allow_writes=False, allowlist=()):
+    def __init__(self, root, actor_id="", actor_kind="", allow_writes=False, allowlist=(),
+                 session_id="", task_id=None):
         self.root = root
         self.actor_id = str(actor_id or "")
         self.actor_kind = str(actor_kind or "")
         self.allow_writes = bool(allow_writes)
         self.allowlist = set(allowlist or ())
+        self.session_id = str(session_id or "")
+        self.task_id = task_id
 
 
 class Registry:
@@ -108,6 +112,10 @@ class Registry:
 
     def execute(self, ctx, qualified, args):
         tool = self.get(qualified)
+        try:
+            session_bridge.require(ctx.root, ctx.session_id, ctx.actor_id, ctx.task_id)
+        except ValueError as exc:
+            raise ToolError(str(exc))
         if tool.writes:
             if not ctx.allow_writes:
                 raise ToolError("tool %s writes; this context is not approved (--approve)"
@@ -119,7 +127,29 @@ class Registry:
                 raise ToolError("tool %s is not in actor %s's tool_allowlist "
                                 "(an empty list means zero write tools)"
                                 % (qualified, ctx.actor_id or "(none)"))
-        return tool.run(ctx.root, ctx, args or {})
+        if ctx.session_id:
+            try:
+                session_bridge.audit(ctx.root, ctx.session_id, ctx.actor_id,
+                                     qualified, "attempt", "", ctx.task_id)
+            except ValueError as exc:
+                raise ToolError(str(exc))
+        try:
+            result = tool.run(ctx.root, ctx, args or {})
+        except Exception as exc:
+            if ctx.session_id:
+                try:
+                    session_bridge.audit(ctx.root, ctx.session_id, ctx.actor_id,
+                                         qualified, "failed", type(exc).__name__, ctx.task_id)
+                except ValueError:
+                    pass  # preserve the underlying tool error; attempt was already recorded
+            raise
+        if ctx.session_id:
+            try:
+                session_bridge.audit(ctx.root, ctx.session_id, ctx.actor_id,
+                                     qualified, "ok", result, ctx.task_id)
+            except ValueError as exc:
+                raise ToolError("tool returned but session completion audit failed: %s" % exc)
+        return result
 
 
 def hades_module():
@@ -276,9 +306,33 @@ class LtmStore(Tool):
         return "stored as row %d in .kb/ltm.sqlite (disposable plane; promote to keep)" % row
 
 
+class LayaDecide(Tool):
+    """Optional System-1 read-only proposal, never an action executor."""
+    name = "core.laya_decide"
+    behavior = "read_only"
+    description = ("Get typed local Laya decision proposals. Opt-in on Python 3.10+; "
+                   "low-confidence answers require review and never trigger tools.")
+    args_schema = {"type": "object",
+                   "properties": {"state": {}, "questions": {"type": "object"},
+                                  "min_confidence": {"type": "number"},
+                                  "model": {"type": "string"}},
+                   "required": ["state", "questions"]}
+
+    def run(self, root, ctx, args):
+        from . import laya_adapter
+        if not isinstance(args, dict):
+            raise ToolError("laya_decide needs a JSON object")
+        try:
+            return json.dumps(laya_adapter.decide(
+                args.get("state"), args.get("questions"),
+                min_confidence=args.get("min_confidence", laya_adapter.DEFAULT_MIN_CONFIDENCE),
+                model=args.get("model", "auto")), ensure_ascii=False)
+        except laya_adapter.DecisionRefused as exc:
+            raise ToolError(str(exc))
+
 def default_registry():
     reg = Registry()
     for tool in (FsRead(), VaultSearch(), RegistryList(), RegistryShow(),
-                 LtmFetch(), LtmStore()):
+                 LtmFetch(), LtmStore(), LayaDecide()):
         reg.register(tool)
     return reg

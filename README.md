@@ -1,5 +1,23 @@
 # Second Brain OS v0.2.0
 
+> **Second Brain OS — The Cognitive Operating System**
+>
+> A local-first brain that can remember, find evidence, connect ideas, organize
+> agent work, and grow through verified experience. Designed to run without
+> cloud lock-in, with optional models and infrastructure when benchmarks justify them.
+>
+> **vNext prototype:** Task-first Brain CLI, mandatory session handoff,
+> a skill-proposal trail, read-only Twin World 0, file-overlay Twin 1a and ADHD cross-domain links.
+> These features are experimental; live AI orchestration and semantic retrieval
+> are not claimed as complete.
+>
+> **Start here:** [Product Vision](00_START_HERE/PRODUCT_VNEXT.md) ·
+> [Brain CLI](00_START_HERE/CLI_VNEXT.md) ·
+> [Agent Constellation](00_START_HERE/AGENT_TEAM_VNEXT.md) ·
+> [Technical research](00_START_HERE/TECH_RESEARCH_VNEXT.md)
+>
+> **Example:** python scripts/brain.py start --goal "Research an idea and preserve the result"
+>
 **What the name means.** *Second Brain OS* is what this is for anyone who needs to know in three
 words: a second brain (external memory you can trust) that is a complete system rather than a
 folder of notes — zones, gates, a registry, a ledger and its own improvement loop. **HADES** is the
@@ -35,6 +53,19 @@ private local data, and the MCP source search exposes matches to connected clien
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **📋 نقشهٔ عمومی راه / Public roadmap (با چیپ وضعیت و تیک پیوسته): [ROADMAP.md](ROADMAP.md)**
+
+
+**Runtime binding (in development):** The task-first CLI can now enforce its
+preflight at the central toolkit boundary. Pass --session SES-... and optionally
+--task-id N to \`orchestrator.py tool call\` or \`workflow run\`. Set
+\`SBO_REQUIRE_SESSION=1\` to reject sessionless central-registry tool calls.
+A session's tool activity is recorded as payload-free hashes in the local
+event journal; closing a session still requires a fresh handoff and human
+review. Direct MCP server tools **now also honor the session gate** when strict mode
+is enabled, and session-bound MCP writes require the actor's registered tool
+allowlist. External harness processes that do not pass through the MCP door or
+central toolkit still need their own adapters. Agent IDs are self-asserted by
+local clients, not authenticated user identities. See \`00_START_HERE/CLI_VNEXT.md\`.
 
 ## What this is
 
@@ -137,7 +168,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 985 |
+| tests collected (`python -m unittest discover -s tests`) | 1012 |
 | health gates (`python scripts/health.py`) | 16 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
@@ -190,3 +221,5 @@ Owner: Hades 3rd ([@iAlirezaaa](https://github.com/iAlirezaaa))
 > **FA —** در کنار ساختار صفحاتِ HADES، این ریپو از این به بعد **موتورِ سکند برین نسخهٔ 0.2.0** را هم دارد: کیت ابزارِ هارنسِ ایجنت که همان فلسفه را با اسکریپت اجرا می‌کند، نه با توصیه. `vault-template/` فقط قطعات آغازین (`index.md` و `_templates`) را دارد؛ `python scripts/install.py` همان شانزده زون مخزن را از `15_SYSTEM/config/system.json` می‌سازد و موتور (`scripts/` و `15_SYSTEM/scripts/`)، شِماهای رجیستری، دفترِ درس‌ها و هر پنج درِ ایجنت را کنارشان می‌گذارد. خانهٔ نصب‌شده یک عکس فوری نیست: `python scripts/install.py --upgrade ~/brain` خانه را مسیر‌به‌مسیر و دانه‌به‌دانه به این موتور می‌آورد — فایلی که موتور عوضش کرده بازنویسی می‌شود، فایلی که آدم اینجا ویرایش کرده دست‌نخورده می‌ماند و نامش گفته می‌شود، و فایلی که رکوردِ خودِ خانه گواهی‌اش را ندارد سرِ جایش می‌ماند و اجرای آپگرید با کد خطا (۱) تمام می‌شود — و هیچ‌چیز حذف نمی‌شود؛ `--dry-run` ثابت می‌کند چیزی نمی‌نویسد، چون ردختِ درختِ خانه را در ورود و خروج مقایسه می‌کند. `rules/` و تست‌ها قابل خواندن ماشین هستند و هر قابلیت با تست محافظت می‌شود. سوت را با `python -m unittest discover -s tests` و سلامت ولت را با `python scripts/health.py` صدا بزنید.
 >
 > **Maps / نگاشت:** `00_Inbox` ≈ `01_INBOX`، `20_Notes`+`30_Resources` ≈ `02_WIKI`+`15_SYSTEM/templates`، `90_Agent_Output` ≈ `13_LAB`+`14_CANDIDATES`، `promote` ≈ ارتقای `13/14` به صفحهٔ انسان. Two vocabularies, one philosophy: **nothing reaches the human plane un-promoted, nothing breaks a link un-checked.** · دو گویش، یک فلسفه: **هیچ‌چیز بدون ارتقا به صفحهٔ انسان نمی‌رسد، هیچ‌چیز بدون چک لینک نمی‌شکند.**
+
+**MCP human-identity guard:** clients may bind only a registered agent identity, not a self-declared human session. This denies one class of impersonation but does not replace host-level authentication.
