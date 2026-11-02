@@ -50,7 +50,10 @@ def collected_tests(root):
     if not folder.is_dir():
         return 0
     loader = unittest.TestLoader()
-    return loader.discover(str(folder), pattern="test_*.py").countTestCases()
+    suite = loader.discover(str(folder), pattern="test_*.py")
+    if loader.errors:
+        raise ValueError("test discovery failed: %s" % "; ".join(loader.errors[:3]))
+    return suite.countTestCases()
 
 
 def gates(root):
@@ -97,11 +100,13 @@ def measures(root):
     ]
 
 
-def table(root):
+def table(root, strict=False):
     lines = ["| measure | now |", "| --- | --- |"]
     try:
         rows = measures(root)
     except (OSError, ValueError, KeyError, ImportError) as exc:
+        if strict:
+            raise
         # handoff.py stamps this block into §1 of a folder that may not be measurable (a
         # temp dir in a test, a half-installed brain). A handoff that crashes is worse than
         # a handoff that says it could not measure: the next session loses its resume point.
@@ -118,7 +123,7 @@ def block(root, body=None):
 
 def stamped(path):
     text = path.read_text(encoding="utf-8", errors="replace")
-    if BEGIN not in text or END not in text:
+    if text.count(BEGIN) != 1 or text.count(END) != 1:
         return None
     return text.split(BEGIN, 1)[1].split(END, 1)[0].strip()
 
@@ -137,46 +142,55 @@ def main():
             print("UNMEASURABLE %s is not in this folder, so its number cannot be read" % rel)
         print("REFUSED: the measurement needs inputs that are not here")
         return 1
-    body = table(root)          # measured exactly once per run; every branch compares to it
+    try:
+        body = table(root, strict=True)  # failure is a refusal, not a document row
+    except (OSError, ValueError, KeyError, ImportError) as exc:
+        print("REFUSED: cannot measure this repository (%s: %s)" % (type(exc).__name__, exc))
+        return 1
     wanted = block(root, body)
 
     if not args.check and not args.write:
         print(body)
         return 0
 
-    problems, updated = [], []
+    # Validate ALL documents before mutating ANY; a partial write hides stale evidence.
+    problems, changes = [], {}
     for rel in DOCS:
         path = root / rel
         if not path.is_file():
             problems.append("%s: named by the doc report but not on disk" % rel)
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
+        if text.count(BEGIN) > 1 or text.count(END) > 1:
+            problems.append("%s: multiple measured blocks; remove duplicates manually" % rel)
+            continue
         if BEGIN in text and END not in text:
-            # never write into it: the rest of the file would be swallowed as old numbers
-            problems.append("%s: a measured block opens here and never closes — everything "
-                            "after the marker would be eaten" % rel)
+            problems.append("%s: a measured block opens here and never closes" % rel)
+            continue
+        if END in text and BEGIN not in text:
+            problems.append("%s: an orphan END marker cannot be verified" % rel)
             continue
         if BEGIN not in text:
             if not args.write:
-                problems.append("%s: carries no measured block — a typed number is a claim "
-                                "nobody re-measures" % rel)
-                continue
-            path.write_text(text.rstrip() + "\n\n" + wanted + "\n", encoding="utf-8")
-            updated.append(rel)
+                problems.append("%s: carries no measured block — a typed number is unverified" % rel)
+            else:
+                changes[rel] = text.rstrip() + "\n\n" + wanted + "\n"
             continue
         if args.write:
             head, rest = text.split(BEGIN, 1)
             _old, tail = rest.split(END, 1)
-            path.write_text(head + wanted + tail, encoding="utf-8")
-            updated.append(rel)
-        elif stamped(path) != table(root):
-            problems.append("%s: the block is stale — run python scripts/doc_report.py --write"
-                            % rel)
+            changes[rel] = head + wanted + tail
+        elif stamped(path) != body:
+            problems.append("%s: the block is stale — run python scripts/doc_report.py --write" % rel)
     if problems:
         for problem in problems:
             print("STALE     %s" % problem)
         print("REFUSED: a number in these documents is no longer a measurement")
         return 1
+    updated = []
+    for rel, content in changes.items():
+        (root / rel).write_text(content, encoding="utf-8")
+        updated.append(rel)
     if updated:
         print("WROTE measured blocks into %d document(s): %s" % (len(updated), ", ".join(updated)))
         return 0
