@@ -9,12 +9,17 @@ permissions:
 
 jobs:
   nightly:
-    runs-on: ubuntu-latest
+    # pinned, not `ubuntu-latest`: a floating image moved to 26.04 and killed the nightly loop
+    # in setup-python for five runs while the local gates stayed green
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
+        # 3.12, not 3.9: the nightly loop's own availability is a promise the repo makes
+        # (a loop that dies in setup-python stops improving in silence), and the 3.9 floor
+        # is proved by the ci matrix on a runner that still installs it. See ci.yml.
         with:
-          python-version: "3.9"
+          python-version: "3.12"
       # the ratchet reads state, writes candidates only to 14_CANDIDATES/loop
       # The cron is the alarm; `11_CONTROL/schedules/SCH-…-improvement-loop.json` is
       # the rule. A manual dispatch is a human override and always runs.

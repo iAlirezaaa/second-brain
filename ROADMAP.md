@@ -308,6 +308,115 @@ still unbuilt, and nothing will be claimed until it is.*
 - [ ] ⛔ A "better model" claim with no dataset manifest, no independent eval and no
       before/after report — refused, by the brief's own rule and this repo's measurement law.
 
+## Phase 37 — The version stops being a hand-typed number · 🟢
+
+*Source: the owner's brief (2026-11-02) — "assume 0.0.3 and let the version follow the size of
+the work; put that rule in the code". Issue #4 removed the hand-typed test-count badge for the
+same reason; `VERSION` was the last hand-typed number the repo trusted. Measured before the
+change: `VERSION` 0.0.3, `pyproject.toml` 0.0.3, README title `HADES OS v0.01`, README badge
+`v0.0.3`, one tag `v0.0.3` and 121 commits after it — three of those five places disagreed and
+no gate could see it.*
+
+- [x] **S** `scripts/version.py --check` compares every place the number lives — `VERSION`,
+      `pyproject.toml`, the README title, the README badge and the changelog section — and
+      refuses by name: `INVALID the README title says 'HADES OS v0.01' while VERSION says
+      '0.0.3'`. A released number must appear in `CHANGELOG.md`; an unreleased one must have a
+      non-empty `## [Unreleased]`, so shipped code with no changelog entry is a red gate too.
+- [x] **M** The bump is derived from the work, not from a feeling: `--bump auto` reads the
+      commit subjects since the last tag (`git describe --tags`) and takes the highest signal —
+      `feat!`/`BREAKING CHANGE` → major, `feat` → minor, `fix`/`perf` → patch, and
+      `docs`/`test`/`chore`/`refactor`/`ci`/`style` → `NO_BUMP`. Prose that carries no type is
+      never a bump. At 0.x a breaking change raises the **minor**, because SemVer §4 makes the
+      minor the breaking level below 1.0 and the jump to 1.0 is the owner's decision, not an
+      agent's.
+- [x] **S** No tag is ever created by the gate. `--bump` writes `VERSION` and `pyproject.toml`,
+      then prints the two commands a human runs (`git tag v… && git push origin v…`) — a tag is
+      a published promise. One test asserts the bump leaves no tag behind.
+- [x] **M** 16 tests in `tests/test_phase37_version_gate.py`: the whole ladder, both refusal
+      shapes (drift and empty-unreleased), the malformed `0.003`, the printed release command,
+      and a check over this folder itself so the repo cannot disagree with its own number again.
+- [x] **M** The same disease in the workflows: `ubuntu-latest` moved to Ubuntu 26.04 on
+      2026-11-01, that image has no CPython 3.9 x64 build, and every `ci` and `loop` run died in
+      `setup-python` — five red runs — while the local gates stayed green and the README still
+      claimed "Python 3.9+". The nightly loop, the repo's headline promise, had silently stopped.
+      `scripts/ci_floor.py` joins the health gates: it compares `requires-python`, the ci matrix, the
+      runner images those jobs ride (no floating `ubuntu-latest`), and the `python floor` rows in
+      README and START; `tests/test_phase37_ci_python_floor.py` adds 15 tests, one per refusal.
+
+## Phase 38 — The lessons ledger grows a plane and learns to disagree · 🔵
+
+*Source: issues #25 and #24 (charter §5). The eight planes were mapped in phase 26 but the
+error plane's rows carried no plane field, and no plane could detect a contradiction.*
+
+- [ ] 🔵 **M** `plane` on every lesson row, at the door and in `--check`, with a deterministic
+      migration for the rows already in the ledger.
+- [ ] 🔵 **M** A measured, stdlib-only definition of a contradiction between two active lessons
+      and a gate that refuses an unresolved pair while reporting a `supersedes`-resolved one.
+
+## Phase 39 — The manager agent and the conversation path · 🔵
+
+*Source: issues #21 and #20 (charter §7, §5/§11). A role the charter names and the registry
+does not hold is an unwritten definition; a memory plane with no extraction ritual is a promise.*
+
+- [ ] 🔵 **M** A registered manager-role agent: proposals only, no approval tool, cannot apply
+      its own plan, pointed at by the `first-session` skill.
+- [ ] 🔵 **M** `skills/conversation-memory` + a step table naming the command, the refusal and
+      the test per step, stated in `AGENTS.md` and projected to every host door.
+
+## Phase 40 — The two missing reference maps · 🔵
+
+*Source: issue #22 (charter §3) — harness2 and claude-obsidian shipped logic that only lived in
+prose history; only SuperAGI had an adopt/refuse artifact.*
+
+- [ ] 🔵 **S** `harness2-to-hades-map.md` and `claude-obsidian-to-hades-map.md` in the shape of
+      the SuperAGI map, every adopted row citing a script **and** the test that proves it.
+
+## Phase 41 — An eval that cannot share examples with training · 🔵
+
+*Source: the remaining checkboxes of phase 36, plus the competitive finding that peers publish
+their eval harness (mem0, Khoj) while a claim with no public floor is a rumour.*
+
+- [ ] 🔵 **S** A tracked independent evaluation set and a gate that refuses any case id present
+      in the training manifest — an eval that shares examples measures memorisation.
+- [ ] 🔵 **S** Before/after through `compare-benchmarks` with a positive margin and repeats, and
+      a `scripts/base.py --save` baseline plus the `--recover` line inside the report itself.
+
+## Phase 42 — Design with an elephant, review with a goldfish · 🔵
+
+*Source: the owner's brief (2026-11-02) and https://github.com/google/elephant-goldfish-model —
+Google's EGM plugin: a context-rich drafter plus zero-context reviewers that expose hidden
+assumptions. Adopted as a method this repo can enforce, refused as a plugin install.*
+
+- [ ] 🔵 **M** `skills/elephant-draft` and `skills/goldfish-review`: the six brainstorm lenses
+      translated into this repo's real constraints, the five review stages, the semantic split at
+      `## Detailed Implementation Plan`, the severity/id scheme, the failed-reviewer rule and the
+      clean-round / two-clean-rounds / five-round-cap / churn stop rules.
+- [ ] 🔵 **S** `11_CONTROL/reviewers/` — the goldfish personae as bounded, read-only definitions
+      with their reading lists, so a harness can spawn exactly one.
+- [ ] 🔵 **M** `scripts/goldfish_check.py`: a review is only valid if every reviewer is recorded
+      `run`, no Blocker or Major is left unsettled, and every citation names a file a clone can
+      open. An isolation rule with no gate is prose: if a harness has no subagent tool the review
+      stops — "a review in the same context is not a Goldfish review".
+- [ ] ⛔ EGM's plugin manifests, marketplace install and harness-specific frontmatter: this repo
+      ships plain files its own gates judge, and a plugin installer is the SuperAGI shape §2
+      refuses.
+
+## Phase 43 — Peer practices worth stealing, and the ones worth refusing · 🔵
+
+*Surveyed against mem0, Letta/MemGPT, Khoj, Basic Memory, Graphiti/Zep and SuperAGI.*
+
+- [ ] 🔵 **S** MCP tool behaviour tags (`read_only` / `destructive` / `idempotent`) on every
+      door, cross-checked against the agent `tool_allowlist` (Basic Memory's progressive tool
+      discovery, without its AGPL code).
+- [ ] 🔵 **M** Validity windows on lessons (`verified_at`, `expires`) so an expired claim is a
+      gate row rather than a stale certainty (Graphiti's bi-temporal edges, minus the LLM).
+- [ ] 🔵 **S** `kb.py --related <note>` — deterministic top-k neighbours from the FTS5 index, so
+      "related notes" needs no embedding activation (Smart Connections' value, none of its cost).
+- [ ] ⛔ Postgres/pgvector, Neo4j, FastAPI+Redis+Celery, Letta's App Server, mem0's cloud and
+      any LLM step inside the write path — a port, a daemon, a key or an unmeasured automatic
+      rewrite is exactly what charter §2 exists to refuse.
+- [ ] ⛔ A docs site (mkdocs/GitHub Pages): the content is the bottleneck, not the tooling.
+
 ## Distribution & scale (parked) · ⛔/🔵
 
 - [ ] 🔵 multi-host installer flags (`--host codex|opencode|gemini|claude`) — one skill tree,

@@ -5,11 +5,18 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # The floor is proved where the floor exists. `ubuntu-latest` moved to 26.04, and
+        # actions/python-versions carries no 3.9 x64 build for it, so every run of this job
+        # died in setup-python since 2026-11-01 while the local gates stayed green — a red
+        # house that only the remote can see. ubuntu-24.04 still installs 3.9, so the claim
+        # stays measured rather than downgraded; tests/test_phase37_ci_python_floor.py is the
+        # gate that refuses to let this matrix and `requires-python` drift apart again.
+        os: [ubuntu-24.04, windows-latest]
         python-version: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

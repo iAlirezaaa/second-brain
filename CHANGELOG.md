@@ -7,6 +7,29 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **Phase 37, second half: the python floor is now something CI can install** — on 2026-11-01
+  `ubuntu-latest` moved to Ubuntu 26.04, `actions/python-versions` carries no CPython 3.9 x64
+  build for it, and **every `ci` and `loop` run died inside `setup-python`** (five red runs,
+  24 seconds each) while `python scripts/health.py` stayed green on the owner's machine and the
+  README went on claiming "Python 3.9+". The nightly improvement loop — the promise the repo is
+  named for — had silently stopped. `scripts/ci_floor.py` now compares four places in one run:
+  `requires-python`, the ci matrix, the runner images those jobs ride, and the
+  `| python floor |` rows in README and START. No workflow rides a floating image any more, and
+  fifteen tests in `tests/test_phase37_ci_python_floor.py` each break one of those four places
+  and read the refusal.
+
+- **Phase 37: the version is measured, not typed** — `VERSION` said `0.0.3`, the README opened
+  with `HADES OS v0.01`, and nothing compared either of them to `pyproject.toml`, the badge,
+  `CHANGELOG.md` or the tag the clone carries. `scripts/version.py --check` now judges all five
+  places at once and refuses by name, and `--bump auto` derives the number from the work: commit
+  subjects since the last tag, highest signal wins (`feat!`/`BREAKING CHANGE` → major, `feat` →
+  minor, `fix`/`perf` → patch, `docs`/`test`/`chore`/`refactor` → `NO_BUMP`). Measured on this
+  folder: **121 commits after `v0.0.3`, level `minor`, so the next release is `0.1.0`** — a
+  number no author can inflate, and one a fresh clone can recompute. At 0.x a breaking change
+  raises the minor (SemVer §4) because the jump to 1.0 is the owner's call. The gate never tags:
+  it prints `git tag v… && git push origin v…` and leaves that promise to a human. Sixteen tests
+  in `tests/test_phase37_version_gate.py`, including a check over this repo's own number.
+
 - **Phase 36, step one: a dataset that refuses what the owner did not offer** — the roadmap's
   next phase starts with the only part that can be checked without training anything.
   `15_SYSTEM/scripts/backend/dataset.py` (behind `sources.py dataset-share`, `dataset-build`,
