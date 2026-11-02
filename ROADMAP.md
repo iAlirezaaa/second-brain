@@ -275,8 +275,9 @@ not the old template folders.*
       `34 kinds, 16 zones, 8 planes proved by tests/test_installed_home.py`; health reports
       8/8 gates OK (12 tracked stores, 4 disposable absent by design); the home suite runs
       5 tests; `memory.py --recall` answers `NO_ENTRY`; `hades.py list` opens the registry.
-- [ ] 🔵 Limitation: the installer is a flat copy with no update path — re-running it against
-      a non-empty home is refused, so upgrading means a fresh folder plus a manual merge.
+- [x] 🔵 Limitation closed by phase 46: the installer has an update path. `--upgrade HOME` judges
+      every shipped path against the digest its own record lays in the home (`scripts/install.py:93`),
+      so a brain is upgraded in place and a note a person wrote is never overwritten by a script.
 
 ## Phase 36 — Fine-tuning pipeline, only behind an independent eval · 🔵
 
@@ -611,6 +612,77 @@ the answer is a gate, not a habit. This phase is that gate pointed at this file.
       to silence a counter is the defect this phase exists to refuse. Read the live count from
       `python scripts/roadmap_check.py --check`; typing it here would make this row the second
       truth it is meant to measure.
+
+## Phase 46 — A home that cannot be upgraded is a home that goes stale · 🟢
+
+*Source: the limitation phase 35 left open, plus the fact that every phase after it shipped engine
+files installed homes could not receive. The starting state, measured rather than remembered, on
+2026-11-02: re-running the installer against a folder that was already a home ended in*
+
+    $ python scripts/install.py --target ~/brain        # ~/brain already holds a brain
+    install.py: error: target ~/brain is not empty — pick a fresh folder
+
+*The advice was sound for a flat copy and unhelpful by the second week: a home accumulates notes,
+lessons and runtime state the repo has never seen, so the only way to get the new engine was to
+build a second folder and merge by hand — which in practice means nobody upgrades, and the home goes
+on running gates written before half of this roadmap existed. Copying over it would have been
+worse: an overwrite deletes a person's thinking in order to deliver a script.*
+
+- [x] 🟢 **M** An install now finishes by hashing what it actually laid, into the home, at
+      `15_SYSTEM/generated/install.json` (`scripts/install.py:93`): one sha256 per shipped path,
+      plus the engine's own bytes for those paths, so a document a home re-measures for itself is
+      not read back as an endless pending update. The file declares its contract under
+      `install-manifest` (`scripts/schema_stamp.py:168`), so the repo's stamp gate judges it and
+      `--check` refuses a home record with no version in it.
+- [x] 🟢 **M** `python scripts/install.py --upgrade HOME` answers one question per shipped path —
+      *are these the bytes we wrote, or the bytes you wrote* — in `scripts/install.py:382`:
+      `UNCHANGED / UPDATED / ABSENT / ADDED / KEPT / PRESENT / YOURS`, each printed with its path.
+      The plan it judges is the same list an install lays (`ship_plan`, `scripts/install.py:297`),
+      so an upgrade cannot be asked about a path the installer never shipped, or refuse one it did.
+- [x] 🟢 **M** A path the home edited is `KEPT`: never written, named in the output, and carried
+      forward into the new record with both its old and its present digest
+      (`final_state`, `scripts/install.py:470`) so the next act still knows it from an edit. A path
+      the home holds *without* a record of it is `YOURS` — the same refusal, one level stricter: it
+      stays byte-identical, is deliberately left out of the new record (recording an unowned file as
+      "what the installer wrote" would teach the next act to overwrite it), the rest of the home
+      still moves, and the run exits 1 with the list. `tests/test_phase46_installer_upgrade.py`
+      pins both: the file survives, the other engine files land, the second act reports `YOURS`
+      again rather than silently rewriting it.
+- [x] 🟢 **S** The brain's own state is out of the installer's business by name, not by hope:
+      `PROTECTED_DIRS` (`scripts/install.py:100`) lists the runtime, lab, quarantine shelf,
+      knowledge index, local data, editor folder, backups and the lesson ledger, and
+      `plan_refusals` (`scripts/install.py:571`) stops the act when the *plan itself* lands a real
+      file there — a bug in this script, caught before it writes. The shelf's `README.md` is the one
+      exception the installer ships, and it is stated as an exception.
+- [x] 🟢 **S** Nothing is deleted and `--dry-run` proves it. A file this engine no longer ships stays
+      in the home unread and the closing line says so; a `--dry-run` takes the home's
+      `tree_fingerprint` on entry and on exit and fails if they differ, so "nothing was written" is
+      a measurement instead of a promise. Every act that writes re-hashes each file from the disk it
+      landed on and only then restamps the record, and appends one line to the act journal this
+      script names at `scripts/install.py:94` — the verdict counts, the refusals and the digest of
+      the record that now describes the home.
+- [x] 🔵 **S** Two design choices differ from the first draft of this brief, and both were decided
+      against it on purpose. A file the record names but the home lost is **restored**, not left
+      absent: a home missing `scripts/probe.py` cannot run its own gates, and a deleted gate is not
+      a decision an upgrade can honour silently. And a collision **does not abort the act**: the
+      first draft stopped everything, which let one unowned file hold a whole brain hostage; it now
+      skips that path, still exits non-zero, and still says which file and why. A `--restore` flag
+      was rejected as unneeded once restore is the default.
+- [x] 🔵 **M** The documents a home re-measures for itself (`doc_report.py`'s `DOCS`, imported here
+      rather than restated) are re-measured only when none of them is `KEPT`: this installer will not
+      run a number-filler over a document a person edited, and will not ship the source repo's
+      measurements into a home whose own it cannot take. Either way it names which, and the command
+      that is safe to run by hand.
+- [x] 🟢 **M** `tests/test_phase46_installer_upgrade.py` — the count is printed by
+      `python -m unittest discover -s tests -p "test_phase46*.py"`, not typed here. It covers the
+      plan's refusals, each verdict on its own, the two-map record, the KEPT/YOURS distinction,
+      "a second upgrade moves nothing at all", and a real home: install, then the installed
+      `health.py`, then the installed suite, then a dry run that moves nothing, then an upgrade with
+      a note a person wrote in `01_INBOX/` that survives it with front matter the gates still accept.
+- [ ] 🔵 The next step this phase deliberately did not take: an upgrade still cannot tell a home
+      that the engine *removed* a path, because nothing records the removal. The honest witness is a
+      `REMOVED` verdict and a test that a home keeps the orphan and the report names it — not a
+      delete, which is the one thing an installer has no licence to do to a brain it did not think.
 
 ## Distribution & scale (parked) · ⛔/🔵
 

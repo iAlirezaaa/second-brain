@@ -16,7 +16,7 @@ windows-latest اثبات می‌کند). اگر `python` پیش‌فرض سیس
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 804 |
+| tests collected (`python -m unittest discover -s tests`) | 837 |
 | health gates (`python scripts/health.py`) | 15 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |

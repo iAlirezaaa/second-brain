@@ -164,6 +164,13 @@ CONTRACTS = (
              fields=("runs",),
              why="the ratchet's own past runs; the shape of `runs` decides whether a regression "
                  "can be compared at all"),
+    # ---- written by scripts/install.py into the home it installs, never into this repo ----
+    Contract("install-manifest", GENERATED, "scripts/install.py", "1",
+             _dict_with("installed_at_utc", "files"), fields=("installed_at_utc", "files"),
+             why="one sha256 per path the installer laid, measured from the home. It is what "
+                 "tells a note a person wrote from a script that fell behind, so `--upgrade` can "
+                 "rewrite the second and refuse the first; `files` being a map of digests is the "
+                 "whole contract, and a reader that guesses at its shape guesses at a home"),
     # ---- no script writes this one today; scripts/issues.py reads it and refuses what it " ----
     # ---- cannot judge, so the version is entered when the shape changes (measured with:    ----
     # ---- grep -rn '"issues.json"' --include=*.py . -> only reads)                          ----

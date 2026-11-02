@@ -21,7 +21,7 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 804 |
+| tests collected (`python -m unittest discover -s tests`) | 837 |
 | health gates (`python scripts/health.py`) | 15 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
@@ -36,6 +36,24 @@ status: active
 
 ## 2. In-Flight Work
 
+- **Phase 46 is the work in this tree — an installed brain can be upgraded.** `python
+  scripts/install.py --upgrade HOME` (`scripts/install.py:644`) judges every path this engine ships
+  against `15_SYSTEM/generated/install.json`, the record an install lays inside the home, and prints
+  one verdict per path: `UPDATED` / `ADDED` / `ABSENT` (restore) / `KEPT` (a person edited it here —
+  never touched, and its old *and* present digests carry into the next record) / `YOURS` (a file at a
+  shipped path with no record of it — left exactly where it is, deliberately not recorded, the rest
+  of the home still moves, exit 1). Nothing is deleted; `PROTECTED_DIRS` (`scripts/install.py:100`)
+  keeps `12_RUNTIME/`, `13_LAB/`, the shelf, the ledger, `.kb/`, `.brain-data/`, `.obsidian/` and
+  backups out of the plan, and `plan_refusals` (`scripts/install.py:571`) stops the act when the plan
+  itself names one — a bug in the installer, not in the home. `--dry-run` compares the home's
+  `tree_fingerprint` on entry and exit, so "nothing was written" is measured; every write is
+  re-hashed from disk before the record is restamped, and each act appends a line to
+  `15_SYSTEM/logs/install.jsonl`. Proof: `python -m unittest discover -s tests -p "test_phase46*.py"`
+  and `TestTheRealHome`, which installs a home, runs its health and suite, upgrades it with a note in
+  `01_INBOX/`, and re-runs both. Two choices differ from the first draft on purpose: a lost engine
+  file is restored by default (a home missing a gate script cannot judge itself), and a collision
+  skips-and-reports instead of aborting the act. Not done: the record cannot yet say the engine
+  *removed* a path — the roadmap row asks for a `REMOVED` verdict and a test, not a delete.
 - **Phase 35 shipped on `phase-35-install-whole-brain`**: an installed brain is now a whole
   brain (issue #27). `scripts/install.py` reads the sixteen zones from
   `15_SYSTEM/config/system.json` and lays them, plus `15_SYSTEM/{scripts,schemas,memory,integrations,migrations,templates}`,
@@ -307,11 +325,13 @@ status: active
   measures, so its scores are a seam test, never a semantic claim; nothing in `kb.py`,
   `sources.py` or the MCP door calls `vector.rank`, and the gate is what keeps it that way.
   `11_CONTROL/vector/activation.json` is unwritten — no evaluation has been run to fill it.
-- **The installer is a flat copy** (the phase-35 limit). It refuses a non-empty target, so
-  upgrading an existing home means a fresh folder plus a manual merge; the home config names
-  `tests/test_installed_home.py` as every plane's proof, and a home that deletes it needs a
-  new proof or a narrower map. Nothing syncs two homes yet — a second device is still a copy,
-  not a replica.
+- **The installer upgrades in place** (phase 46 closed the phase-35 flat-copy limit): a non-empty
+  target is still refused by `--target`, and `--upgrade HOME` is the way forward — it rewrites what
+  the engine changed, keeps and names what a person edited, and refuses a path its own record cannot
+  vouch for. The home config names `tests/test_installed_home.py` as every plane's proof, and a home
+  that deletes it needs a new proof or a narrower map. Two limits stay open: an upgrade cannot yet
+  report a path this engine *removed* (nothing records removals), and nothing syncs two homes — a
+  second device is still a copy, not a replica.
 - **A base is local by construction** (bytes in the gitignored backups). `--recover` is a
   recovery on the machine that saved it.
 - **Python 3.9 floor** holds; CI runs 4 matrices. RAM behaviour on weaker machines is unclaimed.
