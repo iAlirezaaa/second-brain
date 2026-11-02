@@ -40,6 +40,7 @@ from backend import ltm, schedules  # noqa: E402
 from backend import workflows as wf_mod  # noqa: E402
 from backend.tools_kit import Context, bind_hades, default_registry  # noqa: E402
 from backend.tools_kit import ToolError  # noqa: E402
+from backend import session_bridge  # noqa: E402
 import runs as runs_ledger  # noqa: E402
 from runs import RunRefused  # noqa: E402
 
@@ -64,7 +65,7 @@ def _actor_record(root, actor_id):
     return None
 
 
-def _context_for(root, actor_id, approve):
+def _context_for(root, actor_id, approve, session_id="", task_id=None):
     """A Context for the actor: its registry record carries the real tool_allowlist.
     No actor -> a context with no actor and an empty allowlist (reads still work)."""
     rec = _actor_record(root, actor_id) if actor_id else None
@@ -73,7 +74,8 @@ def _context_for(root, actor_id, approve):
                          % actor_id)
     return Context(root, actor_id=str(actor_id or ""),
                    actor_kind=str((rec or {}).get("kind") or ""),
-                   allow_writes=approve, allowlist=(rec or {}).get("tool_allowlist") or ())
+                   allow_writes=approve, allowlist=(rec or {}).get("tool_allowlist") or (),
+                   session_id=session_id, task_id=task_id)
 
 
 def cmd_workflow_validate(root, args):
@@ -108,10 +110,12 @@ def cmd_workflow_run(root, args):
             print("  - %s" % problem)
         return 2
     try:
-        ctx = _context_for(root, args.agent, args.approve)
+        ctx = _context_for(root, args.agent, args.approve,
+                           getattr(args, "session", ""), getattr(args, "task_id", None))
+        session_bridge.require(root, ctx.session_id, ctx.actor_id, ctx.task_id)
         run = runs_ledger.start_run(root, args.agent,
                                     goal="workflow: %s" % wf.get("name", ""))
-    except RunRefused as refused:
+    except (RunRefused, ValueError) as refused:
         return _fail(str(refused))
     print("WORKFLOW %s | run %s | actor %s (%s) | writes %s"
           % (wf.get("name"), run["run_id"], args.agent, ctx.actor_kind,
@@ -145,7 +149,8 @@ def cmd_tool_call(root, args):
         call_args = _load_json(args.args or "{}", "--args")
         if not isinstance(call_args, dict):
             raise ValueError("--args must be a JSON object")
-        ctx = _context_for(root, args.agent, args.approve)
+        ctx = _context_for(root, args.agent, args.approve,
+                           getattr(args, "session", ""), getattr(args, "task_id", None))
         text = default_registry().execute(ctx, args.tool, call_args)
     except (ValueError, RunRefused, ToolError) as exc:
         return _fail(str(exc))
@@ -206,6 +211,8 @@ def main(argv=None):
     q.add_argument("--agent", required=True)
     q.add_argument("--approve", action="store_true")
     q.add_argument("--max-steps", type=int, default=0)
+    q.add_argument("--session", default="", help="Brain task-first session ID")
+    q.add_argument("--task-id", type=int, default=None, help="open work item for the session")
 
     p = sub.add_parser("tool")
     tsub = p.add_subparsers(dest="tcmd")
@@ -215,6 +222,8 @@ def main(argv=None):
     q.add_argument("--args", default="{}")
     q.add_argument("--agent", default="")
     q.add_argument("--approve", action="store_true")
+    q.add_argument("--session", default="", help="Brain task-first session ID")
+    q.add_argument("--task-id", type=int, default=None, help="open work item for the session")
 
     p = sub.add_parser("schedule")
     ssub = p.add_subparsers(dest="scmd")
