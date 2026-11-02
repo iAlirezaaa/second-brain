@@ -1,54 +1,98 @@
 name: loop
+# This workflow never pushes to protected main. Report state is kept on one review branch.
 on:
   schedule:
-    - cron: "30 3 * * *" # nightly ratchet cycle
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
+
+concurrency:
+  group: second-brain-nightly-loop
+  cancel-in-progress: false
 
 jobs:
   nightly:
-    # pinned, not `ubuntu-latest`: a floating image moved to 26.04 and killed the nightly loop
-    # in setup-python for five runs while the local gates stayed green
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
     steps:
-      # the loop runs the gates, and the version gate judges a tag: a depth-1 clone cannot see
-      # one, so the nightly would refuse a released version for the wrong reason. Same reason as
-      # in ci.yml; held by tests/test_phase44_ci_reads_its_tags.py.
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v7
-        # 3.12, not 3.9: the nightly loop's own availability is a promise the repo makes
-        # (a loop that dies in setup-python stops improving in silence), and the 3.9 floor
-        # is proved by the ci matrix on a runner that still installs it. See ci.yml.
         with:
           python-version: "3.12"
-      # the ratchet reads state, writes candidates only to 14_CANDIDATES/loop
-      # The cron is the alarm; `11_CONTROL/schedules/SCH-…-improvement-loop.json` is
-      # the rule. A manual dispatch is a human override and always runs.
-      - name: Is the cycle due?
+
+      - name: Is the scheduled cycle due?
         id: due
         if: github.event_name == 'schedule'
         run: |
-          if python scripts/loop.py --due; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Improvement loop cycle
+          set +e
+          python scripts/loop.py --due
+          rc=$?
+          set -e
+          case "$rc" in
+            0) echo "run=true" >> "$GITHUB_OUTPUT" ;;
+            3) echo "run=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "REFUSED: schedule gate failed (exit $rc)"; exit 1 ;;
+          esac
+
+      - name: Check out persistent report branch
         if: github.event_name != 'schedule' || steps.due.outputs.run == 'true'
-        run: python scripts/loop.py --no-tests --vault vault-template
-        continue-on-error: true # P1 findings must still produce a report commit
-      - name: Commit candidate report
         run: |
-          git config user.name "improvement-loop"
-          git config user.email "actions@users.noreply.github.com"
+          if git ls-remote --exit-code origin refs/heads/loop/nightly >/dev/null; then
+            git fetch origin loop/nightly
+            git checkout -B loop/nightly FETCH_HEAD
+            # Refresh against current main without force pushing or hiding conflicts.
+            git merge --no-edit --no-ff "origin/main"
+          else
+            git checkout -b loop/nightly
+          fi
+
+      - name: Run improvement cycle including tests
+        id: cycle
+        if: github.event_name != 'schedule' || steps.due.outputs.run == 'true'
+        run: |
+          set +e
+          python scripts/loop.py --vault vault-template
+          rc=$?
+          set -e
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          echo "Cycle result: $rc (recorded even when refusing)"
+
+      - name: Commit and publish candidate report
+        if: steps.cycle.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "second-brain-loop[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add 14_CANDIDATES/loop/
           if git diff --cached --quiet; then
-            echo "quiet house — nothing to report"
+            echo "No new report rows; nothing to publish."
           else
-            git commit -m "loop(nightly): candidate report $(date +%F)"
-            git push
+            git commit -m "loop: record reviewable nightly findings (run ${{ github.run_id }})"
+            git push origin HEAD:refs/heads/loop/nightly
+            if gh pr view loop/nightly --json number >/dev/null 2>&1; then
+              echo "Existing review PR updated."
+            else
+              gh pr create --base main --head loop/nightly \
+                --title "chore(loop): review continuous improvement findings" \
+                --body "Generated candidate reports and verified task signals. Review before promotion; never auto-merge."
+            fi
+          fi
+
+      - name: Enforce improvement-cycle verdict
+        if: steps.cycle.outcome == 'success'
+        env:
+          CYCLE_RC: ${{ steps.cycle.outputs.rc }}
+        run: |
+          if [ "$CYCLE_RC" != "0" ]; then
+            echo "REFUSED: the improvement cycle failed with exit code $CYCLE_RC."
+            exit 1
           fi
