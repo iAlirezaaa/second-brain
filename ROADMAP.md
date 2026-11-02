@@ -282,8 +282,12 @@ not the old template folders.*
 
 *Source: the owner's brief, phase 4 ("the next phase adds a data-preparation and fine-tuning
 pipeline with an independent evaluation set; a model improvement is never claimed without
-measurable evidence"). The first step (the dataset builder) shipped in phase 36; the rest is
-still unbuilt, and nothing will be claimed until it is.*
+measurable evidence"). The first step (the dataset builder) shipped in phase 36; the eval gate,
+the before/after claim and the recovery path shipped with it and this list did not notice. What
+was re-measured here, on 2026-11-02, is the tree, not the memory: `git tag --contains 3cb54da` and
+the commands each row now names. The fine-tuning step itself is still unbuilt — deliberately, and
+the ⛔ row below is the reason: no dataset manifest, no independent eval, no before/after report
+means no claim.*
 
 - [x] 🟢 **M** A dataset builder over approved sources only: every training example cites a
       `source_import` id and a byte range, and a source the owner has not marked shareable is
@@ -295,16 +299,42 @@ still unbuilt, and nothing will be claimed until it is.*
       and `dataset-verify` re-hashes a folder against its manifest. Eight tests in
       `tests/test_phase36_dataset.py` prove the refusal, the byte ranges, the digest and the
       tamper check.
-- [ ] 🔵 **S** An independent evaluation set in the `tests/fixtures/retrieval-golden.json`
+- [x] 🔵 **S** An independent evaluation set in the `tests/fixtures/retrieval-golden.json`
       format, with a gate that refuses any case id appearing in the training manifest — an
       eval that shares examples with training measures memorisation, not retrieval.
-- [ ] 🔵 **S** Before/after comparison through `sources.py compare-benchmarks`: acceptance is
+      Shipped as `tests/fixtures/retrieval-independent-eval.json` (a hand-curated set, its
+      `provenance` field says who made it and when, and every case carries the id the gate needs)
+      plus `15_SYSTEM/scripts/backend/dataset.py::leak_check`, reached by
+      `python 15_SYSTEM/scripts/sources.py dataset-eval-gate DATASET_DIR EVAL_JSON`; it answers
+      `{ok, leaks, cases, dataset_digest}` — every leak names the case, the identifier and the
+      dataset digest it collided with — and the command exits 1 unless `ok` is true.
+      `tests/test_phase42_independent_eval_gate.py` proves the refusal for a case id, an example
+      id, an expected source id and a document origin, and proves a tampered dataset cannot pass.
+      *The row was still open in the tree that shipped the feature: `git tag --contains 3cb54da`
+      answers `v0.1.0 v0.2.0`, so `v0.1.0`'s own release body described this gate while the row
+      above it still read `- [ ]`. A row that describes work the tree already contains is not an
+      open item, it is a second truth — the same defect class the link readout reports for prose,
+      so re-measure the roadmap against the filesystem before ticking it.*
+- [x] 🔵 **S** Before/after comparison through `sources.py compare-benchmarks`: acceptance is
       a repeatable recall/MRR gain with a positive margin over the golden set, not one lucky
       run; a regression fails the comparison as it does today.
-- [ ] 🔵 **S** A recovery path shipped with the result: `scripts/base.py --save` records the
+      `retrieval_eval.claim()` answers `IMPROVEMENT` only when *every* repeat improved both mean
+      recall and MRR by at least a stated positive margin on the same cases and corpus, and the
+      claim names the `scripts/base.py --save` state it stands on; `REGRESSION` and `NO_IMPROVEMENT`
+      are the other two answers, and a margin of zero, a non-number, an unequal repeat count or a
+      missing base is a `ValueError`, not a softer verdict.
+- [x] 🔵 **S** A recovery path shipped with the result: `scripts/base.py --save` records the
       state the change started from, and the report carries the `--recover` command that
       undoes it. A model or settings change without a measured baseline and a way back is
       refused.
+      `--save` writes the green state and `--recover [--stamp X] [--note why] [--candidate FILE]`
+      falls back to it, each act journalled in `14_CANDIDATES/loop/recovery.jsonl` and checked
+      against the base's own identity. `load_base` returns the refusal a record cannot answer for
+      and `scripts/base.py:199` prints it, so a snapshot whose bytes are gone is a `REFUSED` and
+      not a reported success — `test_a_journal_entry_whose_bytes_are_gone_is_refused_not_faked`
+      in `tests/test_phase20_known_good_base.py` proves that, and
+      `test_recovery_reverts_the_brain_and_keeps_the_lessons` proves a recovery never rewrites the
+      shelf or the lesson ledger. Exactly one act per run, enforced at `scripts/base.py:294`.
 - [ ] ⛔ A "better model" claim with no dataset manifest, no independent eval and no
       before/after report — refused, by the brief's own rule and this repo's measurement law.
 
