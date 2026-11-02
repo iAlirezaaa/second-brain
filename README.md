@@ -7,7 +7,7 @@
 > cloud lock-in, with optional models and infrastructure when benchmarks justify them.
 >
 > **vNext prototype:** Task-first Brain CLI, mandatory session handoff,
-> a skill-proposal trail, read-only Twin World 0 and ADHD cross-domain links.
+> a skill-proposal trail, read-only Twin World 0, file-overlay Twin 1a and ADHD cross-domain links.
 > These features are experimental; live AI orchestration and semantic retrieval
 > are not claimed as complete.
 >
@@ -168,7 +168,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 998 |
+| tests collected (`python -m unittest discover -s tests`) | 1010 |
 | health gates (`python scripts/health.py`) | 16 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
