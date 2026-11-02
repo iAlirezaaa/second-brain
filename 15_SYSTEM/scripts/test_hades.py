@@ -784,7 +784,8 @@ def t_harness_bridge():
         runs_count = len([d for d in (v.root / "12_RUNTIME" / "agent_runs").iterdir()
                           if d.is_dir()])
         check("harness: doctor_status keeps run counts private and reports records",
-              '"runs":' not in text and '"records": 1' in text, text[:200])
+              '"runs": {' in text and '"read": false' in text and '"denied_by": "12_RUNTIME"' in text
+              and '"records": 1' in text and run_id not in text, text[:200])
         send({"jsonrpc": "2.0", "id": 5, "method": "tools/call",
               "params": {"name": "candidate_propose", "arguments": {
                   "dimension": "invariant", "cue": "the battery spoke to the brain",
