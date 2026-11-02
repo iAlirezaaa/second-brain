@@ -4,6 +4,31 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 **not** listed per commit — only shipped, human-promoted changes appear here.
 
+## [Unreleased]
+
+### Added
+- **Phase 45, the roadmap judged by a script** — `scripts/roadmap_check.py --check` is the
+  fifteenth health gate: every path a closed row cites must resolve, `file.py:123` must be a line
+  the file has and `file.py::symbol` a symbol it defines (refused even in an open row, because an
+  anchor states what is rather than what is planned), and an open row may still name a file it has
+  not written. What the gate cannot see is named instead of counted green: a journal a script
+  declares, and a path belonging to an upstream project, arrive as `NOTED` lines. In an installed
+  brain home the roadmap is the source repo's plan rather than a promise the home made, so the gate
+  says so and exits 0. Suite: `tests/test_phase45_roadmap_citations.py`.
+
+### Fixed
+- Eight roadmap rows cited `backend/…` while the repo holds those files under
+  `15_SYSTEM/scripts/backend/…` — true as names, unopenable from a clone. They now carry
+  repo-relative paths, the law `scripts/common.py::clone_readable` already enforces on generated
+  artifacts.
+- The phase-36 rows for the independent eval, the before/after claim and the recovery path still
+  read `- [ ]` after the code they describe had shipped and been released: `git tag --contains
+  3cb54da` answers `v0.1.0 v0.2.0`. Ticked against the tree with the command, symbol and test each
+  claim lives in — and the check caught two wrong claims in the draft of the correction itself.
+- The new gate found two false greens in its own first draft: a bare folder name resolved to an
+  empty basename, which every tracked file "declares", and a directory's last word was accepted as
+  a declared witness. Both are pinned by tests now.
+
 ## [0.2.0] - 2026-11-02
 
 The release where the gates stopped describing the repo and started judging its own shapes: the

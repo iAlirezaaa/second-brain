@@ -119,7 +119,7 @@ recall@1 / MRR by 0.000 at every weight from 0.05 to 1.0.*
 *Source: charter §6 (continuous improvement cycle) + the backend's pure `schedules.is_due`
 math — two clocks exist (nightly loop + backend schedules); one should tell the truth.*
 
-- [x] **S** `scripts/loop.py --due` imports `backend/schedules.is_due` instead of re-deriving
+- [x] **S** `scripts/loop.py --due` imports `15_SYSTEM/scripts/backend/schedules.py::is_due` instead of re-deriving
       it; exit 0 = due, 3 = not due, 1 = refused (no record, paused, unreadable spec), and the
       check writes nothing. The weekly ritual skill asks the same function first.
 - [x] **S** The loop's cadence is a governed definition: `SCH-0D1E2F3A` (kind `schedule`,
@@ -131,7 +131,7 @@ math — two clocks exist (nightly loop + backend schedules); one should tell th
 
 *Source: charter §1's smarter-over-time promise vs. the standing owner decision.*
 
-- [x] **S** behind `vector_search: false`: `backend/vector.py` ships one `Embedder`
+- [x] **S** behind `vector_search: false`: `15_SYSTEM/scripts/backend/vector.py` ships one `Embedder`
       interface, `cosine`/`rank` as pure functions, and `HashingEmbedder` — a sha256
       bag-of-words double, deterministic across processes, with `production = False`.
       `scripts/vector.py status|probe` shows the seam running offline; `scripts/vector_check.py`
@@ -206,7 +206,7 @@ a sync service is refused until a measurement justifies one.*
 - [x] **S** Sensitive-data boundary: `.brain-data/` is gitignored and behind the clone
       boundary, the docs state it is not encrypted or backed up, and the default tool read
       scope refuses `.env`, key/credential filenames, `.git`, `secrets` and the runtime,
-      lab, candidate, backup and client-metadata zones (`backend/access.py`).
+      lab, candidate, backup and client-metadata zones (`15_SYSTEM/scripts/backend/access.py`).
 - [x] **S** Tests: `tests/test_source_sync.py` (idempotency, conflict preview, corruption
       before copy, missing source, hidden incomplete record, approval import, invalid
       proposal/receipt), `tests/test_access_boundary.py` (search and resource reads, symlink
@@ -218,7 +218,7 @@ a sync service is refused until a measurement justifies one.*
 measurement) and the owner's brief: lessons from permitted data, retrieval quality before
 and after a change, rollback available.*
 
-- [x] **M** `backend/learning.py`: a proposal must cite an imported source id and an exact
+- [x] **M** `15_SYSTEM/scripts/backend/learning.py`: a proposal must cite an imported source id and an exact
       quote that is present in the source; the id is a digest of the content, so a modified
       proposal is refused. `evaluate` re-checks the source checksum and quote and whether the
       chosen query retrieves that source. `approve` requires `--approve`, re-evaluates and
@@ -226,7 +226,7 @@ and after a change, rollback available.*
 - [x] **S** The evaluation states its limit out loud: it does not establish that a lesson is
       true, useful or improves performance. Extraction stays a human/agent interpretation,
       not an asserted fact.
-- [x] **M** `backend/retrieval_eval.py` + `tests/fixtures/retrieval-golden.json`: mean
+- [x] **M** `15_SYSTEM/scripts/backend/retrieval_eval.py` + `tests/fixtures/retrieval-golden.json`: mean
       recall and MRR on an independently curated case set; both reports must share the case
       set, limit and corpus hash; any regression in either metric fails the comparison.
 - [x] **S** Tests: `tests/test_learning.py` (source→proposal→evaluation→approval→recall,
@@ -238,12 +238,12 @@ and after a change, rollback available.*
 skills, plugins and tools with compatibility, origin and permissions, a suggestion per
 session, and installation only after approval.*
 
-- [x] **S** `15_SYSTEM/scripts/capabilities.py` + `backend/capabilities.py`: inventory of
+- [x] **S** `15_SYSTEM/scripts/capabilities.py` + `15_SYSTEM/scripts/backend/capabilities.py`: inventory of
       active registry skills, plugins, MCP records, extensions and built-in tools with
       origin, permissions, approval list and installation state; `--task` returns keyword
       matches, `--harness-id` reports `approved` / `not_approved` / `unknown`. Retired and
       deprecated records are excluded. The MCP tool `capabilities` exposes the same read-only view.
-- [x] **M** `backend/install_skill.py` + `15_SYSTEM/scripts/install_skill.py`: plan → apply
+- [x] **M** `15_SYSTEM/scripts/backend/install_skill.py` + `15_SYSTEM/scripts/install_skill.py`: plan → apply
       → never replace. The plan binds skill id, harness, destination, file digests and a
       `plan_id`; apply requires `--approve`, refuses a stale or modified plan, writes only
       into a new directory, and leaves `.install-incomplete` on a partial write.
@@ -432,7 +432,7 @@ does not hold is an unwritten definition; a memory plane with no extraction ritu
 - [x] **M** A registered manager-role agent — `AGT-7DE1AB28` in
       `11_CONTROL/agents/AGT-7DE1AB28-structure-manager/`, written through the plan door — that
       creates and classifies projects, tasks, agents and skills. It is a **proposer, not a second
-      door**: its `tool_allowlist` has no approve tool, so `backend/tools_kit.py::Registry.execute`
+      door**: its `tool_allowlist` has no approve tool, so `15_SYSTEM/scripts/backend/tools_kit.py::Registry.execute`
       refuses its own plan and the human stays the only signer. `skills/first-session/SKILL.md`
       points at it for the moment a stranger cannot tell a project from a task.
 - [x] **M** `skills/conversation-memory/SKILL.md` (record `SKL-C48357D5`) and
@@ -568,6 +568,49 @@ rules are "local deterministic parsing, every edge explained, no vector store").
       any LLM step inside the write path — a port, a daemon, a key or an unmeasured automatic
       rewrite is exactly what charter §2 exists to refuse.
 - [ ] ⛔ A docs site (mkdocs/GitHub Pages): the content is the bottleneck, not the tooling.
+
+## Phase 45 — A plan that cites what is not here is a second truth · 🟢
+
+*Source: the measurement taken while ticking phase 36 by hand on 2026-11-02. `git tag --contains
+3cb54da` answered `v0.1.0 v0.2.0` for rows the roadmap still called open, and two of the
+corrections I then wrote were themselves wrong until I checked them — a command given flags it does
+not take, a function described as returning a list when it returns a verdict dict. A document
+nobody re-measures drifts from the filesystem in silence; `scripts/link_check.py` already proved
+the answer is a gate, not a habit. This phase is that gate pointed at this file.*
+
+- [x] 🟢 **M** Every path a CLOSED row cites must resolve, by
+      `python scripts/roadmap_check.py --check`: measured first over the shipped roadmap — 8 rows
+      cited `backend/…` while the repo holds them under `15_SYSTEM/scripts/backend/…`, true as
+      names and unopenable from a clone, which is the same law `scripts/common.py::clone_readable`
+      enforces on generated artifacts. Those rows now carry the repo-relative path. The counts this
+      row used to type (`74 rows`, `80 citations`) are deliberately gone: they were wrong the moment
+      this phase's rows were added to the file they measured, which is the law this repo already
+      states for every other number — `python scripts/roadmap_check.py --check` prints the live
+      ones. The suite is `tests/test_phase45_roadmap_citations.py`; `python scripts/doc_report.py
+      --check` prints the test count it holds, because the count this row first typed was stale
+      before the commit landed.
+- [x] 🔵 **S** The anchored and member forms are judged too: `scripts/base.py:294` has to be a line
+      the file actually has, and `15_SYSTEM/scripts/backend/vector.py::Embedder` a symbol it
+      defines. Both are refused even in an OPEN row — an anchor states what is, so an intention is
+      no excuse for a wrong observation.
+- [x] 🔵 **S** An OPEN row may cite a file it has not written yet: the gate calls that `PLANNED` and
+      moves on. A plan punished for naming its next artifact would only learn to be vaguer.
+- [x] 🔵 **M** What the gate cannot see is named, never counted green. A journal a script declares
+      (`14_CANDIDATES/loop/recovery.jsonl`) and a path that belongs to an upstream project are
+      printed as `NOTED` lines, and git's own answer is probed on the path exactly as written: on a
+      Windows checkout `core.autocrlf` leaves a bare `\r` line in the working copy of `.gitignore`
+      (the tracked blob is clean), and git then treats any path probed *as a directory* as ignored —
+      which would have laundered an upstream `docs/` path into this repo's machine plane.
+- [x] 🔵 **M** Wired as the fifteenth gate in `python scripts/health.py`, keeping the
+      one-OK-line-per-gate invariant `tests/test_phase16_host_independence.py` counts. In an
+      installed brain home the roadmap is the source repo's plan rather than a promise the home
+      made, so the gate names that and exits 0 instead of inventing defects.
+- [ ] 🔵 The gate's OK line ends with a count of closed rows that carry no path citation at all, and
+      that number is the open work here: those rows were closed on evidence that was never written
+      down. Each needs a real witness — a file, a test name, a ledger id — and a citation invented
+      to silence a counter is the defect this phase exists to refuse. Read the live count from
+      `python scripts/roadmap_check.py --check`; typing it here would make this row the second
+      truth it is meant to measure.
 
 ## Distribution & scale (parked) · ⛔/🔵
 
