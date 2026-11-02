@@ -1,4 +1,4 @@
-# Second Brain OS v0.1.0
+# Second Brain OS v0.2.0
 
 **What the name means.** *Second Brain OS* is what this is for anyone who needs to know in three
 words: a second brain (external memory you can trust) that is a complete system rather than a
@@ -31,7 +31,7 @@ private local data, and the MCP source search exposes matches to connected clien
 
 [![CI](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/ci.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/ci.yml)
 [![loop](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/loop.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/loop.yml)
-[![version](https://img.shields.io/badge/engine-v0.1.0-blue)](https://github.com/iAlirezaaa/second-brain-os/releases)
+[![version](https://img.shields.io/badge/engine-v0.2.0-blue)](https://github.com/iAlirezaaa/second-brain-os/releases)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **📋 نقشهٔ عمومی راه / Public roadmap (با چیپ وضعیت و تیک پیوسته): [ROADMAP.md](ROADMAP.md)**
@@ -180,10 +180,10 @@ Owner: Hades 3rd ([@iAlirezaaa](https://github.com/iAlirezaaa))
 
 ---
 
-## Engine addendum — second-brain engine v0.1.0 · پیوست موتور
+## Engine addendum — second-brain engine v0.2.0 · پیوست موتور
 
-> **EN —** Alongside the HADES plane structure, this repo now ships the **second-brain engine v0.1.0**: an agent harness toolkit that enforces the same philosophy as scripts. `vault-template/` holds only the starter pieces (`index.md`, `_templates`); `python scripts/install.py` lays the same sixteen zones the repo uses, read from `15_SYSTEM/config/system.json`, together with the engine (`scripts/`, `15_SYSTEM/scripts/`), the registry schemas, the lesson ledger and all five agent doors. `rules/` and the tests are machine-readable; every capability is test-gated. Run the suite with `python -m unittest discover -s tests` and the health check with `python scripts/health.py`. The engine inherited the quarantine→promote, gap-register and write-gate patterns — direct implementations of the promotion and safety gates this design already specified.
+> **EN —** Alongside the HADES plane structure, this repo now ships the **second-brain engine v0.2.0**: an agent harness toolkit that enforces the same philosophy as scripts. `vault-template/` holds only the starter pieces (`index.md`, `_templates`); `python scripts/install.py` lays the same sixteen zones the repo uses, read from `15_SYSTEM/config/system.json`, together with the engine (`scripts/`, `15_SYSTEM/scripts/`), the registry schemas, the lesson ledger and all five agent doors. `rules/` and the tests are machine-readable; every capability is test-gated. Run the suite with `python -m unittest discover -s tests` and the health check with `python scripts/health.py`. The engine inherited the quarantine→promote, gap-register and write-gate patterns — direct implementations of the promotion and safety gates this design already specified.
 >
-> **FA —** در کنار ساختار صفحاتِ HADES، این ریپو از این به بعد **موتورِ سکند برین نسخهٔ 0.1.0** را هم دارد: کیت ابزارِ هارنسِ ایجنت که همان فلسفه را با اسکریپت اجرا می‌کند، نه با توصیه. `vault-template/` فقط قطعات آغازین (`index.md` و `_templates`) را دارد؛ `python scripts/install.py` همان شانزده زون مخزن را از `15_SYSTEM/config/system.json` می‌سازد و موتور (`scripts/` و `15_SYSTEM/scripts/`)، شِماهای رجیستری، دفترِ درس‌ها و هر پنج درِ ایجنت را کنارشان می‌گذارد. `rules/` و تست‌ها قابل خواندن ماشین هستند و هر قابلیت با تست محافظت می‌شود. سوت را با `python -m unittest discover -s tests` و سلامت ولت را با `python scripts/health.py` صدا بزنید.
+> **FA —** در کنار ساختار صفحاتِ HADES، این ریپو از این به بعد **موتورِ سکند برین نسخهٔ 0.2.0** را هم دارد: کیت ابزارِ هارنسِ ایجنت که همان فلسفه را با اسکریپت اجرا می‌کند، نه با توصیه. `vault-template/` فقط قطعات آغازین (`index.md` و `_templates`) را دارد؛ `python scripts/install.py` همان شانزده زون مخزن را از `15_SYSTEM/config/system.json` می‌سازد و موتور (`scripts/` و `15_SYSTEM/scripts/`)، شِماهای رجیستری، دفترِ درس‌ها و هر پنج درِ ایجنت را کنارشان می‌گذارد. `rules/` و تست‌ها قابل خواندن ماشین هستند و هر قابلیت با تست محافظت می‌شود. سوت را با `python -m unittest discover -s tests` و سلامت ولت را با `python scripts/health.py` صدا بزنید.
 >
 > **Maps / نگاشت:** `00_Inbox` ≈ `01_INBOX`، `20_Notes`+`30_Resources` ≈ `02_WIKI`+`15_SYSTEM/templates`، `90_Agent_Output` ≈ `13_LAB`+`14_CANDIDATES`، `promote` ≈ ارتقای `13/14` به صفحهٔ انسان. Two vocabularies, one philosophy: **nothing reaches the human plane un-promoted, nothing breaks a link un-checked.** · دو گویش، یک فلسفه: **هیچ‌چیز بدون ارتقا به صفحهٔ انسان نمی‌رسد، هیچ‌چیز بدون چک لینک نمی‌شکند.**

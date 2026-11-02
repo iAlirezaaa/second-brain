@@ -4,7 +4,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 **not** listed per commit — only shipped, human-promoted changes appear here.
 
-## [Unreleased]
+## [0.2.0] - 2026-11-02
+
+The release where the gates stopped describing the repo and started judging its own shapes: the
+link graph labels every edge and refuses an edge it had to guess at, every generated JSON file
+carries the contract that wrote it, and the registry can finally fill the `repo` block its own
+zone law demands — which is how this repo registered itself. The number is derived, not chosen: 4
+commits after `v0.1.0`, the highest level in their subjects is `feat`, so
+`python scripts/version.py --bump auto` wrote `0.2.0` into `VERSION` and `pyproject.toml`; the
+live test, gate and record counts are the measured block in `README.md`, refreshed by
+`python scripts/doc_report.py --write`, not numbers remembered here.
 
 ### Added
 - **The link graph is measured, printed and gated.** `scripts/link_check.py` now labels every
