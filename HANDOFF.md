@@ -21,8 +21,8 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 902 |
-| health gates (`python scripts/health.py`) | 15 |
+| tests collected (`python -m unittest discover -s tests`) | 950 |
+| health gates (`python scripts/health.py`) | 16 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
@@ -263,7 +263,7 @@ status: active
 - Private sources live in `.brain-data/`, gitignored and behind the clone boundary; the raw
   bytes are authoritative and the SQLite index is disposable and rebuilt from them. Refused:
   storing imported text in tracked markdown (personal data would enter the public repo) and
-  refused: making the index the truth (a corrupt index must cost a rebuild, not the data).
+  refused: making the index the truth (a corrupt index must cost a rebuild, not the data). `scripts/vault.py` now seals that plane on request, over the scope `private_planes` names, and it is still a human command: `encrypted_private_backup` stays off until a restore is proved on a machine that never held the bytes.
 - A lesson is a proposal, never an asserted fact: it needs an exact quote from an imported
   source, `evaluate` re-checks the evidence, and `approve` is a local explicit command. Refused:
   auto-approving a proposal whose query retrieves its own source — that measures the query, not

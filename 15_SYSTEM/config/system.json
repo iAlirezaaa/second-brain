@@ -191,7 +191,9 @@
     "publish_max_file_mb": 8,
     "publish_max_files": 1000
   },
+  "private_planes": [".brain-data", ".kb"],
   "feature_flags": {
+    "encrypted_private_backup": false,
     "vector_search": false,
     "live_orchestration": false,
     "external_ingestion": false,

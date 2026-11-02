@@ -37,7 +37,8 @@ ROOT_ONLY_GATES = {"plane_check.py": [], "candidate_check.py": [], "memory.py": 
                    "sync_hosts.py": ["--check"], "doc_report.py": ["--check"],
                    "vector_check.py": [], "issues.py": ["--check"],
                    "version.py": ["--check"], "ci_floor.py": [], "goldfish_check.py": [],
-                   "schema_stamp.py": ["--check"], "roadmap_check.py": ["--check"]}
+                   "schema_stamp.py": ["--check"], "roadmap_check.py": ["--check"],
+                   "vault_check.py": []}
 
 # the gate list is a measure: doc_report.py counts it instead of typing a number.
 # an entry may carry its own flags -- "link_check.py --readout" runs the same script a second
@@ -45,7 +46,7 @@ ROOT_ONLY_GATES = {"plane_check.py": [], "candidate_check.py": [], "memory.py": 
 GATES = ["link_check.py", "link_check.py --readout", "frontmatter_check.py", "plane_check.py",
          "candidate_check.py", "memory.py", "sync_hosts.py", "doc_report.py", "vector_check.py",
          "issues.py", "version.py", "ci_floor.py", "goldfish_check.py",
-         "schema_stamp.py --check", "roadmap_check.py --check"]
+         "schema_stamp.py --check", "roadmap_check.py --check", "vault_check.py"]
 
 
 def gate_argv(script, vault_args):

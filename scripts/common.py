@@ -3,7 +3,7 @@ import hashlib
 import json
 import re
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 WIKILINK_RE = re.compile(r"\[\[([^\]\[]+)\]\]")
@@ -97,6 +97,24 @@ def is_recorded_base(rel):
     """
     text = str(rel).replace("\\", "/").strip("/")
     return text == SNAPSHOT_ROOT or text.startswith(SNAPSHOT_ROOT + "/")
+
+
+def safe_rel(rel):
+    """A manifest is data. Data that names a path outside the repo is refused, not obeyed.
+
+    One rule, because three writers (the known-good base, the encrypted private vault and any
+    transfer that follows) each re-typing it is three rules that will drift. `text != str(pure)`
+    is the part that earns its keep: it rejects "./a", "a//b" and "a/." -- paths that walk to the
+    right file but name it differently, so a digest taken over the manifest no longer matches the
+    bytes on disk.
+    """
+    text = str(rel).replace("\\", "/")
+    if text.startswith("/") or text.startswith("~/"):
+        return None
+    pure = PurePosixPath(text)
+    if pure.is_absolute() or ".." in pure.parts or not text or text != str(pure):
+        return None
+    return text
 
 
 def iter_markdown(vault):

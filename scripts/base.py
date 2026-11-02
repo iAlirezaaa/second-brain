@@ -31,10 +31,10 @@ import json
 import re
 import shutil
 import sys
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import (PAPERWORK_SKIP_PATHS, SNAPSHOT_ROOT, find_root, run_utf8,
+from common import (PAPERWORK_SKIP_PATHS, SNAPSHOT_ROOT, find_root, run_utf8, safe_rel,
                     state_fingerprint, tree_inventory)
 
 try:
@@ -89,17 +89,6 @@ def gates(root):
 def inventory(root):
     """The base's scope: exactly what `state_fingerprint` counts, nothing else."""
     return tree_inventory(root, PAPERWORK_SKIP_PATHS)
-
-
-def safe_rel(rel):
-    """A manifest is data. Data that names a path outside the repo is refused, not obeyed."""
-    text = str(rel).replace("\\", "/")
-    if text.startswith("/") or text.startswith("~/"):
-        return None
-    pure = PurePosixPath(text)
-    if pure.is_absolute() or ".." in pure.parts or not text or text != str(pure):
-        return None
-    return text
 
 
 def save(root, note):
