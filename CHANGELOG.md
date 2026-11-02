@@ -7,6 +7,27 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **Phase 47, the owner's brief v4.0 became the constitution of record.**
+  `00_START_HERE/CONSTITUTION.md` now holds the eight immutable principles with a pointer to the
+  code that enforces each one today, the precedence ladder (constitution, then the owner's brief
+  `00_START_HERE/PROJECT_CHARTER.md`, then the executive-law register, then `ROADMAP.md` and the
+  code), the executive-law register L-01..L-10 with a version, a reason, an owner, an arbiter, an
+  enforcement scope and a review path per law, a section that defines what does *not* count as
+  evidence, and a debt table D-1..D-10 that names in the same file the promises this brain does
+  not yet keep. Two decisions were written through the registry door and nowhere else:
+  `09_OPERATIONS/decisions/DEC-3E9C1EE0-constitution-4-0-eight-princ.json` binds the eight
+  principles to a manual revision path — the owner's explicit approval, a version record, a
+  security audit — and says plainly that no automated cycle, this repo's nightly loop included,
+  may amend them; `09_OPERATIONS/decisions/DEC-6F15207B-executive-laws-unlock-with-e.json`
+  converts "stdlib-only, no app, no network, no port" from an eternal law into a revisable
+  executive law that unlocks layer by layer, and only when six things are present at once: a named
+  problem, a baseline measured on this corpus, a before/after win with its repeat counts, a cost
+  and risk review, a bounded blast radius with a stdlib fallback and the flag still false, and a
+  decision record. Three lines stay shut at any benchmark score: the core keeps working offline,
+  nothing listens until a human presses approve, and no private record leaves the vault. This
+  phase turned on none of the six capability flags and shipped no new engine — it moved the law
+  from the top of a plan file into a document with an amendment procedure.
+
 - **Phase 46, an installed brain can now be upgraded.** `python scripts/install.py --upgrade HOME`
   judges every path this engine ships against the record an install leaves inside the home
   (`15_SYSTEM/generated/install.json`, one sha256 per shipped path plus the engine's bytes for it,
@@ -36,6 +57,17 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   declares, and a path belonging to an upstream project, arrive as `NOTED` lines. In an installed
   brain home the roadmap is the source repo's plan rather than a promise the home made, so the gate
   says so and exits 0. Suite: `tests/test_phase45_roadmap_citations.py`.
+
+### Changed
+- **The refusals in `ROADMAP.md` are reasons about evidence now, not about size.** The header law
+  and the three refusal rows that had cited "the unnecessary dependency charter forbids" — the
+  external parsing engine, the database-and-app-server stack, and the HTTP/server layer — state
+  instead which of the constitution's six conditions is missing, and each names the measurement
+  that would change the answer. Calling a subsystem too complex is the one argument the brief's
+  section on revisable executive laws forbids, and it was the argument this repo had been making. The precedence ladder in the
+  header now points at `00_START_HERE/CONSTITUTION.md` rather than at itself, so a conflict is
+  filed against the constitution with its section number instead of being resolved silently by
+  whoever last read the plan.
 
 ### Fixed
 - Eight roadmap rows cited `backend/…` while the repo holds those files under

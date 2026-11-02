@@ -1,0 +1,15 @@
+{
+  "kind": "decision",
+  "id": "DEC-3E9C1EE0",
+  "name": "constitution-4-0-eight-principles",
+  "status": "accepted",
+  "classification": "internal",
+  "created_at": "2026-11-02",
+  "tags": [],
+  "relations": {},
+  "notes": "The owner HADES brief version 4.0 becomes the constitution of record at 00_START_HERE/CONSTITUTION.md. Its eight principles outrank every executive law and may be amended only by a manual charter revision with the owners explicit approval, a version record and a security audit; no automated cycle may change them. Precedence ladder: the eight principles, then 00_START_HERE/PROJECT_CHARTER.md, then the executive law register L-01..L-10, then ROADMAP.md and code.",
+  "decision": "The owner HADES brief version 4.0 becomes the constitution of record at 00_START_HERE/CONSTITUTION.md. Its eight principles outrank every executive law and may be amended only by a manual charter revision with the owners explicit approval, a version record and a security audit; no automated cycle may change them. Precedence ladder: the eight principles, then 00_START_HERE/PROJECT_CHARTER.md, then the executive law register L-01..L-10, then ROADMAP.md and code.",
+  "decided_on": "2026-11-02",
+  "reversible": true,
+  "schema_version": "3.0.0"
+}

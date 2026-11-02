@@ -1,0 +1,15 @@
+{
+  "kind": "decision",
+  "id": "DEC-6F15207B",
+  "name": "executive-laws-unlock-with-evidence",
+  "status": "accepted",
+  "classification": "internal",
+  "created_at": "2026-11-02",
+  "tags": [],
+  "relations": {},
+  "notes": "Stdlib-only, no-app, no-network and no-port stop being eternal principles and become revisable executive laws, each carrying a version, owner, arbiter test and review path. An external dependency, HTTP API, local server or vector index is refused for absence of evidence, not for complexity. Unlocking one requires all six: a named problem, a measured baseline on the same dataset, a before and after win with repeat counts, a cost and risk review, a bounded blast radius with a stdlib fallback and the feature flag false until the evidence lands, and a decision record joining the five. The offline core, human approval before any listener, and the rule that private data never leaves are not unlockable by any benchmark.",
+  "decision": "Stdlib-only, no-app, no-network and no-port stop being eternal principles and become revisable executive laws, each carrying a version, owner, arbiter test and review path. An external dependency, HTTP API, local server or vector index is refused for absence of evidence, not for complexity. Unlocking one requires all six: a named problem, a measured baseline on the same dataset, a before and after win with repeat counts, a cost and risk review, a bounded blast radius with a stdlib fallback and the feature flag false until the evidence lands, and a decision record joining the five. The offline core, human approval before any listener, and the rule that private data never leaves are not unlockable by any benchmark.",
+  "decided_on": "2026-11-02",
+  "reversible": true,
+  "schema_version": "3.0.0"
+}

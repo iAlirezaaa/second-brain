@@ -1,12 +1,20 @@
 # ROADMAP — iAlirezaaa/second-brain-os (Second Brain OS; engine codename HADES v3)
 
 A standalone, self-improving agentic operating system: a plain-markdown brain with a gated
-registry, persistent memory, and its own improvement loop — stdlib-only Python, no app, no
-network, no paid service. **This file is a public promise:** every idea lands here with a size
-estimate, gets built test-first, and is ticked continuously by the repo's own engineers
-(human + agents + nightly loop). The owner's brief — `00_START_HERE/PROJECT_CHARTER.md` —
-outranks this file: phases here *implement* the charter, and a conflict is filed on
-`14_CANDIDATES/loop/` with the section number, never resolved silently.
+registry, persistent memory, and its own improvement loop. The stack it runs on today is
+stdlib-only Python, no app, no network, no paid service — and that is a **revisable executive
+law**, not an eternal one: `00_START_HERE/CONSTITUTION.md` keeps stdlib-only as the safe default
+and unlocks a dependency, an HTTP API, a local server or a vector index only through six
+conditions (a named problem, a measured baseline, a before/after win with repeat counts, a cost
+and risk review, a bounded blast radius with a stdlib fallback and the flag still false, and a
+decision record in `09_OPERATIONS/decisions/`). A refusal in this file is therefore about
+*absence of evidence*, never about size.
+**This file is a public promise:** every idea lands here with a size estimate, gets built
+test-first, and is ticked continuously by the repo's own engineers (human + agents + nightly
+loop). The precedence ladder is the constitution, then the owner's brief
+`00_START_HERE/PROJECT_CHARTER.md`, then the executive-law register, then this file and the code:
+phases here *implement* the constitution, and a conflict is filed on `14_CANDIDATES/loop/` with
+the section number, never resolved silently.
 
 **Status chips:** 🟢 done · 🟡 in progress · 🔵 planned · ⛔ refused (with the reason kept)
 **Sizes:** S = one script/gate, M = script + tests + doc surface, L = subsystem
@@ -558,16 +566,21 @@ rules are "local deterministic parsing, every edge explained, no vector store").
       the curated retrieval fixtures) that are named as authored rather than counted as clean, so
       "0 missing" is a statement about generated output and not about the whole tree.
 - [ ] ⛔ graphify's parsing engine itself — ~40 tree-sitter grammars, NetworkX, graspologic,
-      optional whisper/yt-dlp, and a Python 3.10+ floor: the unnecessary dependency charter §3
-      forbids, and the "capabilities implemented inside the project itself" of §2. This repo's
+      optional whisper/yt-dlp, and a Python 3.10+ floor: refused for **absence of evidence**, not
+      for complexity. None of the six conditions of `00_START_HERE/CONSTITUTION.md` is met — no
+      named problem, no baseline measured on this corpus, and a 3.10 floor that breaks the floor
+      `scripts/ci_floor.py` guards. This repo's
       "AST" is the markdown link graph, which is already explicit, so only the schemas above
       transfer. Its own docs also warn that when `root` is omitted, ids "can end up carrying path
       segments from the machine they were extracted on" (`ARCHITECTURE.md`) — the reason every
       citation in this repo stays repo-relative and `clone_readable()` refuses the rest.
       Full adopt/refuse reasoning: `02_WIKI/reference_maps/graphify-to-hades-map.md`.
 - [ ] ⛔ Postgres/pgvector, Neo4j, FastAPI+Redis+Celery, Letta's App Server, mem0's cloud and
-      any LLM step inside the write path — a port, a daemon, a key or an unmeasured automatic
-      rewrite is exactly what charter §2 exists to refuse.
+      any LLM step inside the write path — each is now unlockable *on evidence* by
+      `00_START_HERE/CONSTITUTION.md` and none has met its six conditions: no baseline, no
+      measured before/after, no cost-and-risk review. What stays unconditional is the blast
+      radius: the core keeps working offline without any of them, nothing listens until a human
+      presses the approve flag, and no private record leaves the vault.
 - [ ] ⛔ A docs site (mkdocs/GitHub Pages): the content is the bottleneck, not the tooling.
 
 ## Phase 45 — A plan that cites what is not here is a second truth · 🟢
@@ -700,11 +713,46 @@ worse: an overwrite deletes a person's thinking in order to deliver a script.*
       deleting a note the owner may have moved into it, which is the one thing an installer has no
       licence to do to a brain it did not think.
 
+## Phase 47 — The owner's v4.0 brief becomes the constitution of record · 🟢
+
+*Source: the owner's HADES brief, version 4.0 §1-§3 and §17-§18, written on 2026-11-02. The brief
+does not ask for more rules; it asks which rules are fundamental and which are merely today's
+engineering choice. This phase separates them, and says plainly which of the fundamental ones the
+repo does not yet do.*
+
+- [x] 🔵 **M** `00_START_HERE/CONSTITUTION.md` — the eight immutable principles with where each is
+      enforced today, the precedence ladder, the executive-law register (each law with a version,
+      owner, arbiter and review path), the definition of what is not evidence, and the honest
+      debt table. Source: brief §2, §3, §13, §17.
+- [x] 🔵 **S** two registry decisions written through the plan door, in `09_OPERATIONS/decisions/`:
+      one adopts the constitution and binds the eight principles to a manual revision path only,
+      one converts the "stdlib-only / no app / no network / no port" stack into executive laws
+      that unlock layer-by-layer on measured evidence. Nothing about the principles moved without
+      the owner's brief and a human pressing approve.
+- [x] 🔵 **S** the refusals in this file re-grounded: the header law, the external-parsing-engine
+      row, the database-and-app-server row and the HTTP/server row now state *absence of
+      evidence* as the reason, each with the condition that would change it. A reason that a
+      subsystem is "too complex" is the one argument brief §3 forbids.
+- [ ] 🔵 **L** the debt table closed, in the order the owner's brief sets: encrypted backup with a
+      real restore test (§8), the per-agent boundary at the door that actually serves reads
+      (§8/§9), the record model and entity statuses the personal brain needs (§4/§6), the durable
+      queue, router, planner and evaluator with no daemon (§9/§14), and the BenchLab adapters that
+      let any of it claim to be better (§11). Each closes with its own gate, not its own prose.
+
+*Measured 2026-11-02: `python 15_SYSTEM/scripts/hades.py doctor` -> "errors: 0 | warnings: 0" with
+the two new decision records in the registry. The constitution is honest about the debt it names,
+and the door says that debt out loud too: the same doctor run prints the six capability flags that
+are documented but not enforced, and this phase turned none of them on.*
+
+---
+
 ## Distribution & scale (parked) · ⛔/🔵
 
 - [ ] 🔵 multi-host installer flags (`--host codex|opencode|gemini|claude`) — one skill tree,
       many agents; only after a second harness actually asks for it.
-- [ ] ⛔ HTTP/server layer: refused while MCP-over-stdio answers every harness that exists —
-      a port, a daemon and a key surface are the SuperAGI stack this repo exists to not need
-      (charter §2). Revisit only with a named consumer.
+- [ ] ⛔ HTTP/server layer: the port is no longer refused for being complex —
+      `00_START_HERE/CONSTITUTION.md` unlocks it on evidence — it is refused because MCP-over-stdio
+      already answers every harness that exists, so there is neither a named consumer nor a
+      measured win, and a listener without a human-approved activation record is one of the three
+      lines the constitution does not unlock at any benchmark score.
 - [ ] ⛔ GitHub Pages docs site: content is the bottleneck, not tooling; the README is the site.
