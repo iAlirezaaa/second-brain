@@ -7,6 +7,25 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **Phase 51, the cipher exists before anything is allowed to say it protects.**
+  `15_SYSTEM/scripts/backend/crypto.py` implements ChaCha20-Poly1305 (RFC 8439) with a
+  scrypt/PBKDF2 derivation layer and a versioned container — `SBO1`, kdf id, kdf params, salt, a
+  header authenticated as additional data, one nonce/ciphertext/tag per file, a footer digest — in
+  pure Python, because the standard library ships no AEAD construction and the executive law L-01
+  keeps stdlib as the default. Its credibility is a test rather than a sentence:
+  `python 15_SYSTEM/scripts/backend/crypto.py --selftest` re-checks the RFC's known-answer vectors
+  and every tamper case on any machine, and `tests/test_phase51_chacha20_poly1305.py` — written
+  red-first — runs in the suite CI executes on each push, so a change that breaks a vector fails the
+  build. Refusals name the rule that stopped them (a closed set the code asserts against, so an
+  invented reason cannot be forged), the ordering is built so a splice trips "tag" instead of
+  describing the attacker's bytes, and there is no negotiation and no fallback: a kdf this build
+  cannot run is refused out loud rather than replaced with a weaker one. `SECURITY.md` says plainly
+  that the primitive is self-authored and **not third-party-audited**. The cost is measured, not
+  claimed — `--bench --bytes 1048576` printed 0.902 MB/s on this machine on 2026-11-02, fine for the
+  text planes and disqualifying for media. What this phase does *not* do is written in the same
+  place: nothing real is sealed, there is no seal command over the private planes, no cross-machine
+  restore proof, and all six capability flags are still `false`.
+
 - **Phase 47, the owner's brief v4.0 became the constitution of record.**
   `00_START_HERE/CONSTITUTION.md` now holds the eight immutable principles with a pointer to the
   code that enforces each one today, the precedence ladder (constitution, then the owner's brief

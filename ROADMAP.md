@@ -902,6 +902,93 @@ tool inside a denied plane answers with data from it.*
 *Filed 2026-11-02 against `64bd3f5`; re-checked against `b450cd5` for the five commits that landed in
 between, and the four whose citations moved carry a comment rather than a silent edit.*
 
+## Phase 51 — The cipher is built before anything is allowed to claim it protects · 🟢
+
+*Source: brief §8 requires «رمزنگاری معتبر داده‌های حساس در حالت ذخیره» and «بکاپ رمزنگاری‌شده و آزمون
+منظم Restore» (sound encryption at rest, plus a backup with a *regular restore test*), and §16 requires a
+bootstrap that can create an encrypted private vault. Two numbers were tried for this step and both are
+recorded here rather than hidden: the slice plan called it Phase 48 (this file has no Phase 48), and it
+was written as Phase 50 while the phase above was still unpublished — the issue ledger landed on the
+remote first, so the published numbering stays and this block moved to 51. What ships here is the primitive
+and the gates around it, and nothing more: no product surface calls it, no feature flag changes, no
+personal byte is sealed yet. An encryption engine nobody has ever pointed at real data is not protection
+— so this phase's honest deliverable is a thing that can be tested, and the rows below say what is still
+missing for it to be called a backup.*
+
+- [x] 🔵 **M** `15_SYSTEM/scripts/backend/crypto.py` — ChaCha20-Poly1305 as specified by RFC 8439, a
+      scrypt/PBKDF2 key derivation layer, and a versioned container format (`SBO1` + kdf id + kdf
+      params + salt + header + per-frame nonce/ciphertext/tag + footer digest). Why hand-written: the
+      executive law L-01 of `00_START_HERE/CONSTITUTION.md` keeps stdlib as the default, `cryptography`
+      is not installed here, and the Python standard library ships no AEAD construction at all — so
+      there was no dependency to reach for without first meeting §3's six conditions. `python
+      15_SYSTEM/scripts/backend/crypto.py --selftest` prints the known-answer lines and the named
+      refusal rules; that command, not this file, is the record of what it checked.
+- [x] 🔵 **S** the bug class that reading did not find: `crypto.py::aead_open` first recomputed the tag
+      by calling `crypto.py::aead_seal` on the *received* ciphertext. Seal encrypts what it is handed,
+      so the MAC covered double-encrypted bytes and every honest container — including the RFC's own
+      §2.8.2 vector — was refused as a forgery. Found by a fourteen-line probe that compared the
+      primitives against the RFC and then watched seal and open disagree, not by re-reading the code:
+      a symmetric bug looks like correct code from both sides. Now the tag is recomputed directly over
+      the received ciphertext.
+- [x] 🔵 **S** a refusal names the rule that actually stopped it, so the ordering is part of the
+      design: `crypto.py::read_header` honours only the authenticated prefix (no frame walk),
+      `crypto.py::parse_container` layers the frame map on top as the evidence tool that needs no
+      passphrase, and `crypto.py::open_container` compares the manifest's *declared* length only after
+      the frame authenticated — the frame's own authenticated length is what the AAD binds. A splice
+      therefore trips "tag", the rule that really caught it, rather than a "frame length" or
+      "truncated" story the attacker's bytes would have produced. Same law the door learned in Phase
+      49: a refusal that invents its reason is a second truth.
+- [x] 🔵 **S** no negotiation, no silent fallback, no downgrade: an unsupported kdf id or parameters
+      this platform cannot run raises a stated error instead of quietly choosing a weaker one, the
+      header must equal the parameters the container was derived with, nonce reuse is its own rule, and
+      `crypto.py::OPEN_RULES` is a closed set that `crypto.py::_refuse` asserts against — a rule name
+      not declared there cannot be forged at runtime. `crypto.py::frame_aad` binds context, frame
+      index, the sha256 of the path and the length, so a file moved, renamed or duplicated inside a
+      container fails instead of decrypting into the wrong place.
+- [x] 🔵 **S** `tests/test_phase51_chacha20_poly1305.py`, written red-first: the RFC vectors, tamper
+      cases refused **by name** (flipped ciphertext byte, flipped header byte, wrong passphrase,
+      truncated container, frame moved/repeated/spliced, version 2, reused nonce), two seals of one
+      plaintext producing different bytes, and a pin on the module's import set so a future
+      dependency in the cipher is a decision someone has to make out loud rather than an `import`
+      that lands. Run `python -m unittest tests.test_phase51_chacha20_poly1305`; the count is that
+      command's to print.
+- [x] 🔵 **S** the cost stated, because §17 makes complexity measurable:
+      `python 15_SYSTEM/scripts/backend/crypto.py --bench --bytes 1048576` measured **0.902 MB/s**
+      here on 2026-11-02 — pure Python, one core, no C backend. That is fine for the planes this
+      repo actually seals (text notes, a few megabytes) and disqualifying for media; the same command
+      prints the number on your machine, and the row is honest that a self-written stream cipher is
+      the trade made to stay standalone.
+- [x] 🔵 **S** `SECURITY.md` gained a cryptographic-primitives section, because it had been silent
+      rather than honest: the primitive is self-authored, **not third-party-audited**, and its
+      credibility is held by the known-answer and tamper gates running in the suite that
+      `.github/workflows/ci.yml` executes on every push — not by this document's adjectives. The
+      versioned container font is what lets an audited engine replace it later without migrating the
+      bytes.
+- [ ] ⛔ A third-party cipher (`age`, `openssl`, a hardware engine) and proof-of-origin (signing a
+      container under a separate key) are refused today for **absence of evidence**, not for
+      complexity — `00_START_HERE/CONSTITUTION.md` §3 unlocks the dependency on a measured win. The
+      condition that would change this row is stated rather than implied: a named problem the
+      self-authored primitive cannot solve, a baseline measured against it, and a reviewed cost,
+      licence and supply-chain risk. Proof-of-origin stays out of this file because there is no key
+      management plane to hold a signing key yet.
+- [ ] ⛔ `feature_flags.automated_backup_scheduling` stays `false` here, and that is not a gap in this
+      phase: brief §14 requires every Job to carry identity, permission, status, last-run, retry
+      policy, resource limit, report and stop method, and no such record exists in this repo. A timer
+      wrapped around a cipher is a scheduled unverified restore.
+- [ ] 🔵 **M** what this phase deliberately did not do, so nobody reads it as protection yet: nothing
+      real is sealed. There is no seal/unseal surface over the private planes, no cross-machine
+      restore proof, no verification record under `11_CONTROL/`, and all six feature flags in
+      `15_SYSTEM/config/system.json` are still `false`. The debt row D-2 of
+      `00_START_HERE/CONSTITUTION.md` stays written exactly as it is until a command seals a plane a
+      human can read back on another machine.
+
+*Measured 2026-11-02: `python 15_SYSTEM/scripts/backend/crypto.py --selftest` green; the phase test
+green on this tree and red on the primitive's first draft; `python -m unittest discover -s tests` grew
+by the cases in `tests/test_phase51_chacha20_poly1305.py` and `python scripts/doc_report.py --write`
+regenerated the measured blocks of `README.md`, `HANDOFF.md` and `00_START_HERE/START.md`, while
+`python scripts/health.py` reported the verdict it had already reported — a primitive with no caller
+cannot move a gate, and the row above says that is the point.*
+
 ---
 
 ## Distribution & scale (parked) · ⛔/🔵
