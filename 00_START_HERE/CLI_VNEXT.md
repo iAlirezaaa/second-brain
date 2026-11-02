@@ -167,3 +167,29 @@ approval, tool capability filtering or sandbox isolation.
 The Brain CLI now supports \`check SESSION --actor AGT-...\` and
 \`trace SESSION --limit 100\` for preflight and human-readable event evidence.
 After any tool call or task change, rewrite the handoff before closing.
+
+## Session-gated MCP tool calls
+
+When SBO_REQUIRE_SESSION=1 is set **in the environment of the MCP server
+process**, tools/call refuses ordinary sessionless calls. MCP clients see these
+additional optional fields in each tool input schema:
+
+    {"session_id":"SES-XXXXXXXXXXXX", "actor_id":"AGT-XXXXXXXX",
+     "task_id":123, ...existing tool arguments...}
+
+Prepare a session and complete skill review + plan using Brain CLI before
+calling an MCP work tool. For session-bound MCP writes such as
+candidate_propose, the registered actor must also hold that exact name
+in its tool_allowlist. Raw tool inputs and result bodies are not put in
+the Brain session audit; only qualified name, event result, SHA-256 digest
+and response length appear.
+
+MCP session metadata and actor IDs are *self-declared*, not OS-authenticated.
+A malicious local client can still impersonate an actor that shares its
+operating-system permissions. Real credential-based scoping and isolated
+workers are required before supporting mutually untrusted agents. Enabling
+strict mode without first provisioning a CLI session will refuse tool calls;
+this is intentional fail-closed behavior.
+
+MCP's private source access policy remains controlled by backend/access.py;
+a session does NOT grant access to any denied directory.
