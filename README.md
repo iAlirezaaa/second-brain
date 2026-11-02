@@ -71,8 +71,11 @@ Four properties this repo is built to keep:
 4. **The brain is callable, and its agents are accountable.** The backend agents call is
    `15_SYSTEM/scripts/mcp_server.py` — a Model Context Protocol server over stdio, stdlib-only,
    no port, no keys; OpenCode, Claude Desktop and friends register it natively
-   (`15_SYSTEM/integrations/`). Read tools are open (`vault_search`, `memory_recall`, the
-   registry, `doctor_status`, `source_search`, the run ledger); `source_import` records one
+   (`15_SYSTEM/integrations/`). Read tools answer inside the boundary
+   `15_SYSTEM/scripts/backend/access.py` draws (`vault_search`, `memory_recall`, the registry,
+   `doctor_status`, `source_search`): a read the law denies is refused with the rule named and
+   nothing from inside that plane on the wire, and `source_search` answers with a citation plus
+   a bounded excerpt instead of the whole stored body; `source_import` records one
    file the client names from inside the brain as a private source with its provenance,
    `candidate_propose` files on the quarantine shelf, and `lesson_propose` files private
    source-backed proposals — humans decide. Agent runs
@@ -134,7 +137,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 857 |
+| tests collected (`python -m unittest discover -s tests`) | 866 |
 | health gates (`python scripts/health.py`) | 15 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |

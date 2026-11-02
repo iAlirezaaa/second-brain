@@ -50,10 +50,14 @@ newline-delimited JSON-RPC 2.0. `initialize`, `ping`, `tools/list`, `tools/call`
 `resources/list`, `resources/read`; batches accepted; protocol version echoed; logs to
 stderr only. Tools:
 
-- read, open: `vault_search` (BM25 over the brain's prose, rebuilt per call — an index that
+- read, inside the boundary `15_SYSTEM/scripts/backend/access.py` draws: `vault_search` (BM25
+  over the brain's prose, rebuilt per call — an index that
   can go stale is worse than one that costs 100 ms; unicode tokenizer, so Persian matches),
   `memory_recall` (the repo's own lessons), `registry_list`, `registry_show`,
   `doctor_status` (facts only; the gate itself is `scripts/health.py`).
+- refused, with the rule named: `runs_list`, `runs_show`. `12_RUNTIME` is denied to agents, so
+  the door returns nothing from inside the plane and hands the human view (`runs.py`) over —
+  `tests/test_phase49_door_reads_its_own_law.py`.
 - write: `candidate_propose` — files a **registered** row on the quarantine
   shelf (`14_CANDIDATES/loop`), which is where an agent's writes belong. Agents propose;
   humans decide. (`candidate_check.register` prints, so its stdout is captured — a tool

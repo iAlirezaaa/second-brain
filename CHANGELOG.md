@@ -70,6 +70,27 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   whoever last read the plan.
 
 ### Fixed
+- **The MCP door stopped reading the planes its own access law denies.**
+  `15_SYSTEM/scripts/backend/access.py` had denied `12_RUNTIME`, `.brain-data`, `.kb`,
+  `15_SYSTEM/generated`, `15_SYSTEM/backups`, `13_LAB`, `14_CANDIDATES` and
+  `09_OPERATIONS/clients_metadata_only` to agents since phase 21, and `mcp_server.py` — the one
+  surface an outside harness actually calls — read four of those paths anyway. Measured on this
+  tree before the change, with one run recorded by `15_SYSTEM/scripts/runs.py`: `runs_show`
+  answered `{"run_id": "RUN-F9A34E51", "agent": "AGT-CD4E8AA8", "status": "completed", "steps": 1,
+  "goal": "feed the door"}` and `runs_list`/`doctor_status` enumerated the same plane;
+  `source_search` returned the whole stored body of a private `.brain-data` source, not a citation.
+  Now the door asks the law instead of restating it: `access.denial(root, path)` answers
+  `None` or the *name of the rule* that said no, `access.readable()` is that same function
+  (`readable ⇔ denial is None`, so one law has two answers and no second list to drift), and a
+  refused read puts the rule name and the human view on the wire and nothing from inside the plane.
+  `source_search` answers with source id, kind, origin, filename, `imported_at`, the body's byte
+  length and a 400-character excerpt flagged `excerpt_truncated` — the §7 minimal-context rule, and
+  consistent with `source_import`, which had always refused those paths. `doctor_status` reports
+  `runs.read: false` with `denied_by: "12_RUNTIME"` rather than a run count. Phase 22's passing
+  assertions (`assertFalse(isError)` over `runs_list`) were the contract of this leak, not of the
+  design; that test now asserts the refusal, and `ROADMAP.md` records the reversal. Pinned by
+  `tests/test_phase49_door_reads_its_own_law.py`, written red first — it fails on `4a71da4` with
+  the leaked run id in the text and the refusal naming no declared rule.
 - **A recorded known-good base no longer redraws the link graph as a pile of islands.**
   `python scripts/base.py --save` copies the tree into `15_SYSTEM/backups/known-good/<stamp>/`, and
   `scripts/link_check.py::classify_links` built its stem index over that copy as if it were the

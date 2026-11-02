@@ -330,7 +330,15 @@ class TestHarnessDoor(TempVault, unittest.TestCase):
         self.assertIsNone(r["id"])
         self.assertEqual(0, c.close())
 
-    def test_runs_tools_expose_the_disposable_plane_readonly(self):
+    def test_runs_tools_refuse_the_plane_the_access_law_denies(self):
+        """Phase 22 wrote this test the other way round.
+
+        The assertions below used to demand that runs_list and runs_show answer with a
+        run id, its status and its step text. 15_SYSTEM/scripts/backend/access.py lists
+        12_RUNTIME among the paths denied to agents, so those assertions were the
+        contract of the leak, not of the design; phase 49 reversed them and ROADMAP.md
+        records why. The human view of the plane stays `python 15_SYSTEM/scripts/runs.py`.
+        """
         self.runs = load_by_path("runs_phase22b", RUNS)
 
         def runs_cli(*argv):
@@ -347,17 +355,15 @@ class TestHarnessDoor(TempVault, unittest.TestCase):
         c = self.client()
         initialize(c)
         text, is_err = c.result_text("tools/call", {"name": "runs_list", "arguments": {}})
-        self.assertFalse(is_err, text)
-        self.assertIn(run_id, text)
-        self.assertIn("completed", text)
+        self.assertTrue(is_err, text)
+        self.assertIn("12_RUNTIME", text)
+        self.assertNotIn(run_id, text)
+        self.assertNotIn("completed", text)
         text, is_err = c.result_text("tools/call", {"name": "runs_show",
                                                     "arguments": {"run": run_id}})
-        self.assertFalse(is_err, text)
-        self.assertIn("knock knock", text)
-        text, is_err = c.result_text("tools/call", {"name": "runs_show",
-                                                    "arguments": {"run": "RUN-00000000"}})
         self.assertTrue(is_err, text)
-        self.assertIn("no such run", text)
+        self.assertNotIn("knock knock", text)
+        self.assertIn("runs.py", text, "the refusal should hand the human view over")
 
     def test_doctor_status_is_facts_not_a_gate(self):
         c = self.client()

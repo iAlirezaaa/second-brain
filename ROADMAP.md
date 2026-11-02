@@ -809,6 +809,77 @@ are documented but not enforced, and this phase turned none of them on.*
 
 ---
 
+## Phase 49 — The door that answers agents reads the law, not the prose about it · 🟢
+
+*Source: brief §8 («کنترل دسترسی باید مستقل از مدل AI و در سطح سرویس، فایل، فرآیند و ابزار اجرا شود»
+— access control must run at the service/file/process/tool level, independent of the model) and
+principle three of `00_START_HERE/CONSTITUTION.md`: a claim a measurement disproves is corrected in
+place. This phase ships no new capability. It closes a class of bug found by reading one file
+against another: `15_SYSTEM/scripts/backend/access.py` declares what an agent may not read, and
+`15_SYSTEM/scripts/mcp_server.py` — the only surface an outside harness actually reaches — read four
+of those paths anyway.*
+
+- [x] 🔵 **M** the leak, measured before it was closed. With one run recorded by
+      `15_SYSTEM/scripts/runs.py`, `python -m unittest tests.test_phase49_door_reads_its_own_law`
+      on the previous commit failed red and printed the answer the door had given: `runs_show`
+      returned run id `RUN-F9A34E51`, agent `AGT-CD4E8AA8`, status, step count and goal;
+      `runs_list` enumerated the plane and `doctor_status` counted it. `source_search` put the whole
+      stored body of a `.brain-data` source on the wire, while `source_import` on the same door had
+      always refused that path — the check was the rule and these were exceptions.
+- [x] 🔵 **S** one law, two answers: `15_SYSTEM/scripts/backend/access.py::denial` returns the
+      *name of the rule* that stopped a path and `readable` is now that function answering `None`,
+      so a refusal can quote a real rule instead of a paraphrase, and the tuple of denied planes and
+      the secret-filename rule cannot drift from each other. Both the lexical and the resolved form
+      of a path are judged, which is what catches a `..` walk that the old single check let through.
+- [x] 🔵 **S** the door asks, instead of restating: `15_SYSTEM/scripts/mcp_server.py::tool_runs_list`
+      and `tool_runs_show` refuse with the rule name and the human view (`runs.py list`/`show`), and
+      `doctor_status` answers `runs.read: false` with the denying rule instead of a run count. The
+      tool names did not change, so the registry record
+      `11_CONTROL/mcp/MCP-E1807E50-second-brain-bridge.json` still describes the surface it exposes.
+- [x] 🔵 **S** §7 minimal context, not §7 as a slogan: `tool_source_search` returns the citation
+      (`id`, `kind`, `origin`, `filename`, `imported_at`), the body's length, and a 400-character
+      excerpt flagged `excerpt_truncated`. Retrieval answering a query with a copy of the private
+      plane was the failure mode the brief names; the byte cap is the boundary the code can enforce
+      today.
+- [x] 🔵 **S** the phase-22 reversal, recorded rather than quietly bent:
+      `tests/test_phase22_harness_bridge.py` asserted `assertFalse(isError)` over `runs_list` — those
+      assertions passed, and they were the contract of the leak, not of the design. The test now
+      asserts the refusal, names `12_RUNTIME` in it, and requires nothing from inside the plane on
+      the wire. The law against editing an assertion to fit new code is what forced this row: the
+      assertion was wrong, so it is the code that changed and the reason that is written here.
+- [x] 🔵 **S** `tests/test_phase49_door_reads_its_own_law.py` — written red first, and it fails on
+      the commit before this one. Two halves: the law answers the same question two ways
+      (`readable` ⇔ `denial is None`) over every denied plane and an over-blocking guard, and the
+      door refuses each plane's tools with a rule name the law actually declares — a refusal that
+      invents its own reason is a second truth and fails. Run it with
+      `python -m unittest tests.test_phase49_door_reads_its_own_law`; the test count is that
+      command's to print, not this file's.
+- [x] 🔵 **S** the four documents that promised the opposite corrected in the same change:
+      `README.md`, `AGENTS.md`, `15_SYSTEM/integrations/README.md` and
+      `02_WIKI/reference_maps/superagi-to-hades-map.md` no longer say reads are open — they name the
+      boundary and the two tools that refuse — and the task row of
+      `02_WIKI/reference_maps/eight-memory-planes.md` points the human view at `runs.py`. What the
+      sweep deliberately left alone: the bases this machine recorded under its own backups plane
+      (the ledger of those recordings, `14_CANDIDATES/loop/bases.jsonl`, is the clone-readable half;
+      the snapshot bytes themselves never ship), the dated candidate rows in `14_CANDIDATES/loop/`,
+      and the older `CHANGELOG.md` entries. History is not edited to look better than it was.
+- [ ] 🔵 **M** the residual this phase did not close, stated because the flag that would close it is
+      still `false`: the denied-plane list is one flat policy for every caller, so `source_search`
+      and `vault_search` still *read* inside `.brain-data` and `.kb` to build a citation — the fix
+      bounds what crosses the wire, not which plane the engine touches — and `09_OPERATIONS` is
+      readable through the registry tools while the config denies it as a zone. Per-actor scope at
+      the door (an identity the harness cannot spoof, a read scope per agent, refusal behind an
+      evidence gate) is the next phase; `filesystem_acl_enforcement` stays `false` until then,
+      because the repo enforces a policy at its own door and has no OS-level boundary to claim.
+      Source: brief §8 (least privilege, isolation of agent memory) and §9 (each agent has its own
+      permissions and allowed context).
+
+*Measured 2026-11-02: `python -m unittest tests.test_phase49_door_reads_its_own_law
+tests.test_phase22_harness_bridge` green on this tree and red on the commit before it, and no read
+tool inside a denied plane answers with data from it.*
+
+---
+
 ## Distribution & scale (parked) · ⛔/🔵
 
 - [ ] 🔵 multi-host installer flags (`--host codex|opencode|gemini|claude`) — one skill tree,

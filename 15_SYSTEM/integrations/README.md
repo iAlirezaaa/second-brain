@@ -20,9 +20,9 @@ config shape. Registry record: `MCP-E1807E50` (`11_CONTROL/mcp/`).
 | `memory_recall` | read | the repo's own lessons (cue / lesson / evidence / confidence) |
 | `registry_list` | read | registry records, optionally by kind, with the active/superseded split |
 | `registry_show` | read | one record by id |
-| `doctor_status` | read | a facts-only status readout (records, zones, lessons, runs) |
+| `doctor_status` | read | a facts-only status readout (records, zones, lessons, and which rule closes the run plane — it does not open it) |
 | `candidate_propose` | **write** | files a **registered** row on the quarantine shelf (`14_CANDIDATES/loop`) — agents propose, humans decide |
-| `runs_list`, `runs_show` | read | inspect the run ledger |
+| `runs_list`, `runs_show` | **refused** | `12_RUNTIME` is denied to agents by `15_SYSTEM/scripts/backend/access.py`, so the door names the rule and returns nothing from inside it; the human view is `15_SYSTEM/scripts/runs.py` |
 
 ## Files
 

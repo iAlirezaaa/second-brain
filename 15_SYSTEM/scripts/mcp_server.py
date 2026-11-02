@@ -15,13 +15,16 @@ logs on stderr only. Supported: initialize, ping, tools/list, tools/call,
 resources/list, resources/read, single messages and batched arrays. `tools/list` reports each
 tool's behaviour tag, so a harness can read what a call costs before it makes one.
 
-Read tools are open. `candidate_propose` writes where an
+Read tools answer inside the boundary `backend/access.py` draws: a plane that file denies to
+agents is refused here too, and the refusal names the rule instead of a sentence about it.
+`candidate_propose` writes where an
 agent's writes belong under this repo's law: a registered row on the quarantine shelf --
 the human merges. Agent run history is a separate disposable-plane script (runs.py); runs
 die at the git boundary, evidence is promoted to the shelf, never stranded in machine state.
 `lesson_propose` writes private proposals in .brain-data; only a local human can approve them.
 `source_import` records one explicitly named file from inside the brain as a private source
 (raw bytes kept, provenance recorded); it refuses any path outside the brain or in a denied zone.
+`source_search` answers with the citation and a bounded excerpt, never the whole body.
 
 Phase 44 — behaviour tags. Every tool this door exposes declares one tag from a closed set
 (`read_only` / `idempotent` / `destructive`, the vocabulary declared once in
@@ -90,12 +93,40 @@ def bind(root):
 # moved verbatim into the backend package (single source of truth): the MCP door and
 # the toolkit's core.vault_search must never drift apart.
 from backend.search import snippet, tokenize, vault_search  # noqa: E402,F401
-from backend.access import readable  # noqa: E402
+from backend.access import denial, readable  # noqa: E402
 
 
 # --------------------------------------------------------------------------- tools
 class ToolRefused(Exception):
     """A tool refused its arguments -- surfaces as isError, never as a crash."""
+
+
+# The private source plane keeps the whole body for the human reader; the door answers with the
+# citation plus a bounded excerpt (constitution section 7: retrieval is not "send everything").
+SOURCE_FIELDS = ("id", "kind", "origin", "filename", "imported_at")
+SOURCE_EXCERPT_CHARS = 400
+
+
+def _plane_law(root, *parts):
+    """Ask the access law whether this door may open a plane, and get back the rule's name.
+
+    Nothing here hard-codes a denied directory. The door asks `backend/access.py`, so that file
+    stays the one place the boundary is written down, and a refusal quotes the rule actually in
+    force instead of a sentence about it that can drift. Returns None when the plane is open.
+    """
+    return denial(root, Path(root).joinpath(*parts))
+
+
+RUNS_PLANE = ("12_RUNTIME", "agent_runs")
+
+
+def _runs_refused(blocked):
+    raise ToolRefused(
+        "the run plane is closed at this door: %s is denied to agents by "
+        "15_SYSTEM/scripts/backend/access.py, and agent run history lives inside it. "
+        "This is another actor's trail, not the brain's knowledge: the human view is "
+        "`python 15_SYSTEM/scripts/runs.py list` / `show`, and a harness that needs its own "
+        "history keeps its own." % blocked)
 
 
 def text_result(text):
@@ -139,10 +170,21 @@ def tool_memory_recall(root, args):
 def tool_source_search(root, args):
     from backend import sources
     try:
-        return json.dumps(sources.search(root, args.get('query', ''),
-                                         int(args.get('limit', 10))), ensure_ascii=False)
+        rows = sources.search(root, args.get('query', ''), int(args.get('limit', 10)))
     except (ValueError, OSError) as exc:
         raise ToolRefused(str(exc))
+    # The stored body is the human's to read; the door hands back the citation and a bounded
+    # excerpt, so a query cannot become a copy of the private plane. `sources.py` keeps the
+    # full text for the local reader that asked for it by name.
+    bounded = []
+    for row in rows:
+        body = str(row.get('text') or '')
+        item = dict((key, row.get(key)) for key in SOURCE_FIELDS)
+        item['chars'] = len(body)
+        item['excerpt'] = body[:SOURCE_EXCERPT_CHARS]
+        item['excerpt_truncated'] = len(body) > SOURCE_EXCERPT_CHARS
+        bounded.append(item)
+    return json.dumps(bounded, ensure_ascii=False)
 
 
 def tool_source_import(root, args):
@@ -249,53 +291,27 @@ def tool_doctor_status(root, args):
     zones = HADES.zone_dirs(cfg)
     missing = [z for z in zones if not (root / z).exists() and not HADES.absent_by_boundary(cfg, z, gi)]
     lessons, _problems = memory_ledger.read_lessons(root)
-    runs_root = root / "12_RUNTIME" / "agent_runs"
-    runs = sorted([d.name for d in runs_root.iterdir() if d.is_dir()]) if runs_root.is_dir() else []
+    blocked = _plane_law(root, *RUNS_PLANE)
     out = {"records": len(recs),
            "active_records": len([1 for _p, r in recs if str(r.get("id")) not in sup]),
            "zones_declared": len(zones),
            "zones_missing": missing,
            "lessons": len(list(memory_ledger.active(lessons))),
-           "runs": len(runs),
+           "runs": {"read": blocked is None,
+                    "denied_by": blocked,
+                    "human_view": "python 15_SYSTEM/scripts/runs.py list"},
            "note": "facts only; the gate itself is scripts/health.py"}
     return text_result(json.dumps(out, ensure_ascii=False, indent=1))
 
 
 def tool_runs_list(root, args):
-    """What the actors did -- the disposable plane, read-only through the door."""
-    import runs as runs_ledger
-    base = runs_ledger.runs_dir(root)
-    rows = []
-    if base.is_dir():
-        for d in sorted(base.iterdir()):
-            run = runs_ledger.load_run(root, d.name)
-            if run is None:
-                continue
-            if args.get("agent") and str(run.get("agent")) != str(args["agent"]):
-                continue
-            rows.append({"run_id": run.get("run_id"), "agent": run.get("agent"),
-                         "kind": run.get("kind"), "status": run.get("status"),
-                         "steps": run.get("steps"), "goal": run.get("goal"),
-                         "promoted": run.get("promoted") or ""})
-    return text_result(json.dumps({"runs": len(rows), "items": rows},
-                                  ensure_ascii=False, indent=1))
+    """What the actors did -- refused while the plane that holds it is denied (see _plane_law)."""
+    _runs_refused(_plane_law(root, *RUNS_PLANE))
 
 
 def tool_runs_show(root, args):
-    import runs as runs_ledger
-    run_id = str(args.get("run") or "").strip()
-    if not run_id:
-        raise ToolRefused("runs_show needs a run id (see runs_list)")
-    run = runs_ledger.load_run(root, run_id)
-    if run is None:
-        raise ToolRefused("no such run %s -- runs are disposable plane state, absent in "
-                          "a fresh clone" % run_id)
-    feed = runs_ledger.read_feed(runs_ledger.runs_dir(root) / run_id)
-    body = json.dumps(run, ensure_ascii=False, indent=1, sort_keys=True)
-    lines = ["%s" % body, "feed: %d step(s)" % len(feed)]
-    for i, s in enumerate(feed, 1):
-        lines.append("  %d. [%s] %s" % (i, s.get("status"), s.get("text")))
-    return text_result("\n".join(lines))
+    """One actor's full trail -- refused for the same reason, before the run id is even looked up."""
+    _runs_refused(_plane_law(root, *RUNS_PLANE))
 
 
 SHELF_ROW = """---
@@ -373,7 +389,9 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
                      "limit": {"type": "integer", "minimum": 1, "maximum": 100}}, "required": ["query"]}},
     {"name": "source_search", "behavior": "read_only",
-     "description": "Search explicitly imported private sources, including their origin and import time.",
+     "description": "Search explicitly imported private sources, including their origin and "
+                    "import time. Each hit carries the citation plus a bounded excerpt and the "
+                    "full body's length -- the door never returns a whole private document.",
      "inputSchema": {"type": "object", "properties": {"query": {"type": "string"},
                        "limit": {"type": "integer", "minimum": 1, "maximum": 100}},
                      "required": ["query"]}},
@@ -413,16 +431,21 @@ TOOLS = [
      "inputSchema": {"type": "object", "properties": {
          "id": {"type": "string"}}, "required": ["id"]}},
     {"name": "doctor_status", "behavior": "read_only",
-     "description": "A structured status readout (records, zones, lessons, runs). Facts "
-                    "only -- the gate itself is scripts/health.py.",
+     "description": "A structured status readout (records, zones, lessons, and whether this "
+                    "door may read the run plane). Facts only -- the gate itself is "
+                    "scripts/health.py.",
      "inputSchema": {"type": "object", "properties": {}}},
     {"name": "runs_list", "behavior": "read_only",
-     "description": "Agent runs from the disposable plane (12_RUNTIME/agent_runs): who ran, "
-                    "status, step count, whether the run was promoted to the shelf.",
+     "description": "Refused: the agent-run plane is denied to every harness by "
+                    "15_SYSTEM/scripts/backend/access.py, so no actor can read another's "
+                    "trail through this door. The human view is `python "
+                    "15_SYSTEM/scripts/runs.py list`. The rule is asked, never restated.",
      "inputSchema": {"type": "object", "properties": {
          "agent": {"type": "string"}}}},
     {"name": "runs_show", "behavior": "read_only",
-     "description": "One agent run by id: identity plus its append-only step feed.",
+     "description": "Refused for the same reason as runs_list, before any run id is looked up: "
+                    "one actor's full step feed is not the brain's knowledge. The human view "
+                    "is `python 15_SYSTEM/scripts/runs.py show RUN-ID`.",
      "inputSchema": {"type": "object", "properties": {
          "run": {"type": "string"}}, "required": ["run"]}},
     {"name": "candidate_propose", "behavior": "idempotent",
