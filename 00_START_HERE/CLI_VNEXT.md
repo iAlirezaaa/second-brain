@@ -193,3 +193,30 @@ this is intentional fail-closed behavior.
 
 MCP's private source access policy remains controlled by backend/access.py;
 a session does NOT grant access to any denied directory.
+
+## Twin World 1a — rehearse file changes without touching the real repository
+
+Place this plan in a temporary JSON file (for example twin-files.json):
+
+    [
+      {"op": "write", "path": "02_WIKI/draft.md", "text": "Proposed draft\n"},
+      {"op": "append", "path": "02_WIKI/draft.md", "text": "Second line\n"}
+    ]
+
+Then call:
+
+    python scripts/brain.py twin-files --plan twin-files.json
+
+It returns an ordered operation transcript and before/after SHA-256, byte
+deltas, added/changed/deleted status and bounded unified diffs. It does not
+execute code, open a network connection or write to the real filesystem.
+Only allowed, bounded UTF-8 files participate. Private stores, secrets,
+runtime, candidate shelf and backup paths are denied, including through
+symlinks. The simulator is deterministic and limits per-file and total
+in-memory content.
+
+**Limit:** Twin World 1a is a virtual in-memory overlay and diff simulator,
+NOT an isolated container, OS sandbox or safe place to run untrusted code.
+Twin 1b will add a throwaway copy-on-write filesystem, mock API clients and
+replay tests. Twin 2 requires a proper constrained container/VM and a
+reviewed threat model.
