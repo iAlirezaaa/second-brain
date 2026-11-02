@@ -137,7 +137,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 950 |
+| tests collected (`python -m unittest discover -s tests`) | 959 |
 | health gates (`python scripts/health.py`) | 16 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
@@ -190,3 +190,7 @@ Owner: Hades 3rd ([@iAlirezaaa](https://github.com/iAlirezaaa))
 > **FA —** در کنار ساختار صفحاتِ HADES، این ریپو از این به بعد **موتورِ سکند برین نسخهٔ 0.2.0** را هم دارد: کیت ابزارِ هارنسِ ایجنت که همان فلسفه را با اسکریپت اجرا می‌کند، نه با توصیه. `vault-template/` فقط قطعات آغازین (`index.md` و `_templates`) را دارد؛ `python scripts/install.py` همان شانزده زون مخزن را از `15_SYSTEM/config/system.json` می‌سازد و موتور (`scripts/` و `15_SYSTEM/scripts/`)، شِماهای رجیستری، دفترِ درس‌ها و هر پنج درِ ایجنت را کنارشان می‌گذارد. خانهٔ نصب‌شده یک عکس فوری نیست: `python scripts/install.py --upgrade ~/brain` خانه را مسیر‌به‌مسیر و دانه‌به‌دانه به این موتور می‌آورد — فایلی که موتور عوضش کرده بازنویسی می‌شود، فایلی که آدم اینجا ویرایش کرده دست‌نخورده می‌ماند و نامش گفته می‌شود، و فایلی که رکوردِ خودِ خانه گواهی‌اش را ندارد سرِ جایش می‌ماند و اجرای آپگرید با کد خطا (۱) تمام می‌شود — و هیچ‌چیز حذف نمی‌شود؛ `--dry-run` ثابت می‌کند چیزی نمی‌نویسد، چون ردختِ درختِ خانه را در ورود و خروج مقایسه می‌کند. `rules/` و تست‌ها قابل خواندن ماشین هستند و هر قابلیت با تست محافظت می‌شود. سوت را با `python -m unittest discover -s tests` و سلامت ولت را با `python scripts/health.py` صدا بزنید.
 >
 > **Maps / نگاشت:** `00_Inbox` ≈ `01_INBOX`، `20_Notes`+`30_Resources` ≈ `02_WIKI`+`15_SYSTEM/templates`، `90_Agent_Output` ≈ `13_LAB`+`14_CANDIDATES`، `promote` ≈ ارتقای `13/14` به صفحهٔ انسان. Two vocabularies, one philosophy: **nothing reaches the human plane un-promoted, nothing breaks a link un-checked.** · دو گویش، یک فلسفه: **هیچ‌چیز بدون ارتقا به صفحهٔ انسان نمی‌رسد، هیچ‌چیز بدون چک لینک نمی‌شکند.**
+
+## Optional local Laya decision engine
+
+The workflow toolkit exposes `core.laya_decide` for local typed choice/score/yes-no **proposals** (no automatic execution), disabled by default. It requires a separate Python 3.10+ environment and the external Laya package. The Python 3.9 core needs no new dependency. See [Laya setup and safety contract](15_SYSTEM/integrations/laya.md) and `requirements-laya.txt`. Installing a dependency or loading model weights is not done by GitHub commits or CI.
