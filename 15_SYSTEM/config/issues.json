@@ -115,15 +115,19 @@
     {
       "number": 20,
       "title": "Charter section 5/11: the eight memory planes have no mapping, no conversation-memory reader, and kb.py skips this repo's own prose",
-      "upstream": "open",
-      "state": "partial",
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "8c757b4",
       "evidence": [
         "02_WIKI/reference_maps/eight-memory-planes.md",
         "scripts/plane_check.py",
         "scripts/kb.py",
-        "skills/conversation-memory/SKILL.md"
+        "skills/conversation-memory/SKILL.md",
+        "02_WIKI/reference_maps/conversation-memory-path.md",
+        "tests/test_phase26_memory_planes.py",
+        "tests/test_phase27_repo_corpus.py"
       ],
-      "gap": "نگاشت هشت پلین و گیتش (۹a561d5) و فیلد plane برای همهٔ درس‌ها (dde3cad) و مسیرِ ثبت‌شدهٔ حافظهٔ گفتگو با ایجنتِ مدیر و اسکیلش (8c757b4) ساخته شد. آنچه مانده خواندنِ *زندهٔ* گفتگوست: امروز تنها راه، واردکردن صریح فایل به دفتر درس است و هیچ دری در ۱۲_RUNTIME این کار را خودکار نمی‌کند."
+      "note": "هر چهار معیارِ پذیرش با دستورِ قابل‌اجرا روی یک کلونِ تازه در کامنتِ شاهد بسته شد: نگاشت (سطر ۲۵)، گیتِ شمارهٔ ۳ از ۱۲ با چهار تستِ رد، جست‌وجوی corpusِ خود ریپو با طلاییِ سبز، و مسیرِ یازده‌گامِ حافظهٔ گفتگو با درهای MCP. آنچه «خواندنِ خودکارِ نشستِ زنده» نامیده می‌شد عمداً ساخته نشد: فاز ۲۶ صریح می‌گوید «No automatic session discovery» و مادهٔ ۲ منشور هر اسکنر یا سرویس پس‌زمینه در مسیر نوشتن را رد می‌کند؛ اگر خواسته شود، ایشیوی تازه با معیارهای سنجیده می‌گیرد، نه بازکردنِ این چهار."
     },
     {
       "number": 21,

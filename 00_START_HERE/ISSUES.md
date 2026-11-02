@@ -22,7 +22,7 @@
 | #15 | state_fingerprint counts gitignored, regenerated `15_SYSTEM/generated/` -- an `index` run ages every probe and no clone can reproduce a base | بسته | بسته | `c75bf27`، `scripts/common.py`، `tests/test_phase36_doors_tell_the_truth.py` |
 | #16 | Refusing human-plane `09_OPERATIONS` says "denied machine plane", and AGENTS.md/ACCESS.md/SYSTEM_MAP.md deny a subfolder the config never named | بسته | بسته | `c75bf27`، `15_SYSTEM/scripts/hades.py`، `AGENTS.md` |
 | #17 | `memory.py --add --supersedes <unknown id>` writes the row; the ledger only fails at --check, after the render | بسته | بسته | `c75bf27`، `scripts/memory.py`، `tests/test_phase36_doors_tell_the_truth.py` |
-| #20 | Charter section 5/11: the eight memory planes have no mapping, no conversation-memory reader, and kb.py skips this repo's own prose | نیمه | باز | `02_WIKI/reference_maps/eight-memory-planes.md`، `scripts/plane_check.py` |
+| #20 | Charter section 5/11: the eight memory planes have no mapping, no conversation-memory reader, and kb.py skips this repo's own prose | بسته | بسته | `8c757b4`، `02_WIKI/reference_maps/eight-memory-planes.md`، `scripts/plane_check.py` |
 | #21 | Charter section 7: the manager agent named in the charter is not a registered definition | بسته | بسته | `8c757b4`، `11_CONTROL/agents/AGT-7DE1AB28-structure-manager`، `skills/conversation-memory/SKILL.md` |
 | #22 | Charter section 3: only SuperAGI has a standing reference map; harness2 and claude-obsidian live in prose history | بسته | بسته | `6e7121a`، `02_WIKI/reference_maps/harness2-to-hades-map.md`، `02_WIKI/reference_maps/claude-obsidian-to-hades-map.md` |
 | #24 | Charter section 5: no memory plane can detect a contradiction | بسته | بسته | `dde3cad`، `scripts/memory.py`، `rules/memory.schema.json` |
@@ -32,6 +32,5 @@
 
 ## وضعیت‌ها
 
-**0 باز · 1 نیمه · 0 اصلاح‌شده · 21 بسته** — جمعاً 22 ایشیو.
+**0 باز · 0 نیمه · 0 اصلاح‌شده · 22 بسته** — جمعاً 22 ایشیو.
 
-- **#20** نگاشت هشت پلین و گیتش (۹a561d5) و فیلد plane برای همهٔ درس‌ها (dde3cad) و مسیرِ ثبت‌شدهٔ حافظهٔ گفتگو با ایجنتِ مدیر و اسکیلش (8c757b4) ساخته شد. آنچه مانده خواندنِ *زندهٔ* گفتگوست: امروز تنها راه، واردکردن صریح فایل به دفتر درس است و هیچ دری در ۱۲_RUNTIME این کار را خودکار نمی‌کند.

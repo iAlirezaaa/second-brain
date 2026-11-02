@@ -6,6 +6,26 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Changed
+- **Two documents stopped typing a number they could not keep.** The memory-plane map and
+  `ROADMAP.md` phase 44 both stated the lesson ledger's size as measured ("27 row(s), 27
+  evergreen"); the 28th lesson — added for the CI defect below — made both sentences false on the
+  day they were written, and turned a true rule into a failing assertion. The count now comes from
+  `python scripts/memory.py --windows` wherever it is needed, the docs point at that command
+  instead of quoting its output, and a test refuses the map if it ever freezes a count again. A
+  measurement that has to be re-typed by hand is not a measurement.
+- **Issue #20 closed, and the last row that was not.** The charter §5/§11 issue had carried a
+  `partial` note since phase 41 saying the conversation-memory criterion was unmet. Re-audited
+  against its own four acceptance criteria, each one is met and each is proved by a command run on
+  this tree: the plane map table, `scripts/plane_check.py` as gate 3 of 12 with four refusal tests,
+  `kb.py search` returning only tracked repo prose with the golden set green, and the eleven-step
+  path in `02_WIKI/reference_maps/conversation-memory-path.md` — import, adapter projection,
+  propose, evaluate, human `--approve`, recall, MCP doors — with the refusal and the test named per
+  step. What is *not* shipped is now stated as a refusal rather than a gap: no door reads a live
+  session by itself, because "No automatic session discovery" (phase 26) and charter §2 forbid a
+  scanner in the write path. `python scripts/issues.py --fetch` reports the ledger and GitHub in
+  agreement: 22 issues, 0 open.
+
 ### Fixed
 - **The workflows now clone what the version gate judges.** Cutting `v0.1.0` produced two CI runs
   of the same tree with opposite verdicts: the tag-event run was green, and the branch run 1m

@@ -479,10 +479,11 @@ rules are "local deterministic parsing, every edge explained, no vector store").
       gate row rather than a stale certainty (Graphiti's bi-temporal edges, minus the LLM).
       `rules/memory.schema.json` is version 3; `--check` refuses a stale or impossible window,
       `--recall` marks it and the MCP `memory_recall` door appends the same `recall_mark()`, so an
-      agent never sees a friendlier answer than a human does. Measured 2026-11-02
-      (`python scripts/memory.py --windows`): 27 row(s), 27 evergreen, 0 current, 0 stale, 0
-      invalid — which is why absent `expires` means evergreen rather than "aged by `date`", a
-      claim no row made.
+      agent never sees a friendlier answer than a human does. Measured when the row was written
+      (`python scripts/memory.py --windows`): no shipped row carried either field, so the counts
+      were 0 current / 0 stale / 0 invalid — which is why absent `expires` means evergreen rather
+      than "aged by `date`", a claim no row made. The row count is deliberately not quoted here: a
+      typed count goes false the next time a lesson lands, and `--windows` prints the live number.
 - [x] 🔵 **S** `kb.py --related <note>` — deterministic top-k neighbours from the FTS5 index, so
       "related notes" needs no embedding activation (Smart Connections' value, none of its cost).
       Ranked by cosine of IDF-weighted term vectors, ties on `(-shared, path)`, each line printing
@@ -497,10 +498,12 @@ rules are "local deterministic parsing, every edge explained, no vector store").
       graphify's `EXTRACTED | INFERRED | AMBIGUOUS` edge schema (`docs/how-it-works.md`, "Confidence
       tagging"), whose third label is "Uncertain — flagged in the report for manual review": an
       uncertain edge is escalated, not silently kept in the graph.
-- [ ] 🔵 **S** A link-graph readout in `health.py`: degree-0 notes (a page nothing points to is a
-      page retrieval cannot reach) and bridge notes (one link joining two otherwise separate
-      clusters). Their god-node/Leiden signal, computed from the wikilinks already in the vault —
-      no NetworkX, no embeddings, no new dependency.
+- [ ] 🔵 **S** A link-graph readout in `health.py`: degree-0 notes and bridge notes (one link
+      joining two otherwise separate clusters). Degree-0 is a **navigation** defect, not a retrieval
+      one — full-text search reaches every indexed note whether or not anything links to it, and the
+      first draft of this row claimed otherwise; what an orphan cannot do is be *arrived at* by a
+      human or an agent following links out of the vault. Their god-node/Leiden signal, computed
+      from the wikilinks already in the vault — no NetworkX, no embeddings, no new dependency.
 - [ ] 🔵 **S** `schema_version` stamped inside every generated JSON file, so a reader can tell
       which contract wrote it and a gate can refuse a stale one instead of mis-parsing it
       (graphify stamps `graph.schema_version` in its `graph.json` "so integrations can detect
