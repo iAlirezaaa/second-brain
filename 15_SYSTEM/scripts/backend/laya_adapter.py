@@ -87,7 +87,7 @@ def decide(state, questions, min_confidence=DEFAULT_MIN_CONFIDENCE, model="auto"
     _validate(state, questions, min_confidence, model)
     if not enabled():
         raise DecisionRefused("Laya is opt-in: set SBO_LAYA_ENABLED=1 on this machine")
-    if sys.version_info < (3, 10):
+    if router is None and sys.version_info < (3, 10):
         raise DecisionRefused("Laya requires Python 3.10+; keep the core on Python 3.9 if needed")
     if router is None:
         try:
