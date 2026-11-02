@@ -12,6 +12,7 @@ import re
 import sqlite3
 import sys
 import uuid
+import twin_world
 from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
@@ -558,7 +559,9 @@ def main(argv=None):
     p.add_argument("--query", required=True)
     p = sub.add_parser("twin")
     p.add_argument("session")
-    p.add_argument("--plan", required=True, help="JSON array file; read-only state simulation")
+    p.add_argument("--plan", required=True, help="JSON array file; read-only task simulation")
+    p = sub.add_parser("twin-files")
+    p.add_argument("--plan", required=True, help="JSON array file; in-memory file overlay")
     args = parser.parse_args(argv)
     root = Path(args.root).resolve()
     try:
@@ -582,11 +585,13 @@ def main(argv=None):
             result = {"skills": skills(root, args.query)}
         elif args.command == "adhd":
             result = adhd(root, args.query)
-        else:
+        elif args.command in ("twin", "twin-files"):
             file = Path(args.plan).resolve()
             if not file.is_file() or file.stat().st_size > 30000:
                 raise Refused("twin plan must be a file of at most 30 KB")
-            result = twin(root, args.session, json.loads(file.read_text(encoding="utf-8")))
+            steps = json.loads(file.read_text(encoding="utf-8"))
+            result = (twin(root, args.session, steps) if args.command == "twin"
+                      else twin_world.simulate(root, steps))
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0
     except (Refused, OSError, sqlite3.Error, ValueError) as exc:
