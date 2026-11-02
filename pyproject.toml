@@ -1,6 +1,6 @@
 [project]
 name = "second-brain-os"
-version = "0.0.3"
+version = "0.1.0"
 description = "An AI-augmented second brain: a plain-markdown vault a human curates and AI agents maintain"
 readme = "README.md"
 requires-python = ">=3.9"

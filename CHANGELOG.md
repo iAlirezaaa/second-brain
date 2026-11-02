@@ -1,4 +1,4 @@
-# Changelog — second-brain
+# Changelog — Second Brain OS
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
@@ -6,7 +6,81 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+Nothing unreleased. Every change sitting in the tree is inside `## [0.1.0]` below; work that has
+not been written yet is a row in `ROADMAP.md`, not an entry here — this section only fills when a
+change lands and the version has not been released yet.
+
+## [0.1.0] - 2026-11-02
+
+The first release that answers the whole brief: the repo keeps its own version, tells a stranger
+how to work in it, judges its own designs with reviewers that share no context with the author,
+and borrows only the schemas peers proved. 692 tests, 12 gates, 0 open issues.
+
 ### Added
+- **Phase 44, three of six rows: peer practices that cost no dependency** —
+  `15_SYSTEM/scripts/backend/tools_kit.py` now carries one closed behaviour vocabulary
+  (`read_only` / `idempotent` / `destructive`) and a class that declares nothing is carried as
+  `destructive`, the worst case, rather than read as harmless;
+  `python 15_SYSTEM/scripts/mcp_server.py --check-tools` audits 13 door tools, 6 engine tools and
+  3 agent records against the actor `tool_allowlist` (measured: 0 destructive).
+  `rules/memory.schema.json` is version 3 and a lesson may carry `verified_at` / `expires`:
+  a stale row is a named gate row (`--check` refuses, `--windows` counts, `--recall` marks, and
+  the MCP `memory_recall` door appends the identical mark, so an agent never sees a friendlier
+  answer than a human does). Measured before the default was chosen — 27 rows, all evergreen,
+  because no shipped row states a window; keying the rule on `date` would have aged every row by
+  a claim it never made. `kb.py --related` ranks the FTS5 terms `ingest` already stored by inverse
+  document frequency and prints the evidence each line stood on.
+- **`kb.py --related` refuses the repo's own surface** — both a plain overlap ratio and the
+  IDF-weighted one answered "what is near the memory-planes map?" with ROADMAP.md, CHANGELOG.md
+  and HANDOFF.md. The cause was taxonomy, not arithmetic: a document at the repo root mentions
+  every word, so it is near every note and about none. `--related` now ranks only notes inside
+  zones, states how many shelf documents it skipped (10 here, from 56 indexed notes), refuses when
+  the note you named is one of them, and leaves `search` untouched — that question is *where is
+  this written*, not *what resembles it*.
+- **Phase 43: the elephant/goldfish method is a gate, not a slogan** — `scripts/goldfish_check.py`
+  judges a review artifact: five stages in order, a roster where a reviewer that did not run is
+  never counted as zero findings, finding ids that cannot move between rounds, a comprehension
+  section that must paraphrase in two named headings, a `declined` row that must carry a reason, an
+  escalated row that must be escalated, and every citation checked with `clone_readable()`.
+  8 personae in `11_CONTROL/reviewers/`, three skills (`elephant-draft`, `goldfish-review`,
+  `drift-report`) registered through the plan door, and the stop condition kept verbatim: a harness
+  with no subagent tool is told that a review in the same context is not a Goldfish review.
+  `--self-test` runs 12 cases (the honest artifacts pass, every lie is refused); the gate is the
+  twelfth entry of `health.py`.
+- **Phase 42: an eval that cannot share examples with training** — a tracked independent eval set
+  (`tests/fixtures/retrieval-independent-eval.json`, 6 self-contained cases with their provenance
+  written in the fixture) and `sources.py dataset-eval-gate`, which exits 1 and prints the training
+  id when any eval case id appears in the training manifest. `compare-benchmarks --claim --margin`
+  returns `IMPROVEMENT` only when every repeat raises **both** recall and MRR past the margin, and
+  refuses a claim with no recorded base before it renders a verdict.
+- **Phase 41: the manager agent, and a conversation path that says what it does not do** —
+  `AGT-7DE1AB28` is a registered proposer whose `tool_allowlist` holds no approve tool, so
+  `Registry.execute` refuses its own plan and the human stays the only signer;
+  `skills/conversation-memory` plus `02_WIKI/reference_maps/conversation-memory-path.md` give one
+  row per step (import → rebuild → propose --quote → evaluate → approve --approve), where an
+  invented quote is refused and nothing ever scans a history folder.
+- **Phase 40: the lessons ledger grew a plane and learned to disagree** — `plane` on every row,
+  read from `system.json → memory_planes` so no second taxonomy can drift, with an additive
+  `--migrate-planes --write` that typed all 27 shipped rows and deleted nothing; and a contradiction
+  rule measured before it was written (325 active pairs, closest same-plane shared-topic pair 0.31
+  and *agreeing*, opposite verdicts 0.00 at every threshold), so the bar is cue Jaccard >= 0.50 and
+  the shipped ledger holds 0 contradictions — nothing was reclassified to make a number look good.
+- **Phase 39: the two missing reference maps** — `harness2-to-hades-map.md` (15 rows) and
+  `claude-obsidian-to-hades-map.md` (16 rows) in the shape the SuperAGI map already had, every
+  adopted row citing the script **and** the test. Enumerated by `02_WIKI/indexes/reference-maps.md`
+  instead of wikilinked, because `install.py` ships `reference_maps/` but not `indexes/`, so a link
+  inside a map would dangle in every installed home.
+- **Phase 38: a stranger is told how to work here** — `CONTRIBUTING.md` rewritten as the protocol
+  in working order (issue first, test first, the registry door, the shelf, `doc_report.py --write`
+  in the same commit, the version derived not typed, a goldfish review last) with all twelve gates
+  named in a table, and `.github/CODEOWNERS` over the files where a quiet edit does the most damage.
+- **The method the owner asked to apply to the repo itself** — `02_WIKI/reference_maps/` now answers
+  for four peers rather than three: `elephant-goldfish-to-hades-map.md` and
+  `graphify-to-hades-map.md` record what was taken (EGM's stages, isolation and stop condition;
+  graphify's edge confidence, ambiguity-escalates-to-a-human and stamped `schema_version`) and what
+  was refused with the reason (plugin packaging; ~40 tree-sitter grammars, NetworkX, graspologic,
+  an LLM semantic pass, a 3.10 floor).
+
 - **Phase 37, second half: the python floor is now something CI can install** — on 2026-11-01
   `ubuntu-latest` moved to Ubuntu 26.04, `actions/python-versions` carries no CPython 3.9 x64
   build for it, and **every `ci` and `loop` run died inside `setup-python`** (five red runs,

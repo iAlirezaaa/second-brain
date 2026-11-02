@@ -461,20 +461,36 @@ their eval harness (mem0, Khoj) while a claim with no public floor is a rumour.*
 entry of `scripts/health.py` and prints an OK line inside an installed home, where no reviewer set
 is installed. Registered through the plan door: `hades.py doctor` → 22 records, `errors: 0`.*
 
-## Phase 44 — Peer practices worth stealing, and the ones worth refusing · 🔵
+## Phase 44 — Peer practices worth stealing, and the ones worth refusing · 🟡
 
 *Surveyed against mem0, Letta/MemGPT, Khoj, Basic Memory, Graphiti/Zep, SuperAGI and
 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) (measured 2026-11-02: Apache-2.0,
 Python, 140,699 stars, last push 2026-11-01 — the closest peer this repo has, because its stated
 rules are "local deterministic parsing, every edge explained, no vector store").*
 
-- [ ] 🔵 **S** MCP tool behaviour tags (`read_only` / `destructive` / `idempotent`) on every
+- [x] 🔵 **S** MCP tool behaviour tags (`read_only` / `destructive` / `idempotent`) on every
       door, cross-checked against the agent `tool_allowlist` (Basic Memory's progressive tool
-      discovery, without its AGPL code).
-- [ ] 🔵 **M** Validity windows on lessons (`verified_at`, `expires`) so an expired claim is a
+      discovery, without its AGPL code). `15_SYSTEM/scripts/backend/tools_kit.py` carries the one
+      closed vocabulary and `UNDECLARED_TAG = "destructive"`, so a class that declares nothing is
+      carried as the worst case instead of read as harmless;
+      `python 15_SYSTEM/scripts/mcp_server.py --check-tools` measures the house: 13 door tools
+      tagged, 6 engine tools tagged, 3 agent records cross-checked, 0 destructive.
+- [x] 🔵 **M** Validity windows on lessons (`verified_at`, `expires`) so an expired claim is a
       gate row rather than a stale certainty (Graphiti's bi-temporal edges, minus the LLM).
-- [ ] 🔵 **S** `kb.py --related <note>` — deterministic top-k neighbours from the FTS5 index, so
+      `rules/memory.schema.json` is version 3; `--check` refuses a stale or impossible window,
+      `--recall` marks it and the MCP `memory_recall` door appends the same `recall_mark()`, so an
+      agent never sees a friendlier answer than a human does. Measured 2026-11-02
+      (`python scripts/memory.py --windows`): 27 row(s), 27 evergreen, 0 current, 0 stale, 0
+      invalid — which is why absent `expires` means evergreen rather than "aged by `date`", a
+      claim no row made.
+- [x] 🔵 **S** `kb.py --related <note>` — deterministic top-k neighbours from the FTS5 index, so
       "related notes" needs no embedding activation (Smart Connections' value, none of its cost).
+      Ranked by cosine of IDF-weighted term vectors, ties on `(-shared, path)`, each line printing
+      the terms it stood on and how many notes carry them. Two measurements shaped it: a plain
+      overlap ratio and a weighted one both answered "what is near the memory-planes map?" with
+      ROADMAP.md, CHANGELOG.md and HANDOFF.md, because a document at the repo root mentions every
+      word — so the pool is zone notes only, the answer states how many shelf documents it skipped
+      (10 here), naming one is refused, and `search` still returns them.
 - [ ] 🔵 **S** Confidence on every edge of the link graph — `extracted` (the author wrote the
       wikilink), `inferred` (a gate or the indexer deduced it), `ambiguous` (a row on
       `14_CANDIDATES/`, which is what "uncertain" means here: it waits for a human). Taken from
