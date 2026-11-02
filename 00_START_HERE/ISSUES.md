@@ -19,27 +19,19 @@
 | #12 | Registry is create-only, and the declared supersedes rule is not enforced | بسته | بسته | — |
 | #13 | A markdown-layout record is created invisible: news and wiki_note escape every gate | بسته | بسته | — |
 | #14 | Two contracts claim one file: the note gate judges a registry record as a broken note | بسته | بسته | — |
-| #15 | state_fingerprint counts gitignored, regenerated `15_SYSTEM/generated/` -- an `index` run ages every probe and no clone can reproduce a base | اصلاح‌شده | باز | `c75bf27`، `scripts/common.py`، `tests/test_phase36_doors_tell_the_truth.py` |
-| #16 | Refusing human-plane `09_OPERATIONS` says "denied machine plane", and AGENTS.md/ACCESS.md/SYSTEM_MAP.md deny a subfolder the config never named | اصلاح‌شده | باز | `c75bf27`، `15_SYSTEM/scripts/hades.py`، `AGENTS.md` |
-| #17 | `memory.py --add --supersedes <unknown id>` writes the row; the ledger only fails at --check, after the render | اصلاح‌شده | باز | `c75bf27`، `scripts/memory.py`، `tests/test_phase36_doors_tell_the_truth.py` |
+| #15 | state_fingerprint counts gitignored, regenerated `15_SYSTEM/generated/` -- an `index` run ages every probe and no clone can reproduce a base | بسته | بسته | `c75bf27`، `scripts/common.py`، `tests/test_phase36_doors_tell_the_truth.py` |
+| #16 | Refusing human-plane `09_OPERATIONS` says "denied machine plane", and AGENTS.md/ACCESS.md/SYSTEM_MAP.md deny a subfolder the config never named | بسته | بسته | `c75bf27`، `15_SYSTEM/scripts/hades.py`، `AGENTS.md` |
+| #17 | `memory.py --add --supersedes <unknown id>` writes the row; the ledger only fails at --check, after the render | بسته | بسته | `c75bf27`، `scripts/memory.py`، `tests/test_phase36_doors_tell_the_truth.py` |
 | #20 | Charter section 5/11: the eight memory planes have no mapping, no conversation-memory reader, and kb.py skips this repo's own prose | نیمه | باز | `02_WIKI/reference_maps/eight-memory-planes.md`، `scripts/plane_check.py` |
-| #21 | Charter section 7: the manager agent named in the charter is not a registered definition | باز | باز | — |
-| #22 | Charter section 3: only SuperAGI has a standing reference map; harness2 and claude-obsidian live in prose history | باز | باز | — |
-| #24 | Charter section 5: no memory plane can detect a contradiction | باز | باز | — |
-| #25 | Charter section 5: lessons are not typed by plane, so error memory is unlabelled | باز | باز | — |
+| #21 | Charter section 7: the manager agent named in the charter is not a registered definition | بسته | بسته | `8c757b4`، `11_CONTROL/agents/AGT-7DE1AB28-structure-manager`، `skills/conversation-memory/SKILL.md` |
+| #22 | Charter section 3: only SuperAGI has a standing reference map; harness2 and claude-obsidian live in prose history | بسته | بسته | `6e7121a`، `02_WIKI/reference_maps/harness2-to-hades-map.md`، `02_WIKI/reference_maps/claude-obsidian-to-hades-map.md` |
+| #24 | Charter section 5: no memory plane can detect a contradiction | بسته | بسته | `dde3cad`، `scripts/memory.py`، `rules/memory.schema.json` |
+| #25 | Charter section 5: lessons are not typed by plane, so error memory is unlabelled | بسته | بسته | `dde3cad`، `scripts/memory.py`، `scripts/plane_check.py` |
 | #27 | Fresh install fails plane_check: the dev system.json is copied into a template-shaped home | بسته | بسته | — |
-| #39 | zone_check: an action other than "edit" skips the agent_edit_never rule | اصلاح‌شده | باز | `f73a378`، `scripts/zone_check.py`، `tests/test_phase3.py` |
+| #39 | zone_check: an action other than "edit" skips the agent_edit_never rule | بسته | بسته | `f73a378`، `scripts/zone_check.py`، `tests/test_phase3.py` |
 
 ## وضعیت‌ها
 
-**4 باز · 1 نیمه · 4 اصلاح‌شده · 13 بسته** — جمعاً 22 ایشیو.
+**0 باز · 1 نیمه · 0 اصلاح‌شده · 21 بسته** — جمعاً 22 ایشیو.
 
-- **#15** (اصلاح‌شده، ایشیو باز) ۱۵_SYSTEM/generated از هویت حذف شد؛ ایشیو در گیت‌هاب باز است.
-- **#16** (اصلاح‌شده، ایشیو باز) ردکردن حالا نام قانونِ اجراشده و پلینِ زون را می‌گوید و سه سند همان چیزی را می‌گویند که کانفیگ می‌گوید.
-- **#17** (اصلاح‌شده، ایشیو باز) supersedes ناشناس و خودارجاعی پیش از نوشتن رد می‌شوند.
-- **#20** نگاشت هشت پلین و گیتش (فاز ۲۶) و جست‌وجوی kb.py روی پیکرهٔ خود مخزن (فاز ۲۷) ساخته شد؛ خواندنِ زندهٔ حافظهٔ گفتگو هنوز ساخته نشده — تنها مسیر موجود، واردکردن صریحِ فایل است.
-- **#21** مدیرِ نام‌برده در چارتر هیچ تعریفِ ثبت‌شده‌ای در ۱۱_CONTROL/agents ندارد؛ تصمیمش (ثبت یا حذف از چارتر) هنوز گرفته نشده.
-- **#22** فقط SuperAGI نگاشت مرجع دارد؛ harness2 و claude-obsidian در تاریخچهٔ نثر مانده‌اند.
-- **#24** هیچ پلینی تناقض را تشخیص نمی‌دهد؛ قبل از کد، تعریفِ قابل‌اندازه‌گیریِ «تناقض» لازم است.
-- **#25** درس‌ها هنوز فیلد plane/kind ندارند؛ ۲۷ ردیف موجود مهاجرت لازم دارند.
-- **#39** (اصلاح‌شده، ایشیو باز) اکشن به مجموعهٔ بسته تبدیل شد و مثال ایشیو حالا رد می‌شود؛ ایشیو در گیت‌هاب باز مانده چون این محیط توکن ندارد.
+- **#20** نگاشت هشت پلین و گیتش (۹a561d5) و فیلد plane برای همهٔ درس‌ها (dde3cad) و مسیرِ ثبت‌شدهٔ حافظهٔ گفتگو با ایجنتِ مدیر و اسکیلش (8c757b4) ساخته شد. آنچه مانده خواندنِ *زندهٔ* گفتگوست: امروز تنها راه، واردکردن صریح فایل به دفتر درس است و هیچ دری در ۱۲_RUNTIME این کار را خودکار نمی‌کند.
