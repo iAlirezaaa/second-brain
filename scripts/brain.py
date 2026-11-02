@@ -7,6 +7,7 @@ tasks, approve itself, send data to models or silently publish a skill.
 import argparse
 import hashlib
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -39,6 +40,14 @@ class Refused(ValueError):
     pass
 
 
+def _write_private(path, text):
+    """Create a new temporary UTF-8 artifact owner-only; caller replaces atomically."""
+    fd = os.open(str(path), os.O_CREAT | os.O_EXCL | os.O_WRONLY |
+                 getattr(os, "O_NOFOLLOW", 0), 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as stream:
+        stream.write(text)
+
+
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
@@ -56,7 +65,10 @@ def _storage(root, create=False):
         if item.is_symlink():
             raise Refused("private storage cannot be a symlink")
     if create:
-        directory.mkdir(parents=True, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if os.name != "nt":
+            os.chmod(base, 0o700)
+            os.chmod(directory, 0o700)
     return directory / "sessions.sqlite3"
 
 
@@ -67,6 +79,19 @@ def connect(root, create=False):
     if db.is_symlink():
         raise Refused("database cannot be a symlink")
     if create:
+        # SQLite's default create permissions can inherit a permissive umask.
+        # Precreate the database with owner-only access before SQLite opens it.
+        try:
+            fd = os.open(str(db), os.O_CREAT | os.O_EXCL | os.O_WRONLY |
+                         getattr(os, "O_NOFOLLOW", 0), 0o600)
+        except FileExistsError:
+            pass
+        else:
+            os.close(fd)
+        if db.is_symlink():
+            raise Refused("database cannot be a symlink")
+        if os.name != "nt":
+            os.chmod(db, 0o600)
         conn = sqlite3.connect(str(db), timeout=5)
         conn.execute("PRAGMA journal_mode=WAL")
         conn.executescript("""
@@ -356,7 +381,7 @@ def handoff(root, sid, summary, next_action, risks):
             raise Refused("handoff target cannot be a symlink")
         temporary = directory / ("." + sid + "-" + uuid.uuid4().hex + ".tmp")
         try:
-            temporary.write_text(body, encoding="utf-8")
+            _write_private(temporary, body)
             temporary.replace(target)
         finally:
             if temporary.exists():
@@ -401,7 +426,7 @@ def close(root, sid, outcome, owner_approved=False):
         draft += "\n## Review\nOnly promote when reusable, independently evaluated, and the owner approves.\n"
         tmp = folder / ("." + sid + "-" + uuid.uuid4().hex + ".tmp")
         try:
-            tmp.write_text(draft, encoding="utf-8")
+            _write_private(tmp, draft)
             tmp.replace(file)
         finally:
             if tmp.exists():
