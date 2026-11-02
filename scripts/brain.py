@@ -5,6 +5,7 @@ This is a human-invoked coordination kernel, not a shell agent. It cannot execut
 tasks, approve itself, send data to models or silently publish a skill.
 """
 import argparse
+import hashlib
 import json
 import re
 import sqlite3
@@ -97,6 +98,75 @@ def event(conn, sid, kind, details):
     conn.execute("INSERT INTO events(session_id,kind,details,at) VALUES(?,?,?,?)",
                  (sid, kind, json.dumps(details, ensure_ascii=False, sort_keys=True), now()))
 
+
+
+def _invalidate_handoff(conn, sid, reason):
+    """Any change after a handoff makes that handoff stale, transactionally."""
+    row = conn.execute("SELECT handoff FROM sessions WHERE id=?", (sid,)).fetchone()
+    if row is not None and row["handoff"]:
+        conn.execute("UPDATE sessions SET handoff=NULL WHERE id=?", (sid,))
+        conn.execute("""UPDATE tasks SET state='todo',evidence=NULL,updated_at=?
+                        WHERE session_id=? AND category='handoff'""", (now(), sid))
+        event(conn, sid, "handoff_stale", {"reason": reason})
+
+
+def preflight(root, sid, actor, task_id=None):
+    """Read-only safety gate before an orchestrator invokes any agent work tool."""
+    if not sid:
+        raise Refused("session required before agent work")
+    with closing(connect(root)) as conn:
+        session = _session(conn, sid, active=True)
+        if session["actor"] != actor:
+            raise Refused("actor does not own session; refusing cross-agent execution")
+        tasks = _tasks(conn, sid)
+    missing = [t["category"] for t in tasks if
+               t["category"] in ("skills", "plan") and t["state"] != "done"]
+    if missing:
+        raise Refused("skill review and task plan must be completed before tool execution: " +
+                      ", ".join(missing))
+    if task_id is not None:
+        if isinstance(task_id, bool) or not isinstance(task_id, int):
+            raise Refused("task_id must be an integer")
+        chosen = [t for t in tasks if t["id"] == task_id]
+        if not chosen or chosen[0]["category"] != "work" or chosen[0]["state"] != "todo":
+            raise Refused("task_id must select an open work task in this session")
+    elif not any(t["category"] == "work" and t["state"] == "todo" for t in tasks):
+        raise Refused("create or reopen a work task before invoking tools")
+    return {"session": sid, "actor": actor,
+            "task_id": task_id, "preflight": "passed", "writes_allowed": "by tool gate only"}
+
+
+def audit_tool(root, sid, actor, tool, result, payload, task_id=None):
+    """Private metadata-only audit; never persist tool arguments or response bodies."""
+    if result not in ("ok", "failed", "attempt"):
+        raise Refused("tool audit result is invalid")
+    tool = require_text(tool, "tool name", 120)
+    digest = hashlib.sha256(str(payload).encode("utf-8", errors="replace")).hexdigest()
+    with closing(connect(root, create=True)) as conn:
+        with conn:
+            session = _session(conn, sid, active=True)
+            if session["actor"] != actor:
+                raise Refused("actor does not own session")
+            event(conn, sid, "tool_" + result, {
+                "tool": tool, "result_sha256": digest, "result_length": len(str(payload)),
+                "task_id": task_id})
+            _invalidate_handoff(conn, sid, "tool event after handoff")
+    return {"event": "tool_" + result, "session": sid, "digest": digest}
+
+
+def timeline(root, sid, limit=100):
+    """Human-readable event journal for one session without exposing source payloads."""
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 1000:
+        raise Refused("event limit must be 1-1000")
+    with closing(connect(root)) as conn:
+        s = _session(conn, sid)
+        rows = conn.execute(
+            """SELECT id,kind,details,at FROM events WHERE session_id=?
+               ORDER BY id DESC LIMIT ?""", (sid, limit)).fetchall()
+    return {"session": sid, "actor": s["actor"],
+            "events": [{"id": r["id"], "kind": r["kind"],
+                        "details": json.loads(r["details"]), "at": r["at"]}
+                       for r in reversed(rows)]}
 
 def skills(root, query=""):
     folder = Path(root) / "skills"
@@ -197,6 +267,7 @@ def add(root, sid, summary):
                                   VALUES(?,'work',?,'todo',NULL,?,?)""",
                                (sid, summary, now(), now()))
             event(conn, sid, "task_added", {"task_id": cur.lastrowid, "summary": summary})
+            _invalidate_handoff(conn, sid, "new task added")
             return {"task_id": cur.lastrowid, "state": "todo", "summary": summary}
 
 
@@ -211,6 +282,10 @@ def evidence_path(root, raw):
     canonical = Path(root).resolve()
     if canonical not in candidate.parents or not candidate.is_file():
         raise Refused("evidence file does not exist inside the brain")
+    relative = candidate.relative_to(canonical)
+    if any(part.startswith(".env") or part in (".brain-data", ".kb", ".git", ".secrets", "secrets", "12_RUNTIME", "13_LAB", "14_CANDIDATES")
+           for part in relative.parts):
+        raise Refused("resolved evidence path enters a protected or private zone")
     if any(part in (".brain-data", ".kb", ".git", ".secrets", "12_RUNTIME", "13_LAB")
            for part in path.parts):
         raise Refused("private or disposable files cannot be shared as durable evidence")
@@ -245,6 +320,8 @@ def finish(root, sid, task_id, evidence):
             conn.execute("UPDATE tasks SET state='done',evidence=?,updated_at=? WHERE id=?",
                          (path, now(), task_id))
             event(conn, sid, "task_completed", {"task_id": task_id, "evidence": path})
+            if task["category"] != "handoff":
+                _invalidate_handoff(conn, sid, "task state changed")
     return {"task_id": task_id, "state": "done", "evidence": path}
 
 
@@ -434,6 +511,13 @@ def main(argv=None):
     p.add_argument("--evidence", required=True)
     p = sub.add_parser("status")
     p.add_argument("session")
+    p = sub.add_parser("trace")
+    p.add_argument("session")
+    p.add_argument("--limit", type=int, default=100)
+    p = sub.add_parser("check")
+    p.add_argument("session")
+    p.add_argument("--actor", required=True)
+    p.add_argument("--task-id", type=int)
     p = sub.add_parser("handoff")
     p.add_argument("session")
     p.add_argument("--summary", required=True)
@@ -461,6 +545,10 @@ def main(argv=None):
             result = finish(root, args.session, args.task_id, args.evidence)
         elif args.command == "status":
             result = view(root, args.session)
+        elif args.command == "trace":
+            result = timeline(root, args.session, args.limit)
+        elif args.command == "check":
+            result = preflight(root, args.session, args.actor, args.task_id)
         elif args.command == "handoff":
             result = handoff(root, args.session, args.summary, args.next, args.risks)
         elif args.command == "close":
