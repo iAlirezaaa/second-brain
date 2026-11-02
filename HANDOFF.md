@@ -21,7 +21,7 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 837 |
+| tests collected (`python -m unittest discover -s tests`) | 843 |
 | health gates (`python scripts/health.py`) | 15 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
@@ -37,14 +37,14 @@ status: active
 ## 2. In-Flight Work
 
 - **Phase 46 is the work in this tree — an installed brain can be upgraded.** `python
-  scripts/install.py --upgrade HOME` (`scripts/install.py:644`) judges every path this engine ships
+  scripts/install.py --upgrade HOME` (`scripts/install.py::do_upgrade`) judges every path this engine ships
   against `15_SYSTEM/generated/install.json`, the record an install lays inside the home, and prints
   one verdict per path: `UPDATED` / `ADDED` / `ABSENT` (restore) / `KEPT` (a person edited it here —
   never touched, and its old *and* present digests carry into the next record) / `YOURS` (a file at a
   shipped path with no record of it — left exactly where it is, deliberately not recorded, the rest
-  of the home still moves, exit 1). Nothing is deleted; `PROTECTED_DIRS` (`scripts/install.py:100`)
+  of the home still moves, exit 1). Nothing is deleted; `scripts/install.py::PROTECTED_DIRS`
   keeps `12_RUNTIME/`, `13_LAB/`, the shelf, the ledger, `.kb/`, `.brain-data/`, `.obsidian/` and
-  backups out of the plan, and `plan_refusals` (`scripts/install.py:571`) stops the act when the plan
+  backups out of the plan, and `scripts/install.py::plan_refusals` stops the act when the plan
   itself names one — a bug in the installer, not in the home. `--dry-run` compares the home's
   `tree_fingerprint` on entry and exit, so "nothing was written" is measured; every write is
   re-hashed from disk before the record is restamped, and each act appends a line to
@@ -52,8 +52,11 @@ status: active
   and `TestTheRealHome`, which installs a home, runs its health and suite, upgrades it with a note in
   `01_INBOX/`, and re-runs both. Two choices differ from the first draft on purpose: a lost engine
   file is restored by default (a home missing a gate script cannot judge itself), and a collision
-  skips-and-reports instead of aborting the act. Not done: the record cannot yet say the engine
-  *removed* a path — the roadmap row asks for a `REMOVED` verdict and a test, not a delete.
+  skips-and-reports instead of aborting the act. A path this engine *retired* is named rather than
+  deleted: `scripts/install.py::judge_removed` reads the record the other way round and prints
+  `ORPHAN` (the home still holds it — kept in the record so the next act reports it again) or `GONE`
+  (the home already lost it — reported once, dropped from the record); `--clean-orphans` was refused
+  because deleting a file means deleting a note someone may have moved into it.
 - **Phase 35 shipped on `phase-35-install-whole-brain`**: an installed brain is now a whole
   brain (issue #27). `scripts/install.py` reads the sixteen zones from
   `15_SYSTEM/config/system.json` and lays them, plus `15_SYSTEM/{scripts,schemas,memory,integrations,migrations,templates}`,
@@ -329,9 +332,10 @@ status: active
   target is still refused by `--target`, and `--upgrade HOME` is the way forward — it rewrites what
   the engine changed, keeps and names what a person edited, and refuses a path its own record cannot
   vouch for. The home config names `tests/test_installed_home.py` as every plane's proof, and a home
-  that deletes it needs a new proof or a narrower map. Two limits stay open: an upgrade cannot yet
-  report a path this engine *removed* (nothing records removals), and nothing syncs two homes — a
-  second device is still a copy, not a replica.
+  that deletes it needs a new proof or a narrower map. A retired path is named, not deleted: an
+  upgrade reports `ORPHAN` while the home still holds it and `GONE` once it does not, and there is no
+  flag that removes either. One limit stays open: nothing syncs two homes — a second device is still
+  a copy, not a replica.
 - **A base is local by construction** (bytes in the gitignored backups). `--recover` is a
   recovery on the machine that saved it.
 - **Python 3.9 floor** holds; CI runs 4 matrices. RAM behaviour on weaker machines is unclaimed.

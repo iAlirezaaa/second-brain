@@ -276,7 +276,7 @@ not the old template folders.*
       8/8 gates OK (12 tracked stores, 4 disposable absent by design); the home suite runs
       5 tests; `memory.py --recall` answers `NO_ENTRY`; `hades.py list` opens the registry.
 - [x] 🔵 Limitation closed by phase 46: the installer has an update path. `--upgrade HOME` judges
-      every shipped path against the digest its own record lays in the home (`scripts/install.py:93`),
+      every shipped path against the digest its own record lays in the home (`scripts/install.py::MANIFEST_REL`),
       so a brain is upgraded in place and a note a person wrote is never overwritten by a script.
 
 ## Phase 36 — Fine-tuning pipeline, only behind an independent eval · 🔵
@@ -629,19 +629,19 @@ on running gates written before half of this roadmap existed. Copying over it wo
 worse: an overwrite deletes a person's thinking in order to deliver a script.*
 
 - [x] 🟢 **M** An install now finishes by hashing what it actually laid, into the home, at
-      `15_SYSTEM/generated/install.json` (`scripts/install.py:93`): one sha256 per shipped path,
+      `15_SYSTEM/generated/install.json` (`scripts/install.py::MANIFEST_REL`): one sha256 per shipped path,
       plus the engine's own bytes for those paths, so a document a home re-measures for itself is
       not read back as an endless pending update. The file declares its contract under
-      `install-manifest` (`scripts/schema_stamp.py:168`), so the repo's stamp gate judges it and
+      `install-manifest` (`scripts/schema_stamp.py::CONTRACTS`), so the repo's stamp gate judges it and
       `--check` refuses a home record with no version in it.
 - [x] 🟢 **M** `python scripts/install.py --upgrade HOME` answers one question per shipped path —
-      *are these the bytes we wrote, or the bytes you wrote* — in `scripts/install.py:382`:
+      *are these the bytes we wrote, or the bytes you wrote* — in `scripts/install.py::judge`:
       `UNCHANGED / UPDATED / ABSENT / ADDED / KEPT / PRESENT / YOURS`, each printed with its path.
-      The plan it judges is the same list an install lays (`ship_plan`, `scripts/install.py:297`),
+      The plan it judges is the same list an install lays (`scripts/install.py::ship_plan`),
       so an upgrade cannot be asked about a path the installer never shipped, or refuse one it did.
 - [x] 🟢 **M** A path the home edited is `KEPT`: never written, named in the output, and carried
       forward into the new record with both its old and its present digest
-      (`final_state`, `scripts/install.py:470`) so the next act still knows it from an edit. A path
+      (`scripts/install.py::final_state`) so the next act still knows it from an edit. A path
       the home holds *without* a record of it is `YOURS` — the same refusal, one level stricter: it
       stays byte-identical, is deliberately left out of the new record (recording an unowned file as
       "what the installer wrote" would teach the next act to overwrite it), the rest of the home
@@ -649,18 +649,28 @@ worse: an overwrite deletes a person's thinking in order to deliver a script.*
       pins both: the file survives, the other engine files land, the second act reports `YOURS`
       again rather than silently rewriting it.
 - [x] 🟢 **S** The brain's own state is out of the installer's business by name, not by hope:
-      `PROTECTED_DIRS` (`scripts/install.py:100`) lists the runtime, lab, quarantine shelf,
+      `scripts/install.py::PROTECTED_DIRS` lists the runtime, lab, quarantine shelf,
       knowledge index, local data, editor folder, backups and the lesson ledger, and
-      `plan_refusals` (`scripts/install.py:571`) stops the act when the *plan itself* lands a real
+      `scripts/install.py::plan_refusals` stops the act when the *plan itself* lands a real
       file there — a bug in this script, caught before it writes. The shelf's `README.md` is the one
       exception the installer ships, and it is stated as an exception.
-- [x] 🟢 **S** Nothing is deleted and `--dry-run` proves it. A file this engine no longer ships stays
-      in the home unread and the closing line says so; a `--dry-run` takes the home's
+- [x] 🟢 **S** Nothing is deleted and `--dry-run` proves it. A file this engine no longer ships is
+      named `ORPHAN` and stays in the home unread, and the closing line counts them; a `--dry-run`
+      takes the home's
       `tree_fingerprint` on entry and on exit and fails if they differ, so "nothing was written" is
       a measurement instead of a promise. Every act that writes re-hashes each file from the disk it
       landed on and only then restamps the record, and appends one line to the act journal this
-      script names at `scripts/install.py:94` — the verdict counts, the refusals and the digest of
+      script names at `scripts/install.py::JOURNAL_REL` — the verdict counts, the refusals and the digest of
       the record that now describes the home.
+- [x] 🟢 **S** The bytes an install lays are the bytes the ship plan says it lays — one plan, read
+      twice (`scripts/install.py::write_doors` takes the plan, not the repo). The agent doors were
+      the exception: reading a door as text and writing it back re-encodes its newlines, so a fresh
+      home could hold a door the engine never shipped, while the record — built from those same
+      mangled bytes — kept calling it `UNCHANGED`. The upgrade cannot see this, because it compares
+      the home against what the *record* claims the engine shipped; the only witness is the record's
+      own two maps agreeing for every path nobody edited, which is what
+      `tests/test_phase46_installer_upgrade.py::test_a_real_install_lays_the_engines_bytes_at_every_shipped_path`
+      demands of a real install.
 - [x] 🔵 **S** Two design choices differ from the first draft of this brief, and both were decided
       against it on purpose. A file the record names but the home lost is **restored**, not left
       absent: a home missing `scripts/probe.py` cannot run its own gates, and a deleted gate is not
@@ -679,10 +689,16 @@ worse: an overwrite deletes a person's thinking in order to deliver a script.*
       "a second upgrade moves nothing at all", and a real home: install, then the installed
       `health.py`, then the installed suite, then a dry run that moves nothing, then an upgrade with
       a note a person wrote in `01_INBOX/` that survives it with front matter the gates still accept.
-- [ ] 🔵 The next step this phase deliberately did not take: an upgrade still cannot tell a home
-      that the engine *removed* a path, because nothing records the removal. The honest witness is a
-      `REMOVED` verdict and a test that a home keeps the orphan and the report names it — not a
-      delete, which is the one thing an installer has no licence to do to a brain it did not think.
+- [x] 🔵 **S** The verdict the first act could not reach, closed in the same phase: an upgrade now
+      names what it cannot ship. `judge` only asks about paths the plan holds, so a path the engine
+      *retired* was invisible — the home kept the file, the record kept its hash, and the act said
+      nothing. `scripts/install.py::judge_removed` reads the record the other way round and reports
+      `ORPHAN` (this engine no longer ships it, the home still holds it: named, kept in the record so
+      the next act reports it again, never deleted) and `GONE` (the home already lost it: reported
+      once, dropped). The dry run names them too, and the closing line counts them instead of
+      promising. A `--clean-orphans` flag was refused: deleting a file this script no longer ships is
+      deleting a note the owner may have moved into it, which is the one thing an installer has no
+      licence to do to a brain it did not think.
 
 ## Distribution & scale (parked) · ⛔/🔵
 

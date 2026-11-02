@@ -44,12 +44,18 @@ wrote?*
              cannot tell your file from an outdated one: the file stays exactly where it is, the
              path is deliberately left out of the new record (recording it would teach the next
              act to overwrite it), everything else still moves, and the run exits 1 with the list
+  ORPHAN     the record names a path this engine no longer ships and the home still holds it:
+             named, kept in the record, and never deleted -- a file an older engine laid may hold
+             notes the owner moved into it, and tidying the record is not a licence to eat the home
+  GONE       the record names it, this engine no longer ships it and the home already lost it:
+             reported once and dropped, because the absence of an absent file is noise
 
 Anything the installer never shipped is not in its business. `protected()` names the brain's own
 state -- `12_RUNTIME/`, `13_LAB/`, `14_CANDIDATES/` except the shelf contract it lays, the lesson
 ledger, `.kb/`, `.brain-data/`, `.obsidian/`, backups -- and a ship plan that lands a real file
 there is a bug in this script, so the run refuses and says which path proves it. Nothing is ever
-deleted: a file this engine no longer ships stays in the home unread, and the closing line says so.
+deleted: a file this engine no longer ships is reported as `ORPHAN`, stays in the home unread, and
+the closing line counts them.
 A file the home *lost* that the record named comes back, because engine scripts are the engine's
 business: a home missing `scripts/probe.py` cannot run its own gates, and a gate that was deleted
 in 2027 is not a decision this act can honour silently.
@@ -111,6 +117,9 @@ YOURS = "YOURS"
 PRESENT = "PRESENT"
 NOT_IN_REPO = "NOT_IN_REPO"
 LAID = "LAID"
+# the two verdicts about a path this engine no longer ships: named, read, never deleted
+ORPHAN = "ORPHAN"
+GONE = "GONE"
 # the verdicts that mean "a byte moves"; `YOURS` means "this path does not move, the rest does"
 WRITING = (UPDATED, ABSENT, ADDED)
 
@@ -157,15 +166,18 @@ def copy_into(src, dst, label, log):
         shutil.copy2(str(src), str(dst))
 
 
-def write_doors(repo, target):
-    """Reuse the repo's validated bytes; render them here if the repo has none yet."""
+def write_doors(plan, target):
+    """Lay each host door as the exact bytes the ship plan says this engine carries for it.
+
+    Reading a door as *text* and writing it back re-encodes its newlines, so the install laid bytes
+    the same script's upgrade hashed differently: the record's two maps disagreed about a file
+    nobody had touched, and the home carried a door the engine never shipped.
+    """
     laid = []
-    for _key, name, rel, mdc in HOSTS:
-        source = repo / rel
-        text = source.read_text(encoding="utf-8") if source.is_file() else render(name, mdc)
+    for _key, _name, rel, _mdc in HOSTS:
         door = target / rel
         door.parent.mkdir(parents=True, exist_ok=True)
-        door.write_text(text, encoding="utf-8")
+        door.write_bytes(candidate_bytes(plan[rel]))
         laid.append(rel)
     return laid
 
@@ -429,6 +441,29 @@ def judge(plan, manifest, target):
     return rows
 
 
+def judge_removed(manifest, plan, target):
+    """(orphans, gone) -- recorded paths this engine no longer ships, read never deleted.
+
+    `judge` can only ask about paths the plan names, so a path the engine *retired* was invisible:
+    the home kept the file, the record kept its hash, and the act said nothing -- which is how a
+    brain quietly accumulates files no engine owns. Naming them is the whole of it. Deleting them
+    is not: a file this script no longer ships may hold notes the owner moved into it, and an
+    installer that eats a home to keep its own tidy is the defect this phase exists to refuse.
+
+    An orphan stays in the record, so the next act reports it again until the owner resolves it by
+    hand; a recorded path the home already lost is `GONE` and leaves the record, because reporting
+    the absence of an absent file forever is noise, not evidence.
+    """
+    recorded = ((manifest or {}).get("files") or {}).keys()
+    target = Path(target)
+    orphans, gone = [], []
+    for rel in sorted(recorded):
+        if rel in plan:
+            continue
+        (orphans if hash_file(target / rel) is not None else gone).append(rel)
+    return orphans, gone
+
+
 def apply_rows(rows, target):
     """(written, failures) -- every write is confirmed by re-hashing the file it landed on."""
     written, failures = [], []
@@ -467,7 +502,7 @@ def remeasure(target, blocked):
     return list(MEASURED_DOCS), lines[-1] if lines else ""
 
 
-def final_state(rows, manifest, target, measured):
+def final_state(rows, manifest, target, measured, preserved=()):
     """(files, engine_bytes) -- the two maps the next act judges itself against.
 
     A `KEPT` row keeps both hashes the record already held. Overwriting them with the home's
@@ -479,10 +514,20 @@ def final_state(rows, manifest, target, measured):
     the installer wrote" would turn the collision into a licence: the next engine change would
     rewrite it as `UPDATED` and the person's file would be gone. Unrecorded, it stays `YOURS` in
     every act until someone decides which file it is.
+
+    An `ORPHAN` (in `preserved`) keeps both hashes for the same reason as a `KEPT`: it *is* what the
+    installer wrote, under an engine that has since stopped shipping it. Dropping it from the record
+    would make the file unowned by anything, and the act after this one would report it as `YOURS`
+    or stay silent -- either way the retirement would be forgotten before the owner saw it.
     """
     recorded = (manifest or {}).get("files") or {}
     engine_record = (manifest or {}).get("engine_bytes") or {}
     files, engine = {}, {}
+    for rel in preserved:
+        if rel in recorded:
+            files[rel] = recorded[rel]
+        if rel in engine_record:
+            engine[rel] = engine_record[rel]
     for row in rows:
         if row.verdict == KEPT:
             if row.rel in recorded:
@@ -506,9 +551,9 @@ def final_state(rows, manifest, target, measured):
     return ordered_files, ordered_engine
 
 
-def write_manifest(repo, target, rows, act, manifest, measured=(), notes=()):
+def write_manifest(repo, target, rows, act, manifest, measured=(), notes=(), orphaned=()):
     """Lay the record, then prove the bytes on disk are the record this function built."""
-    files, engine = final_state(rows, manifest, target, measured)
+    files, engine = final_state(rows, manifest, target, measured, orphaned)
     payload = {
         "installed_at_utc": now_utc(),
         "files": files,
@@ -517,6 +562,7 @@ def write_manifest(repo, target, rows, act, manifest, measured=(), notes=()):
         "engine_version": version_text(repo),
         "kept_edited": [row.rel for row in rows if row.verdict == KEPT],
         "unresolved": [row.rel for row in rows if row.verdict == YOURS],
+        "orphaned": list(orphaned),
         "note": ("`files` is the sha256 of the bytes this home held at the end of the act that "
                  "wrote it, `engine_bytes` the sha256 of the source the repo carried then; the two "
                  "differ for the three documents this home re-measures. The record itself, "
@@ -598,7 +644,10 @@ def do_install(repo, target, log):
     zones = len(cfg.get("zones") or [])
     lay_zones(target, cfg, log)
     stores = lay_plane_stores(target, cfg)
-    doors = write_doors(repo, target)
+    # one plan, read twice: the bytes an install lays are the bytes the record calls the engine's,
+    # which is the only way a fresh home can be judged up to date by its first upgrade
+    plan = ship_plan(repo, cfg)
+    doors = write_doors(plan, target)
     index = init_machine_plane(repo, target, log)
     log.append("home config: %d kinds, %d zones, %d planes proved by %s"
                % (len(cfg.get("kinds") or []), zones,
@@ -609,8 +658,7 @@ def do_install(repo, target, log):
     # else's measurements is lying on principle, so the block is re-measured here, from the
     # installed folder, before the first session reads it.
     remeasured, measure_line = remeasure(target, [])
-    rows = [Row(entry, LAID, "", candidate_bytes(entry))
-            for entry in ship_plan(repo, cfg).values()]
+    rows = [Row(entry, LAID, "", candidate_bytes(entry)) for entry in plan.values()]
     manifest_path, parsed = write_manifest(repo, target, rows, "install", None, remeasured, log)
     if parsed is None:
         print("REFUSED: %s did not read back as the record this act built; an unhashed home "
@@ -670,6 +718,14 @@ def do_upgrade(repo, target, dry_run):
               "act cannot tell your file from an outdated one: left in place, not written, not "
               "recorded)" % rel)
     moving = [row.rel for row in rows if row.verdict in WRITING]
+    orphans, gone = judge_removed(manifest, plan, target)
+    for rel in orphans:
+        print("%-12s %s  (an older engine laid this and this one no longer ships it: the bytes "
+              "stay in the home, unread and undeleted — an installer does not remove a brain's "
+              "files to tidy up its own record)" % (ORPHAN, rel))
+    for rel in gone:
+        print("%-12s %s  (this engine no longer ships it and the home no longer holds it: the "
+              "record lets it go)" % (GONE, rel))
     if dry_run:
         after = common.tree_fingerprint(target)
         print("DRY RUN — %d file(s) would move: %s"
@@ -691,7 +747,8 @@ def do_upgrade(repo, target, dry_run):
               "not restamped, so the next run re-judges every path it named"
               % (len(failures), ", ".join(failures)))
         return 1
-    manifest_path, parsed = write_manifest(repo, target, rows, "upgrade", manifest, measured)
+    manifest_path, parsed = write_manifest(repo, target, rows, "upgrade", manifest, measured,
+                                           orphaned=orphans)
     if parsed is None:
         print("REFUSED: %s did not read back as the record this act built — the record is not "
               "trusted, so no journal line was written" % MANIFEST_REL)
@@ -700,6 +757,7 @@ def do_upgrade(repo, target, dry_run):
         "act": "upgrade", "at_utc": now_utc(), "engine_version": version_text(repo),
         "from_engine": manifest.get("engine_version"), "counts": tally, "written": written,
         "kept_edited": kept, "held_documents": blocked_docs, "unresolved": yours,
+        "orphaned": orphans, "gone": gone,
         "files_hashed": len(parsed["files"]), "manifest_digest": hash_file(manifest_path)})
     print("wrote %d file(s), each re-hashed from disk; kept %d edited file(s) untouched"
           % (len(written), len(kept)))
@@ -707,9 +765,9 @@ def do_upgrade(repo, target, dry_run):
     print("record restamped: %s (%d file(s) hashed, engine %s)"
           % (MANIFEST_REL, len(parsed["files"]), version_text(repo)))
     print("act journaled: %s" % JOURNAL_REL)
-    print("unchanged %d, already present %d — and nothing the home holds that this engine does "
-          "not ship was read, moved or deleted" % (tally.get(UNCHANGED, 0),
-                                                   tally.get(PRESENT, 0)))
+    print("unchanged %d, already present %d, %d path(s) this engine no longer ships named and "
+          "left in place — nothing the home holds was moved aside or deleted"
+          % (tally.get(UNCHANGED, 0), tally.get(PRESENT, 0), len(orphans)))
     if yours:
         print("REFUSED: %d path(s) stayed YOURS and the rest of the home moved. The record did "
               "not learn those paths, so the next act reports them again until you decide which "

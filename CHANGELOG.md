@@ -17,7 +17,10 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   record, so the act after this one still knows it from an edit. `YOURS` is the stricter refusal:
   a file at a shipped path with no record of it stays byte-identical, is deliberately *not* written
   into the new record, the rest of the home still moves, and the run exits 1 with the list. Nothing
-  is deleted. The brain's own state is out of bounds by name (`PROTECTED_DIRS`) and a ship plan that
+  is deleted, including what this engine stopped shipping: a recorded path the plan no longer holds
+  is read the other way round (`judge_removed`) and named `ORPHAN` while the home still holds it —
+  kept in the record so the next act reports it again — or `GONE` once it does not. A
+  `--clean-orphans` flag was refused. The brain's own state is out of bounds by name (`PROTECTED_DIRS`) and a ship plan that
   lands a real file there stops the act — that is a bug in the installer, not in the home. A
   `--dry-run` proves its own innocence by comparing the home's tree fingerprint on entry and exit,
   every write is re-hashed from the disk it landed on, and each act appends one line to
@@ -46,18 +49,24 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 - The new gate found two false greens in its own first draft: a bare folder name resolved to an
   empty basename, which every tracked file "declares", and a directory's last word was accepted as
   a declared witness. Both are pinned by tests now.
-- Three defects the phase-46 installer showed before it could ship, each now refused by a test. The
+- Four defects the phase-46 installer showed before it could ship, each now refused by a test. The
   first record was written with text-mode writes, which on Windows puts `\r\n` on the disk and left
   the manifest disagreeing with the bytes it had just hashed — the install printed "record did not
   read back" and the whole upgrade path was unreachable; every byte the installer lays is written
   and re-hashed in binary now. Second: a home's re-measured documents could never agree with the
   repo's copy, so *every* upgrade reported `README.md`, `HANDOFF.md` and `00_START_HERE/START.md` as
   pending; the record holds the engine's own bytes beside the home's, and
-  `tests/test_phase46_installer_upgrade.py:348` is the witness. Third: the first draft of `YOURS`
+  `tests/test_phase46_installer_upgrade.py::test_a_second_upgrade_moves_nothing_at_all` is the witness. Third: the first draft of `YOURS`
   recorded the colliding
   file's bytes as "what the installer wrote", which would have made the next upgrade overwrite a
   person's note — an unowned file is now left out of the record on purpose, and the same row keeps
-  its `UNCHANGED`-stopping power by exiting 1.
+  its `UNCHANGED`-stopping power by exiting 1. Fourth: the agent doors were the last text write
+  left, and reading a door as *text* re-encoded its newlines too, so a fresh home held a door whose
+  bytes were not the engine's — invisible to an upgrade, which compares the home against what the
+  *record* said the engine shipped, and the record had just learned the mangled bytes. `write_doors`
+  now lays the ship plan's own candidate bytes, and
+  `tests/test_phase46_installer_upgrade.py::test_a_real_install_lays_the_engines_bytes_at_every_shipped_path`
+  fails on the old code (`.cursor/rules/agents.mdc`, checked by reverting the line and re-running).
 
 ## [0.2.0] - 2026-11-02
 

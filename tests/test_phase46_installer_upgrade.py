@@ -15,7 +15,7 @@ The fix is a record, not a smarter overwrite. An install now hashes every path i
 `15_SYSTEM/generated/install.json` (`files` = the bytes the home ended up holding, `engine_bytes` =
 the bytes the repo's source carried), under the `install-manifest` contract in
 `scripts/schema_stamp.py`. `--upgrade` compares three hashes per path — the record's, the home's,
-the engine's — and can therefore tell an edit from an outdated file. The tests below pin the eight
+the engine's — and can therefore tell an edit from an outdated file. The tests below pin the ten
 verdicts, the protection of the brain's own folders, the self-proving `--dry-run`, and the one
 property that matters most: after any act, the bytes a person wrote are still those bytes.
 
@@ -53,6 +53,18 @@ def write(path, text):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(text.encode("utf-8"))
     return path
+
+
+def bytes_the_engine_ships(manifest):
+    """The paths whose two record hashes must be the same digest.
+
+    `files` is what the home holds, `engine_bytes` what the repo shipped; a path nobody edited and
+    nobody re-measured has to agree on both sides. The documents a home re-measures for itself are
+    the stated exception, and a path the engine only touches into existence carries no engine hash
+    at all, so it is not in this map.
+    """
+    return {rel: digest for rel, digest in manifest["engine_bytes"].items()
+            if rel not in install_mod.MEASURED_DOCS}
 
 
 class MiniRepo(object):
@@ -308,6 +320,19 @@ class TestTheInstallerActs(unittest.TestCase):
             self.assertEqual(digest, install_mod.hash_file(self.home.file(rel)),
                              "%s is not the byte the record claims" % rel)
 
+    def test_a_fresh_install_lays_the_bytes_the_engine_ships_and_records_those(self):
+        """A text-mode write of an agent door turned its "\n" into "\r\n" on Windows.
+
+        The home then held bytes the engine never shipped, while the upgrade still called the path
+        `UNCHANGED` -- the record's own two maps were the only place the lie was visible.
+        """
+        self.install()
+        manifest = self.home.manifest()
+        self.assertTrue(bytes_the_engine_ships(manifest), "a record that ships nothing to check")
+        for rel, digest in bytes_the_engine_ships(manifest).items():
+            self.assertEqual(digest, manifest["files"].get(rel),
+                             "%s holds bytes the engine does not ship" % rel)
+
     def test_a_home_with_no_record_is_refused_in_words_that_explain_the_refusal(self):
         self.home.root.mkdir(parents=True)
         result = self.repo.run("--upgrade", str(self.home.root))
@@ -443,6 +468,64 @@ class TestTheInstallerActs(unittest.TestCase):
                        self.repo.run("--upgrade", str(self.home.root))):
             self.assertNotIn("\ufffd", result.stdout + result.stderr)
 
+    def record_a_retired_path(self, rel="02_WIKI/reference_maps/retired-map.md",
+                              text="# a map an older engine laid\n"):
+        """A home whose record names a path this engine no longer ships.
+
+        This is the state a retired file leaves behind: an install wrote it, hashed it, and a later
+        engine stopped naming the path. It is built by editing the record rather than the repo
+        because the record is the input the judgement reads.
+        """
+        self.install()
+        path = self.home.write(rel, text)
+        manifest = self.home.manifest()
+        manifest["files"][rel] = install_mod.hash_file(path)
+        manifest["engine_bytes"][rel] = install_mod.hash_file(path)
+        write(self.home.file(MANIFEST_REL), json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
+        return rel
+
+    @staticmethod
+    def named(result, verdict):
+        return [line.split()[1] for line in result.stdout.splitlines()
+                if line.startswith(verdict)]
+
+    def test_a_path_the_engine_retired_is_named_and_left_exactly_where_it_is(self):
+        rel = self.record_a_retired_path()
+        before = install_mod.hash_file(self.home.file(rel))
+        result = self.repo.run("--upgrade", str(self.home.root))
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual([rel], self.named(result, install_mod.ORPHAN), result.stdout)
+        self.assertEqual(before, install_mod.hash_file(self.home.file(rel)),
+                         "an upgrade deleted a file it was only supposed to name")
+        self.assertIn(rel, self.home.manifest()["files"],
+                      "a record that forgets an orphan makes the next act blind to it")
+        self.assertEqual([rel], self.home.journal()[-1]["orphaned"])
+
+    def test_the_retirement_is_reported_again_until_the_owner_resolves_it(self):
+        rel = self.record_a_retired_path()
+        self.repo.run("--upgrade", str(self.home.root))
+        again = self.repo.run("--upgrade", str(self.home.root), "--dry-run")
+        self.assertEqual([rel], self.named(again, install_mod.ORPHAN), again.stdout)
+
+    def test_a_retired_path_the_home_already_deleted_leaves_the_record(self):
+        rel = self.record_a_retired_path()
+        self.home.file(rel).unlink()
+        result = self.repo.run("--upgrade", str(self.home.root))
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual([rel], self.named(result, install_mod.GONE), result.stdout)
+        self.assertNotIn(rel, self.home.manifest()["files"],
+                         "the absence of an absent file is noise, not evidence")
+        self.assertEqual([rel], self.home.journal()[-1]["gone"])
+
+    def test_a_dry_run_names_a_retired_path_and_still_writes_nothing(self):
+        rel = self.record_a_retired_path()
+        before = tree_fingerprint(self.home.root)
+        result = self.repo.run("--upgrade", str(self.home.root), "--dry-run")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertEqual([rel], self.named(result, install_mod.ORPHAN), result.stdout)
+        self.assertEqual(before, tree_fingerprint(self.home.root))
+        self.assertEqual(1, len(self.home.journal()), "a read-only act wrote to the journal")
+
 
 class TestTheRealHome(unittest.TestCase):
     """The shipped installer against the shipped repo: the record cannot break the gates."""
@@ -474,6 +557,12 @@ class TestTheRealHome(unittest.TestCase):
         judged = schema_stamp.judge(MANIFEST_REL, self.home.file(MANIFEST_REL), self.home.root)
         self.assertEqual(schema_stamp.STAMPED, judged["state"], judged["why"])
         self.assertEqual("install-manifest", judged["contract"])
+
+    def test_a_real_install_lays_the_engines_bytes_at_every_shipped_path(self):
+        manifest = self.home.manifest()
+        for rel, digest in bytes_the_engine_ships(manifest).items():
+            self.assertEqual(digest, manifest["files"].get(rel),
+                             "%s is the engine's file, rewritten by a text-mode write" % rel)
 
     def test_a_real_home_up_to_date_moves_nothing(self):
         before = tree_fingerprint(self.home.root)
