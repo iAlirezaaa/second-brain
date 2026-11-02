@@ -854,6 +854,22 @@ of those paths anyway.*
       invents its own reason is a second truth and fails. Run it with
       `python -m unittest tests.test_phase49_door_reads_its_own_law`; the test count is that
       command's to print, not this file's.
+- [x] 🔵 **S** the second battery that asserted the leak, found by CI rather than by reading:
+      `15_SYSTEM/scripts/test_hades.py` — the v3 battery, the one judge that runs only in GitHub
+      Actions — failed two of its own checks on `c889ee5` while the local suite and `health.py`
+      stayed green. Its harness section asked `runs_list` for the promoted run and required
+      `run_id in text`, and asked `doctor_status` for a run count; both passed while the door leaked
+      and both were the contract of the leak. Same rule as the phase-22 row above: the assertion was
+      wrong, so the code stands and the assertion is reversed in writing. The four checks that
+      replaced the two are stricter than what they replaced — they require `isError`, the rule name
+      `12_RUNTIME`, the human command in the refusal, and `run_id not in text`, so a closed plane
+      that still echoes one id fails. Run it with `python 15_SYSTEM/scripts/test_hades.py`;
+      the check count is that command's to print, not this file's.
+- [ ] 🔵 **M** the gap that let a green-local commit go public-red, still open: `health.py` and
+      `python -m unittest discover -s tests` do not run the v3 battery, so the only pre-push loop
+      this repo has cannot see it. Wiring it in as a gate — one stated-skip line in an installed
+      home, the same shape as the other repo-only gates — is the next change; until then the
+      battery is a CI-only judge and every phase that touches the door can break it silently.
 - [x] 🔵 **S** the four documents that promised the opposite corrected in the same change:
       `README.md`, `AGENTS.md`, `15_SYSTEM/integrations/README.md` and
       `02_WIKI/reference_maps/superagi-to-hades-map.md` no longer say reads are open — they name the
@@ -876,7 +892,10 @@ of those paths anyway.*
 
 *Measured 2026-11-02: `python -m unittest tests.test_phase49_door_reads_its_own_law
 tests.test_phase22_harness_bridge` green on this tree and red on the commit before it, and no read
-tool inside a denied plane answers with data from it.*
+tool inside a denied plane answers with data from it. Measured the same day on the next commit:
+`python 15_SYSTEM/scripts/test_hades.py` red twice before the reversal — `FAIL harness: runs_list
+shows the promoted run through the door` and `FAIL harness: doctor_status counts the run and the
+record` — and green after it.*
 
 ---
 

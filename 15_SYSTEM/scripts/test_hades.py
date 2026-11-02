@@ -775,16 +775,25 @@ def t_harness_bridge():
         check("harness: registry_list sees the seeded agent", agt in text, text[:140])
         send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
               "params": {"name": "runs_list", "arguments": {}}})
-        text = recv()["result"]["content"][0]["text"]
-        check("harness: runs_list shows the promoted run through the door",
-              run_id in text and '"promoted"' in text, text[:200])
+        refused = recv()["result"]
+        text = refused["content"][0]["text"]
+        # Phase 49 closed this plane at the door. The battery used to assert the opposite --
+        # that a harness could read another actor's run ids off the wire -- so the checks below
+        # are the reversal, and the `run_id not in text` half is why it is a tighter claim than
+        # the one it replaces: a closed plane that still echoes an id is not closed.
+        check("harness: runs_list refuses the run plane and names the rule",
+              refused.get("isError") is True and "12_RUNTIME" in text
+              and run_id not in text, text[:200])
+        check("harness: the refusal points at the human command that does work",
+              "runs.py list" in text, text[:200])
         send({"jsonrpc": "2.0", "id": 4, "method": "tools/call",
               "params": {"name": "doctor_status", "arguments": {}}})
         text = recv()["result"]["content"][0]["text"]
-        runs_count = len([d for d in (v.root / "12_RUNTIME" / "agent_runs").iterdir()
-                          if d.is_dir()])
-        check("harness: doctor_status counts the run and the record",
-              ('"runs": %d' % runs_count) in text and '"records": 1' in text, text[:200])
+        check("harness: doctor_status reports the run plane unread, not counted",
+              '"read": false' in text and '"denied_by": "12_RUNTIME"' in text
+              and run_id not in text, text[:200])
+        check("harness: doctor_status still counts the record",
+              '"records": 1' in text, text[:200])
         send({"jsonrpc": "2.0", "id": 5, "method": "tools/call",
               "params": {"name": "candidate_propose", "arguments": {
                   "dimension": "invariant", "cue": "the battery spoke to the brain",

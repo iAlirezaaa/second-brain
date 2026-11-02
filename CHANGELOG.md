@@ -105,6 +105,16 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   whoever last read the plan.
 
 ### Fixed
+- **The v3 battery now judges the closed run plane, and it was CI that noticed.**
+  `15_SYSTEM/scripts/test_hades.py` — the battery only GitHub Actions runs — failed two of its own
+  checks on `c889ee5` while `scripts/health.py` and the unittest suite stayed green locally. Both
+  checks had been written while the door leaked: one asked `runs_list` for the promoted run's id on
+  the wire, the other asked `doctor_status` to count `12_RUNTIME/agent_runs`. Phase 49 closed that
+  plane, so the assertions were the contract of the leak. The two checks are replaced by four
+  stricter ones: `isError`, the rule name `12_RUNTIME` in the refusal, the human command
+  `runs.py list` in it, `doctor_status` answering `"read": false` with `"denied_by"`, and
+  `run_id not in text` — a closed plane that still echoes one id fails. `ROADMAP.md` records the
+  reversal and names the remaining gap: the pre-push loop cannot see this battery.
 - **The MCP door stopped reading the planes its own access law denies.**
   `15_SYSTEM/scripts/backend/access.py` had denied `12_RUNTIME`, `.brain-data`, `.kb`,
   `15_SYSTEM/generated`, `15_SYSTEM/backups`, `13_LAB`, `14_CANDIDATES` and
