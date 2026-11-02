@@ -717,6 +717,8 @@ def handle_tool_call(root, params):
     attempted = False
     try:
         if protected:
+            if not sid:
+                raise ToolRefused("strict agent session mode requires --session with a preflight to-do")
             if not actor or actor == "human":
                 raise ToolRefused("MCP session calls need an explicit registered agent; human approval is never impersonated on this wire")
             session_bridge.require(root, sid, actor, task_id)
