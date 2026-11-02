@@ -12,8 +12,15 @@ MAX_OPS = 50
 MAX_FILE_BYTES = 131072
 MAX_TOTAL_BYTES = 1048576
 PROTECTED = frozenset((".brain-data", ".kb", ".git", ".secrets", "secrets",
-                       "12_RUNTIME", "13_LAB", "14_CANDIDATES", "09_OPERATIONS",
-                       "15_SYSTEM/generated", "15_SYSTEM/backups"))
+                       "12_RUNTIME", "13_LAB", "14_CANDIDATES", "09_OPERATIONS"))
+PROTECTED_PREFIXES = ("15_SYSTEM/generated", "15_SYSTEM/backups", "15_SYSTEM/logs")
+
+
+def _blocked(path):
+    parts = path.parts
+    return (any(part in PROTECTED or part.startswith(".env") for part in parts)
+            or any(path.as_posix().startswith(prefix + "/") or path.as_posix() == prefix
+                   for prefix in PROTECTED_PREFIXES))
 OPERATIONS = frozenset(("write", "append", "delete"))
 
 
@@ -27,14 +34,14 @@ def safe_path(root, path):
     candidate = Path(path.replace("\\", "/"))
     if candidate.is_absolute() or ".." in candidate.parts or "." in candidate.parts:
         raise TwinRefused("absolute/traversal paths are not allowed")
-    if any(part in PROTECTED or part.startswith(".env") for part in candidate.parts):
+    if _blocked(candidate):
         raise TwinRefused("private or quarantined scope may not be simulated")
     base = Path(root).resolve()
     resolved = (base / candidate).resolve(strict=False)
     if base not in resolved.parents:
         raise TwinRefused("symlink or path escapes the simulation root")
     rel = resolved.relative_to(base)
-    if any(part in PROTECTED or part.startswith(".env") for part in rel.parts):
+    if _blocked(rel):
         raise TwinRefused("resolved path enters a private or protected scope")
     if resolved.exists() and not resolved.is_file():
         raise TwinRefused("simulation target is not a regular file")
