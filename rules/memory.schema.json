@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "applies_to": ["15_SYSTEM/memory/lessons.jsonl", "MEMORY.md"],
-  "why": "The repo is supposed to get smarter, which needs a memory with the same spine as the candidate shelf: a lesson is a claim, a claim cites evidence, and evidence has to open. scripts/memory.py reads every key below; nothing here is decorative.",
+  "why": "The repo is supposed to get smarter, which needs a memory with the same spine as the candidate shelf: a lesson is a claim, a claim cites evidence, and evidence has to open. Version 2 adds the two charter-section-5 gates that made the memory honest rather than merely readable: a plane field so a lesson is typed by kind (issue #25) and a measured, enforced contradiction rule so no two active lessons can disagree silently (issue #24). scripts/memory.py reads every key below; nothing here is decorative.",
   "record": {
     "id": {"type": "string", "means": "mem-<slug>, unique in the ledger. Reusing a label conflates two lessons."},
     "date": {"type": "string", "means": "ISO 8601 UTC. Memory that cannot be ordered cannot be aged or superseded."},
@@ -10,17 +10,26 @@
     "evidence": {"type": "string_list", "means": "paths in this repo, URLs, or probe ids. An entry that does not resolve is a fabricated memory and the gate refuses the row."},
     "confidence": {"type": "number", "min": 0, "max": 1, "means": "how much this lesson is trusted. Retrieval orders by it; an unweighted lesson would be believed exactly as much as a measured one."},
     "verdict": {"enum": ["proposed", "helped", "hurt", "no_observed_effect", "confounded", "keep_base"], "means": "what the measurement said, same vocabulary as rules/candidate.schema.json. proposed means written down but not yet confirmed by a run."},
-    "topics": {"type": "string_list", "optional": true, "means": "retrieval handles; --recall reads them."},
-    "source": {"type": "string", "optional": true, "means": "where the lesson came from (a chat, an issue, a commit). A provenance line, not evidence."},
-    "supersedes": {"type": "string", "optional": true, "means": "the id of the lesson this one retires. Superseded rows stay in the ledger for the record and drop out of MEMORY.md's active table."}
+    "plane": {"type": "string", "means": "which memory plane the lesson is about: one of the eight ids declared in 15_SYSTEM/config/system.json -> memory_planes (project, repository, agent, task, error, decision, knowledge, conversation), or the stated value 'unclassified' when the row's source and topics do not decide. This is issue #25: before the field existed the map's claim that the error plane holds lessons was honest-but-weak, because a lesson from a failed run looked identical to a lesson from a design choice until you read the prose. The vocabulary is read from the config, never retyped here -- there is no second taxonomy."},
+    "topics": {"type": "string_list", "optional": true, "means": "retrieval handles; --recall reads them, and the contradiction rule (issue #24) treats a shared topic as one of the four conditions."},
+    "source": {"type": "string", "optional": true, "means": "where the lesson came from (a chat, an issue, a commit). A provenance line, not evidence. --migrate-planes and the --add default read it to decide a plane."},
+    "supersedes": {"type": "string", "optional": true, "means": "the id of the lesson this one retires. Superseded rows stay in the ledger for the record and drop out of MEMORY.md's active table. A pair that contradicts but is linked by supersedes is reported as resolved, not refused (issue #24)."}
+  },
+  "contradiction": {
+    "status": "measured and enforced (issue #24)",
+    "definition": "two ACTIVE lessons contradict when all four hold on folded text: same plane, at least one shared topic, cue-overlap Jaccard >= 0.50, opposite verdict (helped vs hurt). Jaccard is |intersection|/|union| over the token sets the repo's own tokens() produces (lowercased, stopwords and short words dropped) -- stdlib, reproducible from a clone, no model, no embedding.",
+    "threshold_evidence": "measured on the shipped ledger (325 active pairs): the closest same-plane, shared-topic pair scores 0.31 and AGREES, and 0 pairs of opposite verdict exist at any threshold -- so 0.50 fires only on cues that describe the same situation in opposing terms, never on shared vocabulary. Because the shipped ledger holds no contradiction, none was rewritten; the rule is proven with fixtures.",
+    "enforced_by": "python scripts/memory.py --check refuses an active conflict; --contradictions reports every pair with its numbers and treats a supersedes-linked pair as resolved."
   },
   "invariants": [
     "one row per id; a duplicate label is refused",
     "every evidence entry resolves on disk, as a URL, or as a probe id",
+    "every row carries a plane in the mapped vocabulary (or the stated 'unclassified'); an unlabelled lesson is refused by --add and by --check (issue #25)",
+    "no two ACTIVE lessons may contradict -- same plane + shared topic + cue-overlap Jaccard >= 0.50 + opposite verdict is a refusal, not a cleanup task (issue #24)",
     "MEMORY.md is a rendering: every active row appears in it and every mem-* id in it exists in the ledger",
     "supersedes points at a row the ledger actually holds",
     "the ledger is append-only -- a lesson is retired by superseding it, never by deleting the line"
   ],
   "empty_is_legal": "--recall with no hits prints NO_ENTRY and exits 0. Saying 'nothing in memory applied' is data; inventing a lesson to fill the silence is how the memory starts lying.",
-  "enforced_by": "python scripts/memory.py --check, wired into scripts/health.py"
+  "enforced_by": "python scripts/memory.py --check (plane field and contradiction rule), wired into scripts/health.py; python scripts/memory.py --contradictions reports the numbers behind each judgement"
 }
