@@ -16,10 +16,10 @@ windows-latest اثبات می‌کند). اگر `python` پیش‌فرض سیس
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 446 |
-| health gates (`python scripts/health.py`) | 9 |
-| registry records (`11_CONTROL/**/*.json`) | 15 |
-| skills in the pack (`skills/*/SKILL.md`) | 10 |
+| tests collected (`python -m unittest discover -s tests`) | 597 |
+| health gates (`python scripts/health.py`) | 12 |
+| registry records (`11_CONTROL/**/*.json`) | 20 |
+| skills in the pack (`skills/*/SKILL.md`) | 14 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
 | active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 26 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 6 |
