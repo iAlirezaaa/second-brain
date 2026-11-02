@@ -25,7 +25,7 @@ This is the machine plane's review shelf: nothing here is knowledge until a huma
    A candidate without a witness on disk is a guess.
 3. **ادعای رفتاری با اجرای واقعی سنجیده می‌شود، نه با تیک.**
    `scripts/probe.py` must have run before a behaviour claim is promotable
-   (`docs: ROADMAP.md → Phase 9.5`, borrowed from google-research/harness²).
+   (`scripts/probe.py` and `skills/promote/SKILL.md` are the executable contracts).
 4. **ردّ هم یک خروجی است.** اگر چرخهٔ جدید چیزی بهتر از وضعیت فعلی نساخت،
    گزارش باید صریحاً بنویسد `keep_base` — نه اینکه یک تغییر اختراع کند.
 5. **ردیف روی قفسه قرارداد دارد.** `rules/candidate.schema.json` قانون است و
