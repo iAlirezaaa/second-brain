@@ -1,5 +1,23 @@
 # Second Brain OS v0.2.0
 
+> **Second Brain OS — The Cognitive Operating System**
+>
+> A local-first brain that can remember, find evidence, connect ideas, organize
+> agent work, and grow through verified experience. Designed to run without
+> cloud lock-in, with optional models and infrastructure when benchmarks justify them.
+>
+> **vNext prototype:** Task-first Brain CLI, mandatory session handoff,
+> a skill-proposal trail, read-only Twin World 0 and ADHD cross-domain links.
+> These features are experimental; live AI orchestration and semantic retrieval
+> are not claimed as complete.
+>
+> **Start here:** [Product Vision](00_START_HERE/PRODUCT_VNEXT.md) ·
+> [Brain CLI](00_START_HERE/CLI_VNEXT.md) ·
+> [Agent Constellation](00_START_HERE/AGENT_TEAM_VNEXT.md) ·
+> [Technical research](00_START_HERE/TECH_RESEARCH_VNEXT.md)
+>
+> **Example:** python scripts/brain.py start --goal "Research an idea and preserve the result"
+>
 **What the name means.** *Second Brain OS* is what this is for anyone who needs to know in three
 words: a second brain (external memory you can trust) that is a complete system rather than a
 folder of notes — zones, gates, a registry, a ledger and its own improvement loop. **HADES** is the
@@ -137,7 +155,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 950 |
+| tests collected (`python -m unittest discover -s tests`) | 971 |
 | health gates (`python scripts/health.py`) | 16 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
