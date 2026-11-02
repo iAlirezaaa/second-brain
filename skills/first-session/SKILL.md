@@ -49,6 +49,12 @@ Take the top P1 (a red gate) if there is one, else one P2, else say `keep_base`.
 one plan note in `90_Agent_Output/`, one test that fails before the fix, one commit.
 Stop after three cycles or when nothing is red — a loop that never stops is not diligence.
 
+When you cannot tell what a thing *is* — project or task, agent or skill, which zone, which
+kind — do not guess and do not invent a second shape. Ask the structure manager:
+`AGT-7DE1AB28` (`11_CONTROL/agents/AGT-7DE1AB28-structure-manager/agent.json`, charter section 7).
+It proposes the creation or classification plan; it never approves its own proposal, so the
+plan still goes through `hades.py plan` → a human reads it → `apply --approve`.
+
 ## 5. Leave the next stranger better off than you were
 
 ```

@@ -37,6 +37,16 @@ the document — write it to `14_CANDIDATES/loop/` and continue with `scripts/`.
 the machine that wrote it. Export what you measured (see `14_CANDIDATES/loop/gaps.jsonl`)
 instead of pointing at local state.
 
+**Conversation memory has a path, not a hope.** Something learned inside a chat becomes memory
+only when a person names one export and walks it: `sources.py import FILE --kind conversation
+--origin harness:SESSION --format F` → `rebuild` → `propose --source-id ID --quote "..."` (an
+invented quote is refused) → `evaluate` → `approve --approve`, a flag only a human types, since
+the MCP door ships no approve tool. Nothing scans a harness history folder and nothing fetches a
+transcript; the store is `.brain-data/`, gitignored by design, so a fresh clone answers `[]` and
+`NO_ENTRY` honestly rather than pretending. The skill is `skills/conversation-memory/SKILL.md`,
+the step-by-step audit — one row per step, with each refusal and the test behind it — is
+`02_WIKI/reference_maps/conversation-memory-path.md`.
+
 ## The harness door is MCP, not a server farm
 Frameworks like SuperAGI answered "how do agents reach the system" with a server farm
 (FastAPI + Postgres + Celery/Redis + a GUI). This brain answers it with the protocol

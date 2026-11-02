@@ -1,0 +1,64 @@
+{
+  "kind": "agent",
+  "id": "AGT-7DE1AB28",
+  "name": "structure-manager",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-11-02",
+  "tags": [
+    "manager",
+    "structure",
+    "governance"
+  ],
+  "relations": {},
+  "notes": "Structure manager, charter section 7: proposes creation and classification plans for projects, tasks, agents and skills, and never approves its own proposal: a human signs the apply. Engine limit stated instead of hidden: the shipped engine exposes no registry write tool at all, so this record's tool allowlist cannot name an apply tool today; the refusal is therefore enforced as a repo level check over this shipped record by tests/test_phase41_manager_agent_and_conversation_memory.py, which turns red if an apply, approve or write tool is ever named here.",
+  "capabilities": [
+    "kb-search",
+    "inbox-triage",
+    "health",
+    "self-audit",
+    "first-session"
+  ],
+  "read_scope": [
+    "00_START_HERE",
+    "01_INBOX",
+    "02_WIKI",
+    "03_PROJECTS",
+    "04_INTELLIGENCE",
+    "05_WORKS",
+    "06_CHANNELS",
+    "07_PRODUCTS",
+    "08_LEARNING",
+    "09_OPERATIONS",
+    "10_ARCHIVE"
+  ],
+  "write_scope": [],
+  "tool_allowlist": [
+    "candidate_propose",
+    "lesson_propose",
+    "capabilities"
+  ],
+  "memory_policy": "promote-only",
+  "approved_for_harness_ids": [],
+  "updated_at": "2026-11-02T05:39:14Z",
+  "amendments": [
+    {
+      "field": "tool_allowlist",
+      "from": [],
+      "to": [
+        "candidate_propose",
+        "lesson_propose",
+        "capabilities"
+      ],
+      "utc": "2026-11-02T05:38:58Z",
+      "plan": "PLAN-626D27261AE0"
+    },
+    {
+      "field": "notes",
+      "from": "Structure manager (charter section 7): proposes creation and classification plans for projects, tasks, agents and skills; it never approves its own proposal, the human signs the apply.",
+      "to": "Structure manager, charter section 7: proposes creation and classification plans for projects, tasks, agents and skills, and never approves its own proposal: a human signs the apply. Engine limit stated instead of hidden: the shipped engine exposes no registry write tool at all, so this record's tool allowlist cannot name an apply tool today; the refusal is therefore enforced as a repo level check over this shipped record by tests/test_phase41_manager_agent_and_conversation_memory.py, which turns red if an apply, approve or write tool is ever named here.",
+      "utc": "2026-11-02T05:39:14Z",
+      "plan": "PLAN-8AC40874A13D"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-C48357D5",
+  "name": "conversation-memory",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-11-02",
+  "tags": [],
+  "relations": {},
+  "notes": "Charter section 11 path: one named harness export becomes a citable private source, then an evidence-backed lesson proposal a human approves; nothing is scanned.",
+  "entrypoint": "skills/conversation-memory/SKILL.md",
+  "description": "Charter section 11 path: one named harness export becomes a citable private source, then an evidence-backed lesson proposal a human approves; nothing is scanned.",
+  "approved_for_harness_ids": []
+}
