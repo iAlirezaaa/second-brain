@@ -119,7 +119,7 @@ class BrainCLITests(unittest.TestCase):
 
     def test_twin_is_read_only_and_does_not_execute_tools(self):
         sid = self.opened()
-        path = brain._storage(self.root) / "sessions.sqlite3"
+        path = brain._storage(self.root)
         original = path.read_bytes()
         result = brain.twin(self.root, sid, [{"op": "add_task", "summary": "try an alternative"}])
         self.assertEqual(0, result["files_written"])
