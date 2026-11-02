@@ -54,6 +54,17 @@ private local data, and the MCP source search exposes matches to connected clien
 
 **📋 نقشهٔ عمومی راه / Public roadmap (با چیپ وضعیت و تیک پیوسته): [ROADMAP.md](ROADMAP.md)**
 
+
+**Runtime binding (in development):** The task-first CLI can now enforce its
+preflight at the central toolkit boundary. Pass --session SES-... and optionally
+--task-id N to \`orchestrator.py tool call\` or \`workflow run\`. Set
+\`SBO_REQUIRE_SESSION=1\` to reject sessionless central-registry tool calls.
+A session's tool activity is recorded as payload-free hashes in the local
+event journal; closing a session still requires a fresh handoff and human
+review. Direct MCP server tools and other host processes **do not yet**
+inherit this toolkit gate; do not treat the environment switch as a
+universal permission barrier. See \`00_START_HERE/CLI_VNEXT.md\`.
+
 ## What this is
 
 یک محفظهٔ محلی برای دانش، پروژه‌ها و ایجنت‌ها — که هارنس‌ها از طریق پروتکلی که همین حالا
@@ -155,7 +166,7 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 971 |
+| tests collected (`python -m unittest discover -s tests`) | 986 |
 | health gates (`python scripts/health.py`) | 16 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
