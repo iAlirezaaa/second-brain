@@ -270,7 +270,7 @@ def handoff(root, sid, summary, next_action, risks):
                           task["id"], task["summary"].replace("\n", " "),
                           task["evidence"] or ("this handoff" if task["category"] == "handoff" else "no evidence")))
         body = "\n".join(lines) + "\n"
-        directory = _storage(root, create=True) / "handoffs"
+        directory = _storage(root, create=True).parent / "handoffs"
         if directory.is_symlink():
             raise Refused("handoff directory cannot be a symlink")
         directory.mkdir(exist_ok=True)
@@ -307,7 +307,7 @@ def close(root, sid, outcome, owner_approved=False):
             raise Refused("success requires all tasks completed (%d pending)" % len(pending))
         if outcome == "success" and not owner_approved:
             raise Refused("a successful outcome requires explicit human confirmation --owner-approved")
-        folder = _storage(root, create=True) / "skill-proposals"
+        folder = _storage(root, create=True).parent / "skill-proposals"
         if folder.is_symlink():
             raise Refused("skill proposal directory cannot be a symlink")
         folder.mkdir(exist_ok=True)
