@@ -49,21 +49,30 @@ engine scripts stay stdlib-only, and a PR that adds one needs a decision note in
 
 ## The gates `health.py` runs
 
+The source of truth is `scripts/health.py:GATES`. The following table must contain
+exactly the same gate names; `tests/test_backlog_governance.py` checks drift.
+
 | gate | what it refuses |
 | --- | --- |
-| `scripts/link_check.py` | a `[[wikilink]]` or relative link that resolves to nothing |
-| `scripts/frontmatter_check.py` | a note whose frontmatter breaks `rules/schema.json` |
-| `scripts/plane_check.py` | a declared memory plane whose store, reader, map or test is gone |
-| `scripts/candidate_check.py` | a shelf candidate that cannot name its evidence |
-| `scripts/memory.py --check` | a lesson row outside `rules/memory.schema.json` |
-| `scripts/sync_hosts.py --check` | a host door that drifted from `AGENTS.md`, the one canon |
-| `scripts/doc_report.py --check` | a document quoting a number this folder no longer produces |
-| `scripts/vector_check.py` | `vector_search` switched on without registered evidence |
-| `scripts/issues.py --check` | an issue page separated from its ledger, or a "fixed" row with no evidence |
-| `scripts/ci_floor.py` | a Python floor the workflows do not actually install |
+| `scripts/link_check.py` | links resolving to missing destinations |
+| `scripts/link_check.py --readout` | ambiguous link graph edges |
+| `scripts/frontmatter_check.py` | invalid notes and registry metadata |
+| `scripts/plane_check.py` | declared memory planes missing stores or readers |
+| `scripts/candidate_check.py` | proposals with missing or inconsistent evidence |
+| `scripts/memory.py --check` | invalid lesson ledger or stale generated memory |
+| `scripts/sync_hosts.py --check` | host instructions drifting from AGENTS.md |
+| `scripts/doc_report.py --check` | stale or unmeasurable document statistics |
+| `scripts/vector_check.py` | unsupported embedding activation |
+| `scripts/issues.py --check` | missing or inconsistent issue ledger |
+| `scripts/version.py --check` | incompatible version tags and metadata |
+| `scripts/ci_floor.py` | CI Python versions below the supported floor |
+| `scripts/goldfish_check.py` | invalid independent review artifacts |
+| `scripts/schema_stamp.py --check` | stale generated JSON schemas |
+| `scripts/roadmap_check.py --check` | missing roadmap evidence |
+| `scripts/vault_check.py` | unjustified backup claims |
 
-Add a gate to that table only with a line in `scripts/health.py`'s `GATES` beside it — a gate
-nobody runs is documentation, not protection.
+A new gate must be implemented, registered, tested and documented together;
+removing a failing gate is not a repair.
 
 ## What a good PR looks like
 
