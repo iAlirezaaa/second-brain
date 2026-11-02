@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import version as gate  # noqa: E402
+import common  # noqa: E402
 
 GOOD_README = """# Second Brain OS v9.9.9
 
@@ -170,6 +171,57 @@ class TestShippedRepo(unittest.TestCase):
         self.assertEqual(gate.split_semver(gate.declared_version(ROOT)),
                          tuple(int(part) for part in
                                gate.declared_version(ROOT).split(".")))
+
+
+class TestAnInstalledHomeMakesNoVersionClaim(unittest.TestCase):
+    """`VERSION`, `pyproject.toml` and the tag are the repo's release paperwork.
+
+    The gate joined `scripts/health.py`, so every installed brain home met it — and a home keeps
+    none of those files. `check()` answered `VERSION: '' is not a MAJOR.MINOR.PATCH version`,
+    which is a true sentence about a folder that never claimed a version, and a crash for
+    `--bump`. A home now gets a stated skip; a checkout missing one of its places still refuses.
+    """
+
+    def run_gate(self, root, *args):
+        return common.run_utf8([sys.executable, str(ROOT / "scripts" / "version.py"),
+                                "--root", str(root), *args], cwd=str(ROOT))
+
+    def test_a_home_states_the_skip_rather_than_inventing_a_defect(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "brain"
+            home.mkdir()
+            result = self.run_gate(home, "--check")
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue(result.stdout.startswith("OK"), result.stdout)
+            for reason in ("installed brain home", "not a repo checkout", "no version claim"):
+                self.assertIn(reason, result.stdout, "the skip did not say why: %s" % result.stdout)
+
+    def test_a_home_refuses_a_bump_it_cannot_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "brain"
+            home.mkdir()
+            result = self.run_gate(home, "--bump", "patch")
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("REFUSED", result.stdout)
+            self.assertNotIn("Traceback", result.stderr)
+
+    def test_a_checkout_missing_its_manifest_refuses_by_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = fixture(tmp)
+            (repo / "pyproject.toml").unlink()
+            (repo / ".git").mkdir()
+            result = self.run_gate(repo, "--check")
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("pyproject.toml declares no version", result.stdout)
+
+    def test_a_checkout_without_a_version_file_refuses_rather_than_crashing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".git").mkdir()
+            result = self.run_gate(root, "--bump", "patch")
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("REFUSED", result.stdout)
+            self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":

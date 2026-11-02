@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import ci_floor  # noqa: E402
+import common  # noqa: E402
 
 CI_GOOD = """name: ci
 on: [push]
@@ -160,6 +161,42 @@ class TestShippedRepo(unittest.TestCase):
         _, runs = ci_floor.workflow_matrix(ROOT, "ci.yml")
         self.assertTrue(any(run.startswith("ubuntu") for run in runs), runs)
         self.assertTrue(any("windows" in run for run in runs), runs)
+
+
+class TestAnInstalledHomeKeepsNoCIPromise(unittest.TestCase):
+    """A gate that crashes in a brain home is worse than a gate that is absent.
+
+    Wiring `ci_floor.py` into `scripts/health.py` made `python scripts/health.py` inside an
+    installed home die on `FileNotFoundError: .../brain/pyproject.toml` — the home ships the
+    scripts and the documents but no packaging manifest and no workflows, because it runs no CI.
+    A traceback in a gate looks exactly like a gate that produced no output, so the skip is
+    stated in words, and a checkout that really is missing its manifest still refuses.
+    """
+
+    def run_gate(self, root):
+        return common.run_utf8([sys.executable, str(ROOT / "scripts" / "ci_floor.py"),
+                                "--root", str(root)], cwd=str(ROOT))
+
+    def test_a_home_with_no_manifest_and_no_ci_states_the_skip(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp) / "brain"
+            (home / "00_START_HERE").mkdir(parents=True)
+            (home / "00_START_HERE" / "START.md").write_text(START_GOOD, encoding="utf-8")
+            result = self.run_gate(home)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertTrue(result.stdout.startswith("OK"), result.stdout)
+            for reason in ("not a repo checkout", "no .git, no pyproject.toml", "CI matrix"):
+                self.assertIn(reason, result.stdout, "the skip did not say why: %s" % result.stdout)
+
+    def test_a_checkout_that_lost_its_manifest_refuses_by_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = fixture(tmp)
+            (repo / "pyproject.toml").unlink()
+            (repo / ".git").mkdir()
+            result = self.run_gate(repo)
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn("pyproject.toml is missing", result.stdout)
+            self.assertIn("REFUSED", result.stdout)
 
 
 if __name__ == "__main__":

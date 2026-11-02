@@ -166,6 +166,19 @@ def clone_readable(rel):
     return not text.endswith(BOUNDARY_SUFFIXES)
 
 
+def is_repo_checkout(root):
+    """True when this folder is the source repo, false for an installed brain home.
+
+    Two things make a folder a repo: git metadata and a packaging manifest. `scripts/install.py`
+    lays down the scripts, the laws and the documents but neither of those, because what they
+    promise — a CI matrix, a released version, a tag — belongs to the repo that builds it. A gate
+    that judges those promises in a home has nothing to read, and the honest answer is a stated
+    skip, not a crash and not a defect invented for a folder that never made the claim.
+    """
+    path = Path(root)
+    return (path / ".git").exists() or (path / "pyproject.toml").is_file()
+
+
 def state_fingerprint(root, extra_skip_paths=()):
     """Content identity of the brain itself: the tree minus its paperwork."""
     return tree_fingerprint(root, list(PAPERWORK_SKIP_PATHS) + list(extra_skip_paths))

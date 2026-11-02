@@ -20,6 +20,9 @@ So the number is derived, not remembered:
 * `--bump` never tags and never pushes. It writes `VERSION` and prints the two commands a human
   runs to make the release; a tag is a published promise and this repo keeps promises for the
   owner to make.
+* An installed brain home keeps no `VERSION`, no `pyproject.toml` and no tag — it is a copy of
+  the engine, not a release — so `--check` states that skip and exits 0, while `--bump` refuses
+  there rather than writing a number into files the folder does not have.
 """
 import argparse
 import re
@@ -28,7 +31,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import find_root, run_utf8  # noqa: E402
+from common import find_root, is_repo_checkout, run_utf8  # noqa: E402
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -231,6 +234,10 @@ def report(root):
 
 def bump(root, level):
     version = declared_version(root)
+    if not version or not (Path(root) / "pyproject.toml").is_file():
+        print("REFUSED: %s has no %s — a bump writes a release number into files this folder "
+              "does not keep" % (root, "VERSION to read" if not version else "pyproject.toml"))
+        return 1
     split_semver(version)
     if level == "auto":
         commits = commits_since(root, latest_tag(root))
@@ -265,6 +272,21 @@ def main():
                         help="write the next version (auto = measured from commits since the tag)")
     args = parser.parse_args()
     root = Path(args.root) if args.root else find_root(Path(__file__))
+
+    if not is_repo_checkout(root):
+        # the four places this gate compares (VERSION, pyproject.toml, README badge, the tag)
+        # are the repo's release paperwork; an installed brain home keeps none of them, so the
+        # honest answer is a stated skip. A checkout missing one of them is a defect, and the
+        # refusal below still fires there.
+        if args.bump:
+            print("REFUSED: %s is an installed brain home, not a repo checkout (no .git, no "
+                  "pyproject.toml) — a version is a promise about a release. Bump the source "
+                  "repo and install again." % root)
+            return 1
+        print("OK — no release number to check in %s: this folder is an installed brain home, "
+              "not a repo checkout (no .git, no pyproject.toml), so it makes no version claim; "
+              "the engine it runs is the one the source repo released" % root)
+        return 0
 
     if args.bump:
         return bump(root, args.bump)

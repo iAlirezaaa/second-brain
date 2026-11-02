@@ -16,7 +16,10 @@ So the floor is checked in four places at once:
   the pinned image back to `ubuntu-latest`);
 * the `python floor` rows in README.md and 00_START_HERE/START.md — the number a human reads.
 
-Exit 0 = one floor everywhere; 1 = at least one of them disagrees.
+Exit 0 = one floor everywhere; 1 = at least one of them disagrees. An installed brain home keeps
+neither `.git` nor `pyproject.toml` and runs no CI, so the promise being compared does not live
+there: the gate says so in one stated line and exits 0. A checkout missing the manifest is a
+defect and still refuses.
 """
 import argparse
 import re
@@ -24,7 +27,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import find_root  # noqa: E402
+from common import find_root, is_repo_checkout  # noqa: E402
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -44,8 +47,11 @@ def parse_version(text):
 
 
 def requires_python_floor(root):
-    text = (Path(root) / "pyproject.toml").read_text(encoding="utf-8")
-    match = re.search(r'requires-python\s*=\s*">=\s*(\d+\.\d+)"', text)
+    path = Path(root) / "pyproject.toml"
+    if not path.is_file():
+        return None
+    match = re.search(r'requires-python\s*=\s*">=\s*(\d+\.\d+)"',
+                      path.read_text(encoding="utf-8"))
     return match.group(1) if match else None
 
 
@@ -95,6 +101,8 @@ def check(root):
     problems = []
     floor = requires_python_floor(root)
     if floor is None:
+        if not (root / "pyproject.toml").is_file():
+            return ['pyproject.toml is missing — no packaging manifest, so no floor to prove'], None
         return ['pyproject.toml declares no requires-python = ">=X.Y" floor'], None
     ci_versions, ci_runs = workflow_matrix(root, "ci.yml")
     if ci_versions is None:
@@ -142,6 +150,12 @@ def main():
     parser.add_argument("--root", default=None, help="repo root override (tests)")
     args = parser.parse_args()
     root = Path(args.root) if args.root else find_root(Path(__file__))
+    if not is_repo_checkout(root):
+        print("OK — no floor to prove in %s: this folder is an installed brain home, not a repo "
+              "checkout (no .git, no pyproject.toml), and the promise this gate inspects is the "
+              "repo's CI matrix. The runtime floor itself is unchanged and still stated to the "
+              "reader in 00_START_HERE/START.md" % root)
+        return 0
     problems, floor = check(root)
     if problems:
         for problem in problems:
