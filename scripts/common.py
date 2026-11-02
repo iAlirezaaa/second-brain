@@ -18,45 +18,83 @@ def find_root(start):
     raise RuntimeError("repo root not found (no rules/zones.json above " + str(cur) + ")")
 
 
-def parse_frontmatter(text):
-    """Minimal YAML-less frontmatter parser.
+def parse_frontmatter_checked(text):
+    """Read the supported YAML subset and report unsupported syntax without losing data.
 
-    Supports top-level `key: value` and simple `key: [a, b]` / `- item` lists.
-    Returns (dict, rest_of_text).
+    Returns (metadata, body, problems). If any frontmatter line cannot be read,
+    the caller gets the complete original document back as body with empty
+    metadata. No statement or reviewer law is silently cut out.
     """
     lines = text.splitlines()
-    fm = {}
     if not lines or lines[0].strip() != "---":
-        return fm, text
-    i = 1
+        return {}, text, []
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+    if end is None:
+        return {}, text, ["FRONTMATTER: opening --- has no closing fence"]
+    fm = {}
+    problems = []
     current_key = None
-    while i < len(lines) and lines[i].strip() != "---":
+    for i in range(1, end):
         line = lines[i]
         stripped = line.strip()
-        if stripped.startswith("- ") and current_key:
+        if not stripped:
+            continue
+        indented = line[0].isspace()
+        if stripped.startswith("- "):
+            if not current_key:
+                problems.append("FRONTMATTER line %d: list item has no parent key" % (i + 1))
+                continue
+            item = stripped[2:].strip()
+            if not item:
+                problems.append("FRONTMATTER line %d: empty list item" % (i + 1))
+                continue
             existing = fm.get(current_key)
             if existing is None:
-                existing = []                     # a bare "key:" followed by block items
+                existing = []
             elif not isinstance(existing, list):
-                existing = [str(existing)]        # "key: value" then items: keep both
-            existing.append(stripped[2:].strip())
+                existing = [str(existing)]
+            existing.append(item)
             fm[current_key] = existing
-        elif ":" in line:
-            key, _, value = line.partition(":")
-            key = key.strip()
-            value = value.strip()
-            current_key = key
-            if value.startswith("[") and value.endswith("]"):
-                items = [v.strip().strip("'\"") for v in value[1:-1].split(",") if v.strip()]
-                fm[key] = items
-            elif value == "":
-                fm[key] = None
-            else:
-                fm[key] = value.strip("'\"")
-        i += 1
-    body = "\n".join(lines[i + 1:])
-    return fm, body
+            continue
+        if indented:
+            # Only a continued list item is supported. Never hoist nested
+            # YAML keys into top-level permissions or silently discard text.
+            existing = fm.get(current_key) if current_key else None
+            if isinstance(existing, list) and existing and not stripped.startswith("#"):
+                existing[-1] += " " + stripped
+                continue
+            problems.append("FRONTMATTER line %d: nested/unknown syntax: %s"
+                            % (i + 1, stripped[:100]))
+            continue
+        if ":" not in line or stripped.startswith("#"):
+            problems.append("FRONTMATTER line %d: unrecognized line: %s"
+                            % (i + 1, stripped[:100]))
+            continue
+        key, _, value = line.partition(":")
+        key, value = key.strip(), value.strip()
+        if not key or " " in key:
+            problems.append("FRONTMATTER line %d: invalid key %r" % (i + 1, key))
+            continue
+        if key in fm:
+            problems.append("FRONTMATTER line %d: duplicate key %s" % (i + 1, key))
+            continue
+        current_key = key
+        if value.startswith("[") and value.endswith("]"):
+            fm[key] = [part.strip().strip("'\"") for part in value[1:-1].split(",")
+                       if part.strip()]
+        elif value == "":
+            fm[key] = None
+        else:
+            fm[key] = value.strip("'\"")
+    if problems:
+        return {}, text, problems
+    return fm, "\n".join(lines[end + 1:]), []
 
+
+def parse_frontmatter(text):
+    """Backwards-compatible two-value reader; unsupported markup is never swallowed."""
+    fm, body, _problems = parse_frontmatter_checked(text)
+    return fm, body
 
 def load_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
