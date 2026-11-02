@@ -615,6 +615,36 @@ def audit_tags(door, funcs, engine, agents):
     return problems
 
 
+def registry_surface_problems(root):
+    """Compare the live MCP door against its registered list, not prose estimates."""
+    root = Path(root)
+    path = root / "11_CONTROL" / "mcp" / "MCP-E1807E50-second-brain-bridge.json"
+    if not path.is_file():
+        if (root / "pyproject.toml").is_file():
+            return ["MCP REGISTRY: the source repo has no registered second-brain bridge"]
+        return []  # installed home / fixture with no source-control registry
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        return ["MCP REGISTRY: invalid JSON (%s)" % type(exc).__name__]
+    declared = record.get("tools_exposed")
+    if not isinstance(declared, list) or not all(isinstance(x, str) for x in declared):
+        return ["MCP REGISTRY: tools_exposed must be an explicit string list"]
+    if len(set(declared)) != len(declared):
+        return ["MCP REGISTRY: tools_exposed contains duplicate names"]
+    actual = {row["name"] for row in TOOLS}
+    missing = sorted(actual - set(declared))
+    phantom = sorted(set(declared) - actual)
+    problems = []
+    if missing:
+        problems.append("MCP REGISTRY: %d served tool(s) missing from record: %s"
+                        % (len(missing), ", ".join(missing)))
+    if phantom:
+        problems.append("MCP REGISTRY: %d phantom tool(s) declared but not served: %s"
+                        % (len(phantom), ", ".join(phantom)))
+    return problems
+
+
 def check_tools(root):
     """The door audits itself: print what every reachable tool is, then refuse what cannot be
     cross-checked. Facts first, verdict last -- the shape `doctor_status` already uses."""
@@ -626,6 +656,7 @@ def check_tools(root):
         print("  engine  %-18s %s%s" % (row["name"], row["behavior"],
                                         " (writes)" if row["writes"] else ""))
     problems = audit_tags(TOOLS, set(TOOL_FUNCS), engine, agents)
+    problems.extend(registry_surface_problems(root))
     for problem in problems:
         print("INVALID  %s" % problem)
     if problems:
