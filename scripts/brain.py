@@ -205,6 +205,8 @@ def evidence_path(root, raw):
     path = Path(text)
     if path.is_absolute() or ".." in path.parts or not path.parts:
         raise Refused("evidence must be a relative path inside the brain")
+    if any(part.startswith(".env") or part in (".secrets", "secrets", "14_CANDIDATES") for part in path.parts):
+        raise Refused("secret or quarantined file is not durable evidence")
     candidate = (Path(root) / path).resolve()
     canonical = Path(root).resolve()
     if canonical not in candidate.parents or not candidate.is_file():
@@ -252,73 +254,89 @@ def handoff(root, sid, summary, next_action, risks):
     if not isinstance(risks, str) or len(risks) > 2000:
         raise Refused("risks too long")
     with closing(connect(root, create=True)) as conn:
-        with conn:
-            session = _session(conn, sid, active=True)
-            items = _tasks(conn, sid)
-            lines = ["# Session handoff: " + sid, "",
-                     "- Actor: " + session["actor"],
-                     "- Goal: " + session["goal"].replace("\n", " "),
-                     "- Summary: " + summary.replace("\n", " "),
-                     "- Risks: " + (risks.strip() or "None reported").replace("\n", " "),
-                     "- Next action: " + next_action.replace("\n", " "),
-                     "", "## Task ledger"]
-            for task in items:
-                lines.append("- [%s] #%d %s — %s" %
-                             ("x" if task["state"] == "done" else " ",
-                              task["id"], task["summary"].replace("\n", " "),
-                              task["evidence"] or "no evidence"))
-            body = "\n".join(lines) + "\n"
-            conn.execute("UPDATE sessions SET handoff=? WHERE id=?", (body, sid))
-            event(conn, sid, "handoff_written",
-                  {"open_tasks": sum(t["state"] == "todo" for t in items)})
-    # Durable local handoff and draft. Neither is promoted into public knowledge.
-    directory = _storage(root, create=True) / "handoffs"
-    directory.mkdir(exist_ok=True)
-    for target in (directory / (sid + ".md"),):
+        session = _session(conn, sid, active=True)
+        items = _tasks(conn, sid)
+        lines = ["# Session handoff: " + sid, "",
+                 "- Actor: " + session["actor"],
+                 "- Goal: " + session["goal"].replace("\n", " "),
+                 "- Summary: " + summary.replace("\n", " "),
+                 "- Risks: " + (risks.strip() or "None reported").replace("\n", " "),
+                 "- Next action: " + next_action.replace("\n", " "),
+                 "", "## Task ledger"]
+        for task in items:
+            resolved = task["state"] == "done" or task["category"] == "handoff"
+            lines.append("- [%s] #%d %s — %s" %
+                         ("x" if resolved else " ",
+                          task["id"], task["summary"].replace("\n", " "),
+                          task["evidence"] or ("this handoff" if task["category"] == "handoff" else "no evidence")))
+        body = "\n".join(lines) + "\n"
+        directory = _storage(root, create=True) / "handoffs"
+        if directory.is_symlink():
+            raise Refused("handoff directory cannot be a symlink")
+        directory.mkdir(exist_ok=True)
+        target = directory / (sid + ".md")
         if target.is_symlink():
-            raise Refused("handoff target is a symlink")
-        target.write_text(body, encoding="utf-8")
-    return {"session": sid, "handoff": str((directory / (sid + ".md")).relative_to(root)),
-            "unfinished": sum(t["state"] == "todo" for t in items)}
-
+            raise Refused("handoff target cannot be a symlink")
+        temporary = directory / ("." + sid + "-" + uuid.uuid4().hex + ".tmp")
+        try:
+            temporary.write_text(body, encoding="utf-8")
+            temporary.replace(target)
+        finally:
+            if temporary.exists():
+                temporary.unlink()
+        with conn:
+            conn.execute("UPDATE sessions SET handoff=? WHERE id=?", (body, sid))
+            conn.execute("""UPDATE tasks SET state='done',evidence=?,updated_at=?
+                            WHERE session_id=? AND category='handoff' AND state='todo'""",
+                         ("private-local-handoff", now(), sid))
+            event(conn, sid, "handoff_written",
+                  {"open_tasks": sum(t["state"] == "todo" and t["category"] != "handoff" for t in items)})
+    return {"session": sid, "handoff": target.relative_to(root).as_posix(),
+            "unfinished": sum(t["state"] == "todo" and t["category"] != "handoff" for t in items),
+            "handoff_task_completed": True}
 
 def close(root, sid, outcome, owner_approved=False):
     if outcome not in ("success", "partial", "failed"):
         raise Refused("outcome must be success, partial or failed")
     with closing(connect(root, create=True)) as conn:
+        session = _session(conn, sid, active=True)
+        if not session["handoff"]:
+            raise Refused("a handoff is mandatory before closing a session")
+        pending = [t for t in _tasks(conn, sid) if t["state"] != "done"]
+        if outcome == "success" and pending:
+            raise Refused("success requires all tasks completed (%d pending)" % len(pending))
+        if outcome == "success" and not owner_approved:
+            raise Refused("a successful outcome requires explicit human confirmation --owner-approved")
+        folder = _storage(root, create=True) / "skill-proposals"
+        if folder.is_symlink():
+            raise Refused("skill proposal directory cannot be a symlink")
+        folder.mkdir(exist_ok=True)
+        file = folder / (sid + ".md")
+        if file.is_symlink():
+            raise Refused("skill proposal target is a symlink")
+        draft = "# Unreviewed skill proposal from " + sid + "\n\n"
+        draft += "Status: draft; NOT executable or installed.\n\n"
+        draft += "## Goal\n" + session["goal"] + "\n\n"
+        draft += "## Observed steps (review for generality)\n"
+        for task in _tasks(conn, sid):
+            draft += "- %s [%s; evidence: %s]\n" % (
+                task["summary"], task["state"], task["evidence"] or "none")
+        draft += "\n## Review\nOnly promote when reusable, independently evaluated, and the owner approves.\n"
+        tmp = folder / ("." + sid + "-" + uuid.uuid4().hex + ".tmp")
+        try:
+            tmp.write_text(draft, encoding="utf-8")
+            tmp.replace(file)
+        finally:
+            if tmp.exists():
+                tmp.unlink()
         with conn:
-            session = _session(conn, sid, active=True)
-            if not session["handoff"]:
-                raise Refused("a handoff is mandatory before closing a session")
-            pending = [t for t in _tasks(conn, sid) if t["state"] != "done"]
-            if outcome == "success" and pending:
-                raise Refused("success requires all tasks completed (%d pending)" % len(pending))
-            if outcome == "success" and not owner_approved:
-                raise Refused("a successful outcome requires explicit human confirmation --owner-approved")
             conn.execute("UPDATE sessions SET state='closed',outcome=?,closed_at=? WHERE id=?",
                          (outcome, now(), sid))
             event(conn, sid, "closed", {"outcome": outcome, "owner_approved": owner_approved,
                                        "uncompleted": len(pending)})
-            # Draft a skill for every session; a one-off result is still only a DRAFT.
-            # It is never registered, activated, or injected into an agent's prompt.
-            skill_draft = "# Unreviewed skill proposal from " + sid + "\n\n"
-            skill_draft += "Status: draft; NOT executable or installed.\n\n"
-            skill_draft += "## Goal\n" + session["goal"] + "\n\n"
-            skill_draft += "## Observed steps (review for generality)\n"
-            for task in _tasks(conn, sid):
-                skill_draft += "- %s [%s; evidence: %s]\n" % (
-                    task["summary"], task["state"], task["evidence"] or "none")
-            skill_draft += "\n## Review\nOnly promote if reusable, correctly evaluated, and the owner approves.\n"
-    folder = _storage(root, create=True) / "skill-proposals"
-    folder.mkdir(exist_ok=True)
-    file = folder / (sid + ".md")
-    if file.is_symlink():
-        raise Refused("skill proposal target is a symlink")
-    file.write_text(skill_draft, encoding="utf-8")
     return {"session": sid, "state": "closed", "outcome": outcome,
             "draft_skill": file.relative_to(root).as_posix(),
             "skill_installed": False, "pending_tasks": len(pending)}
-
 
 def twin(root, sid, steps):
     """Deterministic task-state simulation in RAM: no tools, network or storage writes."""
