@@ -43,3 +43,97 @@ jobs:
       # only on the owner's seeded local folder
       - name: HADES plane is honest from a pristine clone
         run: python scripts/ci_hades_plane.py --battery
+
+  # Track A's independent witness. `scripts/backup_proof.py` seals synthetic bytes and prints a
+  # draft, but it cannot certify *where* it ran: a host name is self-reported, and one machine
+  # agreeing with itself is the self-deception the charter names. This pair supplies the two facts
+  # no single machine can invent — a run id and two different OS images. Nothing here writes the
+  # evidence file: the shelf and the planes are gitignored, the artifact expires in a day, and
+  # scripts/vault_check.py still refuses to open encrypted_private_backup until a human has read
+  # a real green run.
+  backup-seal:
+    needs: test
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.9"
+      # The key is generated here — never typed, never an argument, never printed. It travels in
+      # the same ephemeral artifact as the container, so what this pair proves is the round trip
+      # of bytes across machines, not confidentiality; on a real vault the key never leaves the
+      # owner's terminal.
+      - name: Generate a throwaway key outside the repository
+        run: |
+          python - <<'PY'
+          import os
+          import secrets
+          path = os.path.join(os.environ["RUNNER_TEMP"], "sbo1-key")
+          with open(path, "w", encoding="utf-8") as handle:
+              handle.write(secrets.token_hex(24) + "\n")
+          PY
+      - name: Write synthetic bytes into every declared private plane
+        run: python scripts/backup_proof.py --fixture
+      # pbkdf2 rather than scrypt because the runner is small and the envelope records whichever
+      # KDF was paid for, so the witness never claims a cost this job did not measure.
+      - name: Seal every declared private plane
+        run: |
+          python scripts/backup_proof.py --seal \
+            --passphrase-file "$RUNNER_TEMP/sbo1-key" \
+            --envelope "$RUNNER_TEMP/envelope.json" \
+            --kdf pbkdf2 \
+            --ci-run "${{ github.run_id }}"
+      - name: Stage the container, its envelope and its key
+        run: |
+          mkdir -p "$RUNNER_TEMP/proof"
+          cp 15_SYSTEM/backups/private/*.sbo1 "$RUNNER_TEMP/proof/"
+          cp "$RUNNER_TEMP/envelope.json" "$RUNNER_TEMP/proof/envelope.json"
+          mv "$RUNNER_TEMP/sbo1-key" "$RUNNER_TEMP/proof/sbo1-key"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbo1-cross-machine-proof
+          path: ${{ runner.temp }}/proof
+          retention-days: 1
+
+  # The restoring machine never wrote these bytes and cannot see the sealing machine's disk. No
+  # escape hatch is passed here: this job either proves a restore on a different host or fails.
+  backup-restore:
+    needs: [test, backup-seal]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        python-version: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: sbo1-cross-machine-proof
+          path: ${{ runner.temp }}/proof
+      # Only the container has to arrive: vault.restore reads the shelf and not the planes, which
+      # is what a machine recovering from a lost disk actually looks like.
+      - name: Put the container on this machine's shelf
+        run: |
+          mkdir -p 15_SYSTEM/backups/private
+          cp "$RUNNER_TEMP/proof/"*.sbo1 15_SYSTEM/backups/private/
+      - name: Restore bytes this machine never wrote
+        run: |
+          python scripts/backup_proof.py --restore \
+            --envelope "$RUNNER_TEMP/proof/envelope.json" \
+            --passphrase-file "$RUNNER_TEMP/proof/sbo1-key" \
+            --into "$RUNNER_TEMP/restored" \
+            --witness
