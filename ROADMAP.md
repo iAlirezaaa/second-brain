@@ -733,6 +733,36 @@ repo does not yet do.*
       row, the database-and-app-server row and the HTTP/server row now state *absence of
       evidence* as the reason, each with the condition that would change it. A reason that a
       subsystem is "too complex" is the one argument brief §3 forbids.
+- [x] 🔵 **S** stage 0 of that order — and the first thing it found was not a missing capability but a
+      measurement that lied. `scripts/base.py --save` copies the tree into a recorded known-good base
+      under the snapshot root, and `scripts/link_check.py` walked that copy as if it were the vault:
+      every note existed twice in the stem index, so the resolver's collision rule — the rule whose
+      entire job is to refuse *guessing* which of two files the author meant — fired on links the
+      author had written unambiguously, and the graph the owner drew collapsed to no edges and one
+      island per note. Invisible in CI and in `python scripts/health.py`: the plane is gitignored, and
+      every vault gate defaults to `vault-template`, so only the machine that had just recorded a base
+      could see it. `link_check.py::link_targets` now takes the recorded base out of the target index
+      and nothing else out: the test is vault-relative, so a snapshot judged as its own vault still
+      resolves its own links, and it is scoped to the snapshot root alone, so two live notes that
+      genuinely share a stem are still refused rather than bound to whichever path sorts first.
+      Measured by `python scripts/link_check.py --vault . --readout`, which prints the tree it judged
+      and the counts, so an empty result says what it looked at. Source: brief §7 (the link graph *is*
+      retrieval) and §17 (a fix is a test, not a paragraph).
+- [x] 🔵 **S** `tests/test_phase47_link_graph_plane.py` — written red first, on a fixture and on the
+      real tree with a base copied into it. Before the change the three regression cases failed naming
+      exactly the snapshot path, and the two guard cases (a live stem collision still ambiguous, a
+      snapshot opened as its own vault still extracted) passed all along — which is what pins the fix
+      to its scope instead of letting it widen into a general silence. Run it with
+      `python -m unittest tests.test_phase47_link_graph_plane`; the test count is that command's to
+      print, not this file's.
+- [ ] 🔵 **S** the same class of blind spot, still open: the search plane and the graph plane disagree
+      about what the corpus is. `scripts/kb.py` keeps one exclusion list (`NOT_CORPUS`) and the
+      recorded base is not on it, so a full-text index built on a machine that has recorded a base
+      returns each note once per snapshot, while the link gate this commit just fixed refuses to count
+      those copies at all; `scripts/loop.py` walks the tree the same unfiltered way. What is missing:
+      one declared notion of "the plane that is judged", shared by the graph, the index and the loop,
+      with each of them naming which root it measured — and a vault gate that can be pointed at the
+      owner's real notes by default instead of only by `--vault`.
 - [ ] 🔵 **L** the debt table closed, in the order the owner's brief sets: encrypted backup with a
       real restore test (§8), the per-agent boundary at the door that actually serves reads
       (§8/§9), the record model and entity statuses the personal brain needs (§4/§6), the durable

@@ -70,6 +70,21 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   whoever last read the plan.
 
 ### Fixed
+- **A recorded known-good base no longer redraws the link graph as a pile of islands.**
+  `python scripts/base.py --save` copies the tree into `15_SYSTEM/backups/known-good/<stamp>/`, and
+  `scripts/link_check.py::classify_links` built its stem index over that copy as if it were the
+  vault: every note appeared twice, so the resolver's collision rule — the rule whose whole job is
+  to refuse guessing which of two files the author meant — fired on links written unambiguously.
+  Measured on this tree with a base on disk, before the change: the 7 exact wikilinks in
+  `02_WIKI/indexes/reference-maps.md` came back `ambiguous`, the readout reported 22 degree-0 notes
+  and no hub; after it, the same command reports 22 notes with 7 edges, 0 ambiguous, 0 broken and
+  `02_WIKI/indexes/reference-maps.md` as the hub. `link_targets` takes the recorded base out of the
+  target index and nothing else out: the test is vault-relative, so a snapshot opened as its own
+  vault still resolves its own links, and it is scoped to the snapshot root alone, so two live notes
+  that genuinely share a stem are still refused instead of bound to whichever path sorts first.
+  Invisible in CI and in `python scripts/health.py`, because that plane is gitignored and every
+  vault gate defaults to `vault-template` — only the machine that had just recorded a base could see
+  it. Pinned by `tests/test_phase47_link_graph_plane.py`, written red first.
 - Eight roadmap rows cited `backend/…` while the repo holds those files under
   `15_SYSTEM/scripts/backend/…` — true as names, unopenable from a clone. They now carry
   repo-relative paths, the law `scripts/common.py::clone_readable` already enforces on generated

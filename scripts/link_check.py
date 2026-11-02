@@ -45,6 +45,7 @@ from collections import namedtuple
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+from base import SNAPSHOT_ROOT
 from common import WIKILINK_RE, find_root, iter_markdown, iter_notes
 
 # every gate prints its verdict in UTF-8: an em dash that dies on a Windows console turns a
@@ -65,6 +66,27 @@ Edge = namedtuple("Edge", "source target label reason path")
 
 # prose contract files are not notes; their example links are documentation, not data
 # the name list lives in common.is_prose so both vault gates agree on what a note is
+
+
+def in_recorded_base(path, vault):
+    """True when this markdown sits inside a known-good base recorded by `scripts/base.py`.
+
+    A recorded base is a byte-for-byte copy of the vault taken so the owner can roll back; it is
+    not a second file the author could have meant. `iter_markdown` is deliberately unfiltered — a
+    candidate row is not a note but is still a legitimate link target — so the copies arrive in
+    the stem index here and must be dropped again, or every live note reads as a stem collision
+    and the graph the author drew collapses into 0 edges and one island per note.
+
+    The test is vault-relative, not absolute: judge a base as its own vault and its own links
+    resolve, because the exclusion asks "is this inside the plane being judged a copy of?".
+    """
+    rel = Path(path).relative_to(Path(vault)).as_posix()
+    return rel == SNAPSHOT_ROOT or rel.startswith(SNAPSHOT_ROOT + "/")
+
+
+def link_targets(vault):
+    """Every markdown file a wikilink could name: the whole tree, minus the recorded bases."""
+    return sorted(p for p in iter_markdown(vault) if not in_recorded_base(p, vault))
 
 
 def build_index(targets, vault):
@@ -146,9 +168,14 @@ def classify_links(vault):
     `ambiguous`; `broken` holds the missing ones as (source, target) pairs, exactly the shape
     the gate has always reported. Ambiguous edges are returned (so they can be named), but the
     graph readout deliberately does not treat them as navigable.
+
+    A note can be a link source or a link target, and the two questions have different answers:
+    the sources are the author's notes (`iter_notes`, prose excluded), while the targets are every
+    file a link could name — except the copies made by `scripts/base.py --save`, which a recorded
+    known-good base is full of. See `link_targets`.
     """
     vault = Path(vault)
-    targets = sorted(iter_markdown(vault))
+    targets = link_targets(vault)
     stem_to_files, rel_to_file = build_index(targets, vault)
     edges = []
     broken = []
