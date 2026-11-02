@@ -62,6 +62,7 @@ import common  # noqa: E402
 import memory as memory_ledger  # noqa: E402
 import candidate_check  # noqa: E402
 from backend.tools_kit import BEHAVIOR_TAGS, default_registry  # noqa: E402
+from backend import session_bridge  # noqa: E402
 
 HADES_PATH = _HERE / "hades.py"
 PROTOCOL_VERSION = "2025-06-18"
@@ -458,6 +459,14 @@ TOOLS = [
          "confidence": {"type": "number", "minimum": 0, "maximum": 1}},
          "required": ["cue", "lesson"]}},
 ]
+# Optional session-bound execution metadata, shown to every MCP client.
+# Legacy clients remain compatible when SBO_REQUIRE_SESSION is disabled.
+SESSION_ARGS = {"session_id": {"type": "string"},
+                "actor_id": {"type": "string"},
+                "task_id": {"type": "integer"}}
+for _tool in TOOLS:
+    _tool["inputSchema"]["properties"].update(SESSION_ARGS)
+
 TOOL_FUNCS = {
     "capabilities": tool_capabilities,
     "lesson_propose": tool_lesson_propose,
@@ -682,17 +691,59 @@ def err(mid, code, message):
     return {"jsonrpc": "2.0", "id": mid, "error": {"code": code, "message": message}}
 
 
+def _mcp_session_permission(root, name, actor):
+    """Session-bound MCP writes must also be in the registered actor's allowlist."""
+    definition = next((row for row in TOOLS if row["name"] == name), None)
+    if definition is None or definition.get("behavior") == "read_only":
+        return
+    rows = [row for row in agent_rows(root) if row.get("id") == actor]
+    if len(rows) != 1 or rows[0].get("error") or name not in rows[0]["tool_allowlist"]:
+        raise ToolRefused("MCP write %s is not in the registered actor's tool_allowlist" % name)
+
+
 def handle_tool_call(root, params):
     name = str(params.get("name") or "")
     fn = TOOL_FUNCS.get(name)
     if fn is None:
         return {"content": [{"type": "text", "text": "unknown tool %r" % name}], "isError": True}
+    args = params.get("arguments") or {}
+    if not isinstance(args, dict):
+        return {"content": [{"type": "text", "text": "REFUSED: tool arguments must be an object"}],
+                "isError": True}
+    sid = args.get("session_id") or ""
+    actor = args.get("actor_id") or ""
+    task_id = args.get("task_id")
+    protected = bool(sid) or session_bridge.enabled()
+    attempted = False
     try:
-        text = fn(root, params.get("arguments") or {})
-    except ToolRefused as refused:
+        if protected:
+            session_bridge.require(root, sid, actor, task_id)
+            _mcp_session_permission(root, name, actor)
+            session_bridge.audit(root, sid, actor, "mcp." + name, "attempt", "", task_id)
+            attempted = bool(sid)
+        text = fn(root, args)
+    except (ToolRefused, ValueError) as refused:
+        if attempted:
+            try:
+                session_bridge.audit(root, sid, actor, "mcp." + name,
+                                     "failed", type(refused).__name__, task_id)
+            except ValueError:
+                pass
         return {"content": [{"type": "text", "text": "REFUSED: %s" % refused}], "isError": True}
     except Exception as exc:  # a tool crash is a tool result, not a dead server
+        if attempted:
+            try:
+                session_bridge.audit(root, sid, actor, "mcp." + name,
+                                     "failed", type(exc).__name__, task_id)
+            except ValueError:
+                pass
         return {"content": [{"type": "text", "text": "ERROR: %s" % exc}], "isError": True}
+    if attempted:
+        try:
+            session_bridge.audit(root, sid, actor, "mcp." + name, "ok", text, task_id)
+        except ValueError as exc:
+            return {"content": [{"type": "text", "text": "REFUSED: MCP tool completed but audit failed: %s" % exc}],
+                    "isError": True}
     return {"content": [{"type": "text", "text": text}]}
 
 
