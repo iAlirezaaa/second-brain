@@ -18,7 +18,14 @@ jobs:
         python-version: ["3.9", "3.12"]
     runs-on: ${{ matrix.os }}
     steps:
+      # full history, not the default depth-1: the version gate judges whether HEAD's VERSION is
+      # the commit a tag points at, and a shallow clone cannot answer — so on a branch push after
+      # a tag the gate refused a released version it could not see (measured on run 41412566723,
+      # red in 1m16s, while the tag-event run of the same commit was green). The tag half is only
+      # real if the clone carries tags; tests/test_phase44_ci_reads_its_tags.py holds this line.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}

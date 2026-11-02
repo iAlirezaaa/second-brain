@@ -5,8 +5,8 @@ title: Repo memory
 status: raw
 owner: agent
 topics: [memory, lessons, evidence]
-created: 2026-11-01
-updated: 2026-11-01
+created: 2026-11-02
+updated: 2026-11-02
 generated_by: scripts/memory.py --render
 ---
 
@@ -22,6 +22,7 @@ An empty answer is legal and honest -- that is `NO_ENTRY`, and it is data, not a
 | id | cue | lesson | verdict | conf | evidence |
 | --- | --- | --- | --- | --- | --- |
 | `mem-child-output-encoding` | a gate's child printed em dashes or Persian on a Windows console | read subprocess output through common.run_utf8 (encoding='utf-8'); text=True alone inherits the code page and the parent dies looking like a gate that said nothing | `helped` | 0.95 | `scripts/common.py`, `tests/test_toolchain.py` |
+| `mem-ci-clone-must-carry-what-the-gate-judges` | a git-reading gate passes locally and refuses the same commit in CI | a gate's verdict is only as wide as the clone it is handed: actions/checkout defaults to depth 1, which carries no tags for a commit after the release, so scripts/version.py correctly refused a version that is published. Fetch what the gate judges (fetch-depth: 0) and reproduce the environment in a test, not the expectation of it | `helped` | 0.95 | `.github/workflows/ci.yml`, `tests/test_phase44_ci_reads_its_tags.py` |
 | `mem-measurement-freshness` | a verdict cited a probe that ran before the last edit | a fresh measurement matches the current state fingerprint AND the candidate digest; paperwork (14_CANDIDATES, 12_RUNTIME, the proposal sink) stays outside the fingerprint so filing never invalidates an honest run | `helped` | 0.95 | `scripts/probe.py`, `scripts/common.py`, `tests/test_phase12_probe.py` |
 | `mem-doors-must-point-at-real-rooms` | a generated instruction file names a path that no longer exists | every host door is generated from AGENTS.md, so a stale path in the canon is republished to five agents at once; lint the backticked paths in the body and refuse the render, do not review the prose by eye | `helped` | 0.9 | `scripts/sync_hosts.py`, `skills/first-session/SKILL.md`, `tests/test_phase16_host_independence.py` |
 | `mem-dot-prefix-stripping` | evidence pointed at a path starting with a dot, like .kb/kb.sqlite | strip a leading './' as a prefix, never with lstrip('./'): the character class eats the dot and the gate reports a real file as a fabrication | `helped` | 0.9 | `scripts/candidate_check.py`, `tests/test_phase13_candidate_contract.py` |

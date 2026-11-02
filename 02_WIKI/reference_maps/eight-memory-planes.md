@@ -166,14 +166,17 @@ still returned. `tools/list` says so in the tool's own description
 (`tests/test_phase44_lesson_validity_windows.py::TheDoorMarksTheWindowToo`).
 
 **The measurement behind the default, not a wish.** `python scripts/memory.py --windows` on this
-repo, 2026-11-02: **27 row(s): 27 evergreen, 0 current, 0 stale, 0 invalid** — 0 of 27 shipped
-lessons are stale, because none of them carries either field. That is why `absent = evergreen` is
-the default: the alternative (key the rule on the existing `date` field and call anything older
-than N days stale) would have aged every row by a claim the row never made — `date` is when the
-lesson was written, not when it stops being true. No date was written into
-`15_SYSTEM/memory/lessons.jsonl` to make the gate bite; the refusals above are proven with
-fixtures (`tests/test_phase44_lesson_validity_windows.py`), and there is no `--migrate-window`
-command, because migrating would mean inventing 27 windows nobody observed.
+repo prints the live counts, and every count it has ever printed on the shipped ledger is the same
+shape: **zero stale**. Not one shipped lesson carries `expires` or `verified_at`, so none can be
+out of its window — which is why `absent = evergreen` is the default. The alternative (key the rule
+on the existing `date` field and call anything older than N days stale) would have aged every row by
+a claim the row never made: `date` is when the lesson was written, not when it stops being true. The
+row count is deliberately not quoted here — a hand-typed number in a reference map goes false the
+moment a lesson lands, and a lesson landing is the normal business of this repo. Read it from
+`--windows`. No date was written into `15_SYSTEM/memory/lessons.jsonl` to make the gate bite; the
+refusals above are proven with fixtures
+(`tests/test_phase44_lesson_validity_windows.py`), and there is no `--migrate-window` command,
+because migrating would mean inventing a window for every lesson in the ledger.
 
 ## What a lesson's tags are NOT
 

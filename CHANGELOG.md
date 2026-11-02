@@ -6,9 +6,19 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-Nothing unreleased. Every change sitting in the tree is inside `## [0.1.0]` below; work that has
-not been written yet is a row in `ROADMAP.md`, not an entry here — this section only fills when a
-change lands and the version has not been released yet.
+### Fixed
+- **The workflows now clone what the version gate judges.** Cutting `v0.1.0` produced two CI runs
+  of the same tree with opposite verdicts: the tag-event run was green, and the branch run 1m
+  later — on the very next commit — died in `scripts/health.py` with
+  `VERSION 0.1.0 is not tagged and CHANGELOG.md's [Unreleased] declares nothing`. Neither answer
+  was wrong. `actions/checkout@v7` clones at depth 1, and a depth-1 clone of a commit that is not
+  the tagged one carries **no tags at all**, so from the first commit after any release the gate is
+  handed a history with its own release missing and refuses a version that *is* published. Both
+  workflows now pass `fetch-depth: 0`, and
+  `tests/test_phase44_ci_reads_its_tags.py` reproduces the whole thing in three throwaway local
+  repos: the shallow clone cannot `git describe` the tag and the gate refuses it for a reason that
+  is not true of the repo, while the full clone of the same commit passes. One test reads the
+  workflow text, so the fix cannot rot back into a depth-1 clone unnoticed.
 
 ## [0.1.0] - 2026-11-02
 

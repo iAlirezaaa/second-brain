@@ -13,7 +13,12 @@ jobs:
     # in setup-python for five runs while the local gates stayed green
     runs-on: ubuntu-24.04
     steps:
+      # the loop runs the gates, and the version gate judges a tag: a depth-1 clone cannot see
+      # one, so the nightly would refuse a released version for the wrong reason. Same reason as
+      # in ci.yml; held by tests/test_phase44_ci_reads_its_tags.py.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v7
         # 3.12, not 3.9: the nightly loop's own availability is a promise the repo makes
         # (a loop that dies in setup-python stops improving in silence), and the 3.9 floor

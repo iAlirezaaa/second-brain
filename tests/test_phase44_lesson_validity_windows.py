@@ -22,9 +22,11 @@ The semantics, stated before the code and written into `rules/memory.schema.json
 `--recall` marks a stale row instead of dropping it, `--windows` reports the measured counts, and
 the MCP door's `memory_recall` marks the row with the same helper — one rule, two readers.
 
-Measured on this repo's shipped ledger before the rule was chosen: 0 of 27 rows carry either
-field, so 0 of 27 are stale and the default is `absent = evergreen`. No date was invented to
-make a number appear.
+Measured on this repo's shipped ledger before the rule was chosen: not one row carried either
+field, so not one was stale and the default is `absent = evergreen`. No date was invented to
+make a number appear. The row *count* is deliberately not frozen anywhere below or in the plane
+map: a lesson landing is normal business here, and a typed count would go false on the next
+commit while saying nothing about the rule.
 """
 import json
 import shutil
@@ -287,11 +289,14 @@ class TheDoorRefusesABrokenWindow(WindowFixture):
 
 
 class TheShippedLedgerIsMeasured(WindowFixture):
-    """The default was chosen from the shipped rows, not from a wish: 0 of 27 are stale."""
+    """The default was chosen from the shipped rows, not from a wish: none carries a window, so
+    none is stale. The counts are read from the ledger on every run — a typed row count here would
+    go false the next time a lesson lands, which is the silent-gate failure in the other direction:
+    a number that was true once and now only proves the test was written before the change."""
 
     def test_no_shipped_row_carries_an_expired_window(self):
         rows = memory.read_lessons(ROOT)[0]
-        self.assertEqual(27, len(rows), "the count this rule was measured against changed")
+        self.assertTrue(rows, "an empty ledger measures nothing and cannot back a default")
         self.assertEqual(0, sum(1 for r in rows if r.get("expires") or r.get("verified_at")),
                          "rows now carry windows; re-measure before trusting the default")
         self.assertEqual([], memory.stale_rows(rows, TODAY))
@@ -302,7 +307,7 @@ class TheShippedLedgerIsMeasured(WindowFixture):
         done = run_utf8([sys.executable, MEMORY, "--root", str(ROOT), "--windows"], cwd=str(ROOT))
         self.assertEqual(0, done.returncode, done.stdout)
         self.assertIn("0 stale", done.stdout)
-        self.assertIn("27 evergreen", done.stdout)
+        self.assertIn("%d evergreen" % len(memory.read_lessons(ROOT)[0]), done.stdout)
 
     def test_no_shipped_row_is_rewritten_by_the_gate(self):
         """Byte-for-byte: --check and --windows are readers over the shipped ledger."""
@@ -329,11 +334,15 @@ class TheContractIsWrittenDown(WindowFixture):
                             for line in schema["invariants"]),
                         "an invariant must forbid deleting or rewriting a stale row")
 
-    def test_the_memory_plane_map_states_the_semantics_and_the_measurement(self):
+    def test_the_memory_plane_map_states_the_semantics_and_points_at_the_measurement(self):
         text = MAP.read_text(encoding="utf-8")
         for phrase in ("verified_at", "expires", "evergreen", "stale", "--windows"):
             self.assertIn(phrase, text, "the map does not state the window rule (%s)" % phrase)
-        self.assertIn("0 of 27", text, "the map must carry the measurement, not a bare promise")
+        self.assertIn("zero stale", text,
+                      "the map must carry what the gate has always measured, not a bare promise")
+        self.assertNotIn("row(s): ", text,
+                         "the map froze a row count; a landing lesson makes the prose a liar — "
+                         "point the reader at `memory.py --windows` instead")
 
     def test_the_door_help_lists_the_window_flags(self):
         done = run_utf8([sys.executable, MEMORY, "--help"], cwd=str(ROOT))

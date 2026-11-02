@@ -21,12 +21,12 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 696 |
+| tests collected (`python -m unittest discover -s tests`) | 702 |
 | health gates (`python scripts/health.py`) | 12 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
-| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 26 |
+| active lessons (`15_SYSTEM/memory/lessons.jsonl`) | 27 |
 | candidate rows on the shelf (`14_CANDIDATES/loop`) | 6 |
 | kinds in the contract (`15_SYSTEM/config/system.json`) | 34 |
 | relation types in the contract | 13 |
