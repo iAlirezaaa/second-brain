@@ -5,6 +5,20 @@
 موضوع‌ها را در **Topics** اضافه کنید. یک بار انجام می‌شود؛ بعد از آن، این فایل مرجعِ آن
 متن است تا توضیحِ ریپو و README از هم جدا نشوند.
 
+## نام
+
+**`second-brain-os`** نام مخزن و محصول است: «یک مغز دوم که یک سیستم کامل است، نه یک پوشهٔ
+یادداشت». **HADES v3** نامِ رمزِ موتور است و در کد می‌ماند — `hades.py` همان درِ رجیستری است و
+`HADES OS v3` همان اسکلتِ ناحیه‌ها را می‌گذارد. بجِ نسخه در README به همین دلیل
+`engine-v…` خوانده می‌شود.
+
+## متن انگلیسیِ فعلاً منتشرشده (۲۰۲۶-۱۱-۰۲، با `gh repo edit` تنظیم شد)
+
+> Second Brain OS (engine codename HADES v3) — a local, plain-markdown second brain for one
+> human and many AI agents: numbered zones, retrieval with provenance, every rule enforced by a
+> script instead of a reminder, harnesses over MCP on stdio, durable changes only with a human
+> approval.
+
 ## متن کوتاه (حدود ۳۵۰ کاراکتر، محدودیت گیت‌هاب)
 
 > دومغزیِ شخصی و محلی روی مارک‌داون: دانش، پروژه‌ها و اجرای ایجنت‌ها در ناحیه‌های شماره‌دار
@@ -19,8 +33,18 @@
 
 ## موضوع‌ها (Topics)
 
-`second-brain` · `personal-knowledge-management` · `markdown` · `mcp` · `ai-agents`
-· `local-first` · `provenance` · `retrieval` · `python` · `persian`
+هرچه این خط می‌گوید، همان فهرستِ زنده روی گیت‌هاب است (`gh repo view --json repositoryTopics`
+آن را می‌خواند؛ سقف گیت‌هاب ۲۰ موضوع است):
+
+`second-brain` · `second-brain-os` · `knowledge-management` · `markdown` · `python` ·
+`ai-agents` · `agent-harness` · `agent-framework` · `agentic-ai` · `mcp-server` ·
+`documentation-as-code` · `local-first` · `self-improving` · `gates-not-vibes` ·
+`obsidian-vault`
+
+سه موضوعی که این فایل قبلاً پیشنهاد می‌کرد و روی گیت‌هاب **نیست**:
+`personal-knowledge-management` (جایش `knowledge-management` گرفته شده)، `provenance` و
+`retrieval` (هر دو در سقف ۲۰ جا نشدند؛ ارزششان را با `02_WIKI` و `15_SYSTEM/integrations`
+داخل خود مخزن می‌خوانند، نه از طریق موضوع).
 
 ## چه چیزی را نباید در توضیح ادعا کرد
 

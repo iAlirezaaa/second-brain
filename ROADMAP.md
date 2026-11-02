@@ -1,4 +1,4 @@
-# ROADMAP — iAlirezaaa/second-brain (HADES OS v3)
+# ROADMAP — iAlirezaaa/second-brain-os (Second Brain OS; engine codename HADES v3)
 
 A standalone, self-improving agentic operating system: a plain-markdown brain with a gated
 registry, persistent memory, and its own improvement loop — stdlib-only Python, no app, no
@@ -343,49 +343,103 @@ no gate could see it.*
       runner images those jobs ride (no floating `ubuntu-latest`), and the `python floor` rows in
       README and START; `tests/test_phase37_ci_python_floor.py` adds 15 tests, one per refusal.
 
-## Phase 38 — The lessons ledger grows a plane and learns to disagree · 🔵
+## Phase 38 — A stranger is told how to work here · 🟢
 
-*Source: issues #25 and #24 (charter §5). The eight planes were mapped in phase 26 but the
-error plane's rows carried no plane field, and no plane could detect a contradiction.*
+*Source: the owner's brief (2026-11-02) — "the description must be clear and complete". A repo
+whose rules live only in the maintainer's head is a repo nobody but the maintainer can finish.*
 
-- [ ] 🔵 **M** `plane` on every lesson row, at the door and in `--check`, with a deterministic
-      migration for the rows already in the ledger.
-- [ ] 🔵 **M** A measured, stdlib-only definition of a contradiction between two active lessons
-      and a gate that refuses an unresolved pair while reporting a `supersedes`-resolved one.
+- [x] **S** `CONTRIBUTING.md` rewritten as the protocol in working order: issue first → test
+      first → the registry door → the candidates shelf → `doc_report.py --write` in the same
+      commit → the version derived by `scripts/version.py` → a goldfish review by a reviewer with
+      no context. All ten gates named in a table, so "run the checks" is a command, not a rumour.
+- [x] **S** `.github/CODEOWNERS`: the canon (`AGENTS.md`), the judging scripts (`health.py`,
+      `promote.py`, `version.py`, `ci_floor.py`, `write_gate.py`, `zone_check.py`, `rules/`), the
+      workflows, the registry (`11_CONTROL/`), the config and the candidate shelf each have an
+      owner — the files where a quiet edit does the most damage.
 
-## Phase 39 — The manager agent and the conversation path · 🔵
-
-*Source: issues #21 and #20 (charter §7, §5/§11). A role the charter names and the registry
-does not hold is an unwritten definition; a memory plane with no extraction ritual is a promise.*
-
-- [ ] 🔵 **M** A registered manager-role agent: proposals only, no approval tool, cannot apply
-      its own plan, pointed at by the `first-session` skill.
-- [ ] 🔵 **M** `skills/conversation-memory` + a step table naming the command, the refusal and
-      the test per step, stated in `AGENTS.md` and projected to every host door.
-
-## Phase 40 — The two missing reference maps · 🔵
+## Phase 39 — The two missing reference maps · 🟢
 
 *Source: issue #22 (charter §3) — harness2 and claude-obsidian shipped logic that only lived in
 prose history; only SuperAGI had an adopt/refuse artifact.*
 
-- [ ] 🔵 **S** `harness2-to-hades-map.md` and `claude-obsidian-to-hades-map.md` in the shape of
-      the SuperAGI map, every adopted row citing a script **and** the test that proves it.
+- [x] **S** `harness2-to-hades-map.md` (15 rows: 7 adopted whole, 4 adopted with a named refusal,
+      4 refused) and `claude-obsidian-to-hades-map.md` (16 rows: 7 / 6 / 3), in the shape of the
+      SuperAGI map — every adopted row cites the script **and** the test that proves it.
+- [x] **S** The maps are enumerated by `02_WIKI/indexes/reference-maps.md` rather than
+      `[[wikilink]]`ed from each other: `scripts/install.py` ships `reference_maps/` but not
+      `indexes/`, so a link inside a map would dangle in every installed home. Measured: 158
+      backticked repo paths stat'ed, all 23 cited `file::test` names matched a real `def test_…`;
+      zero exceptions taken, the only misses are upstream paths, gitignored paperwork and journals
+      a script creates on its first run — now worded as such. `00_START_HERE/CHARTER_AUDIT.md` §3
+      points at all three maps.
 
-## Phase 41 — An eval that cannot share examples with training · 🔵
+## Phase 40 — The lessons ledger grows a plane and learns to disagree · 🟢
+
+*Source: issues #25 and #24 (charter §5). The eight planes were mapped in phase 26 but the
+error plane's rows carried no plane field, and no plane could detect a contradiction.*
+
+- [x] **M** `plane` on every lesson row, at the door and in `--check`, with a deterministic
+      migration for the rows already in the ledger. `plane_ids()` reads `system.json →
+      memory_planes`, so there is no second taxonomy to drift: `--plane banana` is refused with
+      the list of the eight it does accept. `--migrate-planes` previews, `--write` types all 27
+      shipped rows additively — nothing deleted, nothing rewritten, idempotent on a second run,
+      and `--plane` defaults from `--source` so the field is never a blank the author forgot.
+- [x] **M** A measured, stdlib-only definition of a contradiction between two active lessons and
+      a gate that refuses an unresolved pair while reporting a `supersedes`-resolved one.
+      Measured on the real ledger before the code was written: 325 active pairs, the closest
+      same-plane shared-topic pair (both *agreeing*) scores **0.31**, opposite verdicts score
+      **0.00 at every threshold** — so the threshold is Jaccard cue-overlap **≥ 0.50** and the
+      shipped ledger has **0** contradictions. Nothing was reclassified to make a number look
+      good. `--check` now exits 1 on `CONTRADICTION mem-a and mem-b … opposite verdicts`, and
+      `--contradictions` prints `overlap=` and `verdicts=` per pair. 27 tests in
+      `tests/test_phase40_lesson_planes_and_contradictions.py`.
+
+## Phase 41 — The manager agent and the conversation path · 🟢
+
+*Source: issues #21 and #20 (charter §7, §5/§11). A role the charter names and the registry
+does not hold is an unwritten definition; a memory plane with no extraction ritual is a promise.*
+
+- [x] **M** A registered manager-role agent — `AGT-7DE1AB28` in
+      `11_CONTROL/agents/AGT-7DE1AB28-structure-manager/`, written through the plan door — that
+      creates and classifies projects, tasks, agents and skills. It is a **proposer, not a second
+      door**: its `tool_allowlist` has no approve tool, so `backend/tools_kit.py::Registry.execute`
+      refuses its own plan and the human stays the only signer. `skills/first-session/SKILL.md`
+      points at it for the moment a stranger cannot tell a project from a task.
+- [x] **M** `skills/conversation-memory/SKILL.md` (record `SKL-C48357D5`) and
+      `02_WIKI/reference_maps/conversation-memory-path.md`: one row per step naming the command,
+      the refusal and the test — `sources.py import FILE --kind conversation --origin
+      harness:SESSION` → `rebuild` → `propose --quote` (an invented quote is refused) →
+      `evaluate` → `approve --approve`, a flag only a human types since the MCP door ships no
+      approve tool. Nothing scans a history folder; the store is `.brain-data/`, gitignored, so a
+      fresh clone honestly answers `[]`. Stated in `AGENTS.md` and projected to every host door.
+      29 tests in `tests/test_phase41_manager_agent_and_conversation_memory.py`; the tests refuse
+      a document that promises a mechanism the shipped doors do not have, or that forgets a
+      refusal the doors really enforce.
+
+## Phase 42 — An eval that cannot share examples with training · 🟢
 
 *Source: the remaining checkboxes of phase 36, plus the competitive finding that peers publish
 their eval harness (mem0, Khoj) while a claim with no public floor is a rumour.*
 
-- [ ] 🔵 **S** A tracked independent evaluation set and a gate that refuses any case id present
-      in the training manifest — an eval that shares examples measures memorisation.
-- [ ] 🔵 **S** Before/after through `compare-benchmarks` with a positive margin and repeats, and
-      a `scripts/base.py --save` baseline plus the `--recover` line inside the report itself.
+- [x] **S** A tracked independent evaluation set (`tests/fixtures/retrieval-independent-eval.json`
+      — 6 self-contained cases, provenance stated in the fixture, measured answerable at recall
+      and MRR 1.000 on its own corpus) and one gate that refuses it: `sources.py
+      dataset-eval-gate DATASET EVAL` exits 1 and prints the 64-hex training id when any eval
+      case id appears in the training manifest — an eval that shares examples measures
+      memorisation. The shipped fixture against a dataset built from its own sources exits 0.
+- [x] **S** Before/after through `compare-benchmarks --claim --margin M`: the verdict is
+      `IMPROVEMENT` only when **every** repeat raises **both** recall and MRR by at least a
+      positive margin, and the report carries both reports, the margin, the repeats, the base and
+      the `python scripts/base.py --recover --stamp …` line inside it. Measured: golden set
+      0.5 → 1.0 on both metrics over 2 repeats clears 0.4 and is an improvement; margin 0.9 is
+      `NO_IMPROVEMENT` exit 1; base and candidate swapped is `REGRESSION` exit 1 with the way back
+      named; with no recorded base the claim is refused **before** any verdict (exit 2).
+      **Tightened, and measured first:** plain `compare-benchmarks` on a regression used to exit
+      **0** — it printed `regressed` and stayed silent — now it exits 1.
+      23 tests in `tests/test_phase42_independent_eval_gate.py`, 5 more in
+      `tests/test_phase36_dataset.py`.
 
-## Phase 42 — Design with an elephant, review with a goldfish · 🔵
-
-*Source: the owner's brief (2026-11-02) and https://github.com/google/elephant-goldfish-model —
-Google's EGM plugin: a context-rich drafter plus zero-context reviewers that expose hidden
-assumptions. Adopted as a method this repo can enforce, refused as a plugin install.*
+## Phase 43 — Design with an elephant, review with a goldfish · 🟡
 
 - [ ] 🔵 **M** `skills/elephant-draft` and `skills/goldfish-review`: the six brainstorm lenses
       translated into this repo's real constraints, the five review stages, the semantic split at
@@ -401,7 +455,7 @@ assumptions. Adopted as a method this repo can enforce, refused as a plugin inst
       ships plain files its own gates judge, and a plugin installer is the SuperAGI shape §2
       refuses.
 
-## Phase 43 — Peer practices worth stealing, and the ones worth refusing · 🔵
+## Phase 44 — Peer practices worth stealing, and the ones worth refusing · 🔵
 
 *Surveyed against mem0, Letta/MemGPT, Khoj, Basic Memory, Graphiti/Zep and SuperAGI.*
 

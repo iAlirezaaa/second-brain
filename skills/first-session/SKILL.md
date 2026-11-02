@@ -12,7 +12,7 @@ walk it in this order.
 ## 1. Clone and prove (never trust a README from a stranger)
 
 ```
-git clone https://github.com/iAlirezaaa/second-brain
+git clone https://github.com/iAlirezaaa/second-brain-os
 cd second-brain
 python scripts/health.py            # every gate: links, frontmatter, shelf, memory, hosts, doc numbers
 python -m unittest discover -s tests

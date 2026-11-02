@@ -354,7 +354,7 @@ status: active
 - backend/runs/MCP: `15_SYSTEM/scripts/backend/`, `orchestrator.py`, `runs.py`,
   `mcp_server.py` · SuperAGI map: `02_WIKI/reference_maps/superagi-to-hades-map.md`
 - loop shelf: `14_CANDIDATES/loop/` · open issues:
-  https://github.com/iAlirezaaa/second-brain/issues
+  https://github.com/iAlirezaaa/second-brain-os/issues
 
 ## 7. Environment & Verification
 

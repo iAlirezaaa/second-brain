@@ -1,4 +1,4 @@
-# راهنمای جامع HADES OS v3
+# راهنمای جامع Second Brain OS (موتور HADES v3)
 
 > این سند دو بخش دارد: **فارسی**، سپس **English**. هر دو یک سیستم را توصیف می‌کنند؛ اگر فقط یکی را می‌خوانی، بخش فارسی کامل است. اگر بین این سند و دیسک اختلافی دیدی، **دیسک درست است**: مرجع نهایی `15_SYSTEM/config/system.json`، کدِ اسکریپت‌ها و خروجی `doctor` است، نه این متن.
 
@@ -484,7 +484,7 @@ test_hades.py    -> checks: 75 | passed: 75 | failed: 0
 ---
 ---
 
-# HADES OS v3 — Complete Guide
+# Second Brain OS — Complete Guide (engine: HADES v3)
 
 > This document has two halves: **Persian**, then **English**. Both describe the same system. If this text and the disk disagree, **the disk wins**: `15_SYSTEM/config/system.json`, the scripts, and `doctor` output are the source of truth.
 

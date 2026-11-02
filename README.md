@@ -1,4 +1,11 @@
-# HADES OS v0.0.3
+# Second Brain OS v0.0.3
+
+**What the name means.** *Second Brain OS* is what this is for anyone who needs to know in three
+words: a second brain (external memory you can trust) that is a complete system rather than a
+folder of notes — zones, gates, a registry, a ledger and its own improvement loop. **HADES** is the
+engine's codename, and it stays in the code where it already lives: `15_SYSTEM/scripts/hades.py`
+is the registry door, `HADES OS v3` is the plane skeleton the engine lays. The badge below reads
+`engine-v…` for that reason.
 
 **دومغزیِ شخصی و محلی (فارسی):** یک مغزِ مارک‌داون برای یک انسان و چند ایجنت — دانش، پروژه‌ها
 و اجراها در ناحیه‌های شماره‌دار می‌مانند و قانون را اسکریپت اجرا می‌کند، نه تذکر. هارنس‌ها از
@@ -22,9 +29,9 @@ For explicitly importing and searching local documents or conversation exports, 
 [local source ingestion](15_SYSTEM/integrations/local-sources.md). Imported content is
 private local data, and the MCP source search exposes matches to connected clients.
 
-[![CI](https://github.com/iAlirezaaa/second-brain/actions/workflows/ci.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain/actions/workflows/ci.yml)
-[![loop](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain/actions/workflows/loop.yml)
-[![version](https://img.shields.io/badge/engine-v0.0.3-blue)](https://github.com/iAlirezaaa/second-brain/releases)
+[![CI](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/ci.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/ci.yml)
+[![loop](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/loop.yml/badge.svg)](https://github.com/iAlirezaaa/second-brain-os/actions/workflows/loop.yml)
+[![version](https://img.shields.io/badge/engine-v0.0.3-blue)](https://github.com/iAlirezaaa/second-brain-os/releases)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **📋 نقشهٔ عمومی راه / Public roadmap (با چیپ وضعیت و تیک پیوسته): [ROADMAP.md](ROADMAP.md)**

@@ -1,5 +1,5 @@
 [project]
-name = "second-brain"
+name = "second-brain-os"
 version = "0.0.3"
 description = "An AI-augmented second brain: a plain-markdown vault a human curates and AI agents maintain"
 readme = "README.md"
@@ -17,5 +17,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/iAlirezaaa/second-brain"
-Roadmap = "https://github.com/iAlirezaaa/second-brain/blob/main/ROADMAP.md"
+Homepage = "https://github.com/iAlirezaaa/second-brain-os"
+Roadmap = "https://github.com/iAlirezaaa/second-brain-os/blob/main/ROADMAP.md"

@@ -1,4 +1,7 @@
-# HADES OS v3 — Agent entrypoint (mandatory)
+# Second Brain OS — Agent entrypoint (mandatory)
+
+*The product is **Second Brain OS**; **HADES v3** is the engine codename the code keeps
+(`15_SYSTEM/scripts/hades.py` is the registry door, `HADES OS v3` is the plane skeleton it lays).*
 
 **This file is the canon.** Other agent hosts get a generated pointer at `CLAUDE.md`,
 `GEMINI.md`, `.github/copilot-instructions.md`, `.cursor/rules/agents.mdc` and
