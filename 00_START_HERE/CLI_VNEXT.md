@@ -125,3 +125,45 @@ enforcement until integration tests verify the actual tool boundary.
 A packaged executable entry point, better Windows command wrapper,
 cross-platform JSON events, fast capture/search commands, agent event hooks,
 credentialed approvals, durable queues, skill composition and Twin 1 isolation.
+
+## Session-bound real toolkit execution (new)
+
+The following path performs a REAL registered toolkit tool call, unlike Twin 0:
+
+1. Start with a registered AGT-XXXXXXXX actor, not the word human.
+2. Use \`brain.py status SESSION\` to identify the IDs of the skill-review
+   and planning tasks and the open work task.
+3. Inspect a relevant SKILL.md. Then explicitly complete the skill-review
+   and planning tasks with existing, inspectable evidence paths.
+4. Call the orchestrator using the SAME actor and the actual open work-task ID.
+
+    python scripts/brain.py start --goal "Check known lessons" --actor AGT-78188303
+    python scripts/brain.py status SES-XXXXXXXXXXXX
+    python scripts/brain.py done SES-XXXXXXXXXXXX SKILL_TASK_ID --evidence skills/first-session/SKILL.md
+    python scripts/brain.py done SES-XXXXXXXXXXXX PLAN_TASK_ID --evidence AGENTS.md
+    python 15_SYSTEM/scripts/orchestrator.py tool call --tool core.vault_search --args '{"query":"lessons"}' --agent AGT-78188303 --session SES-XXXXXXXXXXXX --task-id WORK_TASK_ID
+    python scripts/brain.py trace SES-XXXXXXXXXXXX
+
+Here WORK_TASK_ID is the actual open work-task ID. The audit stores tool
+identity, status, response digest and size, not tool response text. It
+also invalidates any older handoff. Tool execution does NOT automatically
+complete the work task; independent evidence must first be reviewed.
+
+To enforce this preflight for ALL calls **through the central toolkit**
+(including legacy commands that omit --session), opt into strict mode:
+
+    # Linux/macOS shell
+    export SBO_REQUIRE_SESSION=1
+
+    # PowerShell
+    $env:SBO_REQUIRE_SESSION = "1"
+
+Without strict mode, sessionless legacy toolkit calls remain compatible.
+Strict mode is a migration gate, not an authenticated identity system:
+direct MCP tools, arbitrary scripts and external harnesses currently bypass
+it. Do not use this setting as a substitute for OS privileges, authenticated
+approval, tool capability filtering or sandbox isolation.
+
+The Brain CLI now supports \`check SESSION --actor AGT-...\` and
+\`trace SESSION --limit 100\` for preflight and human-readable event evidence.
+After any tool call or task change, rewrite the handoff before closing.
