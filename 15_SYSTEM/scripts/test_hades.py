@@ -776,15 +776,15 @@ def t_harness_bridge():
         send({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
               "params": {"name": "runs_list", "arguments": {}}})
         text = recv()["result"]["content"][0]["text"]
-        check("harness: runs_list shows the promoted run through the door",
-              run_id in text and '"promoted"' in text, text[:200])
+        check("harness: runs_list refuses access to the private run plane",
+              "12_RUNTIME" in text and run_id not in text, text[:200])
         send({"jsonrpc": "2.0", "id": 4, "method": "tools/call",
               "params": {"name": "doctor_status", "arguments": {}}})
         text = recv()["result"]["content"][0]["text"]
         runs_count = len([d for d in (v.root / "12_RUNTIME" / "agent_runs").iterdir()
                           if d.is_dir()])
-        check("harness: doctor_status counts the run and the record",
-              ('"runs": %d' % runs_count) in text and '"records": 1' in text, text[:200])
+        check("harness: doctor_status keeps run counts private and reports records",
+              '"runs":' not in text and '"records": 1' in text, text[:200])
         send({"jsonrpc": "2.0", "id": 5, "method": "tools/call",
               "params": {"name": "candidate_propose", "arguments": {
                   "dimension": "invariant", "cue": "the battery spoke to the brain",
