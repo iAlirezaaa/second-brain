@@ -12,10 +12,15 @@
       "PRJ-0E1F18BD"
     ]
   },
-  "notes": "MCP stdio door into the second brain: read tools (vault_search, memory_recall, registry_list, registry_show, doctor_status) and write tools (source_import records one explicitly named file from inside the brain as a private source; candidate_propose files a registered row on the quarantine shelf).",
+  "notes": "MCP stdio door with 13 declared operations. Read tools are scoped by backend/access.py; runs_list and runs_show are intentionally refused. Private source imports, lesson proposals and candidate proposals require their own policy and permissions.",
   "transport": "stdio",
   "endpoint_or_command": "15_SYSTEM/scripts/mcp_server.py",
   "tools_exposed": [
+    "capabilities",
+    "lesson_propose",
+    "lesson_recall",
+    "source_search",
+    "source_import",
     "vault_search",
     "memory_recall",
     "registry_list",
@@ -23,9 +28,7 @@
     "doctor_status",
     "runs_list",
     "runs_show",
-    "source_search",
-    "source_import",
     "candidate_propose"
   ],
-  "updated_at": "2026-11-02T09:17:11Z"
+  "updated_at": "2026-11-03T00:00:00Z"
 }
