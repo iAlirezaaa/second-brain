@@ -140,7 +140,7 @@ Generated skills are quarantined until the human approves.
 
 - **Twin 0, implemented in this proposal:** deterministic task transitions in
   memory, with no tool executions or disk writes.
-- **Twin 1, planned:** isolated copy-on-write workspace, mock connectors,
+- **Twin 1, planned:** full isolated copy-on-write workspace, mock connectors,
   reproducible fixtures and before/after filesystem diffs.
 - **Twin 2, planned:** container/VM sandbox, restricted network/filesystem,
   resource budgets, checkpoint/resume and rollback proof.
@@ -199,7 +199,7 @@ references or potential adapters, not implied installed dependencies.
 ## Rollout order
 
 **P0:** repair red gates; unified CLI; skill-first start; pre-work to-do;
-dynamic tasks; handoff; user-approved completion; skill draft; Twin 0;
+dynamic tasks; handoff; user-approved completion; skill draft; Twin 0; in-memory file-overlay Twin 1a;
 ADHD lexical bridge; tests and examples.
 
 **P1:** fast capture; personal memory types; validated ingestion;
