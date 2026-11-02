@@ -15,8 +15,9 @@ updated: 2026-11-02
 their stack — and it forbids blind copying. Each map below is the standing answer for one of them:
 what upstream actually is (verified from its own README), what HADES adopted, what it refused with
 the reason, and the script **plus the test** holding each adopted piece. One line per map here, so
-no map is a note nobody links. The fourth row is the method the owner's brief added after the
-charter was written: the same discipline, pointed at a design process instead of a codebase.
+no map is a note nobody links. The last two rows are peers the owner's brief added after the
+charter was written: one is the same discipline pointed at a design process instead of a codebase,
+the other is the closest existing product to this brain's own idea.
 
 | Map | Upstream | Held by |
 |---|---|---|
@@ -24,6 +25,7 @@ charter was written: the same discipline, pointed at a design process instead of
 | [[harness2-to-hades-map]] | `google-research/harness2` — recursive harness refinement: Propose → Probe → Compose, keep-base | `scripts/loop.py`, `scripts/probe.py`, `scripts/candidate_check.py`, `scripts/promote.py`, `scripts/base.py` |
 | [[claude-obsidian-to-hades-map]] | `AgriciDaniel/claude-obsidian` — a second brain that respects its vault: transaction core, lint, secret hygiene | `15_SYSTEM/scripts/hades.py`, `scripts/write_gate.py`, `scripts/link_check.py`, `scripts/issues.py` |
 | [[elephant-goldfish-to-hades-map]] | `google/elephant-goldfish-model` — design with an elephant, review with a goldfish: five stages, zero-context reviewers, one artifact per round | `scripts/goldfish_check.py`, `11_CONTROL/reviewers/`, `skills/goldfish-review/`, `skills/elephant-draft/`, `skills/drift-report/` |
+| [[graphify-to-hades-map]] | `Graphify-Labs/graphify` — the nearest peer: local deterministic parsing, every edge explained, no vector store (engine refused, its edge-confidence and schema-versioning schemas adopted) | `scripts/link_check.py`, `scripts/candidate_check.py`, `scripts/health.py`, `rules/*.schema.json`, `ROADMAP.md` phase 44 |
 
 Companion map in the same folder: [[eight-memory-planes]] — one row per memory plane, with its
 writer, its reader and the test that proves the store exists.

@@ -465,7 +465,7 @@ is installed. Registered through the plan door: `hades.py doctor` → 22 records
 
 *Surveyed against mem0, Letta/MemGPT, Khoj, Basic Memory, Graphiti/Zep, SuperAGI and
 [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) (measured 2026-11-02: Apache-2.0,
-Python, 140,684 stars, last push 2026-11-01 — the closest peer this repo has, because its stated
+Python, 140,699 stars, last push 2026-11-01 — the closest peer this repo has, because its stated
 rules are "local deterministic parsing, every edge explained, no vector store").*
 
 - [ ] 🔵 **S** MCP tool behaviour tags (`read_only` / `destructive` / `idempotent`) on every
@@ -478,21 +478,25 @@ rules are "local deterministic parsing, every edge explained, no vector store").
 - [ ] 🔵 **S** Confidence on every edge of the link graph — `extracted` (the author wrote the
       wikilink), `inferred` (a gate or the indexer deduced it), `ambiguous` (a row on
       `14_CANDIDATES/`, which is what "uncertain" means here: it waits for a human). Taken from
-      graphify's `EXTRACTED | INFERRED | AMBIGUOUS` edge schema and its rule that an ambiguous
-      edge is "flagged for human review", not silently kept in the graph.
+      graphify's `EXTRACTED | INFERRED | AMBIGUOUS` edge schema (`docs/how-it-works.md`, "Confidence
+      tagging"), whose third label is "Uncertain — flagged in the report for manual review": an
+      uncertain edge is escalated, not silently kept in the graph.
 - [ ] 🔵 **S** A link-graph readout in `health.py`: degree-0 notes (a page nothing points to is a
       page retrieval cannot reach) and bridge notes (one link joining two otherwise separate
       clusters). Their god-node/Leiden signal, computed from the wikilinks already in the vault —
       no NetworkX, no embeddings, no new dependency.
 - [ ] 🔵 **S** `schema_version` stamped inside every generated JSON file, so a reader can tell
       which contract wrote it and a gate can refuse a stale one instead of mis-parsing it
-      (graphify stamps its `graph.json` the same way).
+      (graphify stamps `graph.schema_version` in its `graph.json` "so integrations can detect
+      incompatible format changes").
 - [ ] ⛔ graphify's parsing engine itself — ~40 tree-sitter grammars, NetworkX, graspologic,
-      optional whisper/yt-dlp: the dependency wall charter §2 exists to refuse. This repo's
+      optional whisper/yt-dlp, and a Python 3.10+ floor: the unnecessary dependency charter §3
+      forbids, and the "capabilities implemented inside the project itself" of §2. This repo's
       "AST" is the markdown link graph, which is already explicit, so only the schemas above
-      transfer. Its own docs also warn that node ids built from an inferred root "can end up
-      carrying path segments from the machine they were extracted on" — the reason every citation
-      in this repo stays repo-relative and `clone_readable()` refuses the rest.
+      transfer. Its own docs also warn that when `root` is omitted, ids "can end up carrying path
+      segments from the machine they were extracted on" (`ARCHITECTURE.md`) — the reason every
+      citation in this repo stays repo-relative and `clone_readable()` refuses the rest.
+      Full adopt/refuse reasoning: `02_WIKI/reference_maps/graphify-to-hades-map.md`.
 - [ ] ⛔ Postgres/pgvector, Neo4j, FastAPI+Redis+Celery, Letta's App Server, mem0's cloud and
       any LLM step inside the write path — a port, a daemon, a key or an unmeasured automatic
       rewrite is exactly what charter §2 exists to refuse.
