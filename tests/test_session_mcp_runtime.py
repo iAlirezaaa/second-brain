@@ -106,6 +106,22 @@ class SessionMCPTests(unittest.TestCase):
             self.assertTrue({"session_id", "actor_id", "task_id"}.issubset(
                 row["inputSchema"]["properties"].keys()), row["name"])
 
+    def test_mcp_client_cannot_claim_a_human_session(self):
+        human_sid = brain.start(self.root, "human", "a private user task")["session"]
+        out = mcp_server.handle_tool_call(
+            self.root, {"name": "capabilities", "arguments": {
+                "session_id": human_sid, "actor_id": "human"}})
+        self.assertTrue(out["isError"])
+        self.assertIn("never impersonated", out["content"][0]["text"])
+
+    def test_mcp_client_must_declare_a_registered_actor(self):
+        self.ready()
+        out = mcp_server.handle_tool_call(
+            self.root, {"name": "capabilities", "arguments": {
+                "session_id": self.sid, "actor_id": ""}})
+        self.assertTrue(out["isError"])
+        self.assertIn("registered agent", out["content"][0]["text"])
+
     def test_mcp_refuses_non_object_arguments(self):
         out = mcp_server.handle_tool_call(
             self.root, {"name": "capabilities", "arguments": ["not", "an", "object"]})
