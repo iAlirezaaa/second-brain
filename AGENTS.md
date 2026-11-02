@@ -39,9 +39,12 @@ next action. The close command generates a **draft skill proposal** after
 every session. Do not treat that draft as an approved SKILL.md; the user
 must confirm a successful result and review any promotion separately.
 
-Brain CLI is currently an opt-in execution journal; it does not intercept
-external harness tool calls or certify who physically supplied an approval
-flag. Never claim universal automatic enforcement before the actual harness
+The central orchestrator/toolkit can bind tool calls to an existing Session
+(using --session and --task-id); SBO_REQUIRE_SESSION=1 refuses calls made through
+that toolkit without a Session. This is now a runtime gate, not merely advice.
+Direct MCP tools and external harnesses do NOT yet share this guard: require
+independent adapters and integration tests before claiming global coverage.
+The CLI cannot certify who physically supplied an approval flag. Never claim universal automatic enforcement before the actual harness
 adapter and permission boundary are tested. The existing scripts/handoff.py
 remains the canonical repository-level handoff generator.
 
