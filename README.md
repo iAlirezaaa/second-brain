@@ -134,8 +134,8 @@ stale number fails the numbers gate in `python scripts/health.py` rather than be
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 702 |
-| health gates (`python scripts/health.py`) | 12 |
+| tests collected (`python -m unittest discover -s tests`) | 782 |
+| health gates (`python scripts/health.py`) | 14 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |

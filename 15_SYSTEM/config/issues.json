@@ -1,4 +1,5 @@
 {
+  "schema_version": "1",
   "repo": "iAlirezaaa/second-brain-os",
   "fetched_at": "2026-11-02",
   "note": "snapshot از api.github.com؛ با scripts/issues.py --fetch مقایسه می‌شود",

@@ -6,6 +6,49 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Added
+- **The link graph is measured, printed and gated.** `scripts/link_check.py` now labels every
+  edge the way graphify's schema does — `extracted` (the author's text names exactly one file),
+  `inferred` (the resolver normalised to reach it), `ambiguous` (the text cannot answer "which
+  file?") — and the old resolver's habit of keeping whichever colliding path sorted first is gone:
+  a colliding stem escalates, with every matching file named. `--readout` reports the navigation
+  shape (components, degree-0 notes, bridges, the god-node) with the path behind every number, and
+  the default link gate prints the counts next to its verdict so `OK — 0 broken links` can never
+  be read as "reachable by links". `health.py` runs the readout as a gate of its own and
+  **refuses** while an ambiguous edge is open, because a graph the tool had to guess at is not a
+  healthy graph.
+  degree-0 stays a readout, not a defect: `scripts/kb.py` full-text search reaches those notes —
+  what an orphan cannot do is be *arrived at* by a reader following links. Proven by
+  `tests/test_phase44_edge_confidence.py`, `tests/test_phase44_link_graph_readout.py` and
+  `tests/test_phase44_readout_is_a_gate.py`.
+- **The registry can fill the `repo` block its own zone law demands.** `03_PROJECTS/README.md`
+  says code does not live in the brain and that a manifest carries `repo.path`, `repo.remote` and
+  `repo.branch`; `hades.py` created that block with three empty strings, `set` refused every
+  dotted field name, and `new --code-repo` was a flag no line of code ever read. The schema now
+  declares the keys inside the object (`object_keys`) for `project` and `app`, `set --field
+  repo.remote` amends one key through the same plan/approve audit trail as a flat field, an
+  undeclared key is refused by naming the declared ones, `doctor` catches a key hand-written
+  inside `repo`, and `--code-repo PATH` reads the address out of that folder's own git — refusing
+  to plan anything when the folder has no git instead of inventing an address, and recording `.`
+  when the code is the brain's own folder so a self-record stays true on every clone. Proven by
+  `tests/test_phase44_registry_fills_its_repo_block.py`.
+- **Second Brain OS is registered in its own brain.** `03_PROJECTS/active/PRJ-0E1F18BD-second-brain-os/project.json`
+  is a `public` project record whose `repo` block came from `git` on this tree, whose evidence
+  paths are the files that implement it, and which is the `parent_ids` target of every skill,
+  agent, schedule, MCP door and workflow the repo ships — before this the registry was a flat list
+  of unconnected records, which is the same isolation the link readout measures for prose.
+  `python 15_SYSTEM/scripts/hades.py graph` prints the nodes and typed edges it found, and
+  `hades.py doctor` judges every record with `errors: 0 | warnings: 0`; neither number is typed
+  into this document.
+- **Every generated JSON file says which contract wrote it.** `scripts/schema_stamp.py` stamps
+  `schema_version` at write time (the table in that file names each writer, its file and the fields
+  that prove the file is what it claims) and `--check` refuses a stamp that is missing, stale or
+  claimed by no contract instead of letting a reader mis-parse quietly and print green. The
+  migration ran once, from this gate's own `--stamp --write`, and `scripts/loop.py` now stamps the
+  ratchet history it appends rather than leaving a later pass to paint a number on it. Hand-authored
+  JSON is not silently exempt: the check prints those files as `AUTHORED`, each with the reason it
+  is not generated output. Wired into `health.py`; proven by `tests/test_phase44_schema_version.py`.
+
 ### Changed
 - **Two documents stopped typing a number they could not keep.** The memory-plane map and
   `ROADMAP.md` phase 44 both stated the lesson ledger's size as measured ("27 row(s), 27
@@ -17,7 +60,7 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 - **Issue #20 closed, and the last row that was not.** The charter §5/§11 issue had carried a
   `partial` note since phase 41 saying the conversation-memory criterion was unmet. Re-audited
   against its own four acceptance criteria, each one is met and each is proved by a command run on
-  this tree: the plane map table, `scripts/plane_check.py` as gate 3 of 12 with four refusal tests,
+  this tree: the plane map table, `scripts/plane_check.py` as a health gate with four refusal tests,
   `kb.py search` returning only tracked repo prose with the golden set green, and the eleven-step
   path in `02_WIKI/reference_maps/conversation-memory-path.md` — import, adapter projection,
   propose, evaluate, human `--approve`, recall, MCP doors — with the refusal and the test named per

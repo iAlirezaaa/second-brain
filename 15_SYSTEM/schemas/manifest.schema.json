@@ -1,10 +1,11 @@
 {
-  "$comment": "HADES OS v3 manifest contract. Enforced by hades.py (a subset of JSON Schema: required, type, enum, id pattern, one-level properties). Loaded from disk at every run -- if this file and the code disagree, doctor reports it.",
+  "$comment": "HADES OS v3 manifest contract. Enforced by hades.py (a subset of JSON Schema: required, type, enum, id pattern, one-level properties, and object_keys for the keys inside a nested object). Loaded from disk at every run -- if this file and the code disagree, doctor reports it.",
   "id_pattern": "^[A-Z]{2,6}-[0-9A-F]{8}$",
   "common_required": ["id", "kind", "name", "status", "classification", "created_at"],
   "common_types": {
     "id": "string",
     "kind": "string",
+    "schema_version": "string",
     "name": "string",
     "status": "string",
     "classification": "string",
@@ -21,7 +22,9 @@
   "by_kind": {
     "project": {
       "required": ["type"],
-      "types": { "type": "string", "repo": "object", "parent_ids": "array", "depends_on": "array" }
+      "types": { "type": "string", "repo": "object", "parent_ids": "array", "depends_on": "array" },
+      "object_keys": { "repo": { "path": "string", "remote": "string", "branch": "string" } },
+      "comment": "repo is declared key-by-key because `set --field repo.remote` has to know what is legal: an object with no declared keys is where a typo hides"
     },
     "organization": { "required": [], "types": { "official_url": "string", "products": "array" } },
     "model": {
@@ -54,7 +57,8 @@
     "channel": { "required": ["platform"], "types": { "platform": "string", "secret_ref": "string" } },
     "episode": { "required": ["channel_id"], "types": { "channel_id": "string", "published_at": "string" } },
     "campaign": { "required": ["channel_ids", "starts"], "types": { "channel_ids": "array", "starts": "string" } },
-    "app": { "required": ["app_type"], "types": { "app_type": "string", "repo": "object" } },
+    "app": { "required": ["app_type"], "types": { "app_type": "string", "repo": "object" },
+             "object_keys": { "repo": { "path": "string", "remote": "string", "branch": "string" } } },
     "tutorial": { "required": ["topic"], "types": { "topic": "string" } },
     "task": { "required": [], "types": { "due": "string", "project_id": "string" } },
     "decision": { "required": ["decision", "decided_on"], "types": { "decision": "string", "decided_on": "string", "reversible": "bool" } },

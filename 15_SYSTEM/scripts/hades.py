@@ -90,6 +90,18 @@ def load_json(path):
 
 
 def dump_json(path, obj):
+    """The one door every JSON this tool writes goes through -- atomic, and stamped.
+
+    `schema_version` names the contract whose shape the file is in, so a reader -- and
+    `python scripts/schema_stamp.py --check` -- can refuse a stale file instead of mis-parsing
+    it (phase 44). The number is read from config -- the same value `cmd_index` has always
+    written into catalog.json -- never typed here, so system.json stays the one place the
+    version lives. A dict that already declares its own version is left alone.
+    """
+    if isinstance(obj, dict) and not obj.get("schema_version"):
+        version = config().get("schema_version")
+        if version:
+            obj["schema_version"] = version
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp-%d" % os.getpid())
     tmp.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -377,6 +389,18 @@ def validate(record, cfg, sch, path=None):
     for f, t in spec.get("types", {}).items():
         if f in record and not type_ok(record[f], t):
             problems.append("kind %s: field '%s' should be %s" % (ks, f, t))
+    # a nested object is only safe if its keys are declared: `repo` is a code address, and
+    # an undeclared key inside it is a second truth no gate would ever name
+    for f, keys in (spec.get("object_keys") or {}).items():
+        value = record.get(f)
+        if not isinstance(value, dict):
+            continue                      # the type check above already said "should be object"
+        for k, v in value.items():
+            if k not in keys:
+                problems.append("kind %s: '%s.%s' is not a declared key of '%s' (declared: %s)"
+                                % (ks, f, k, f, "|".join(sorted(keys))))
+            elif not type_ok(v, keys[k]):
+                problems.append("kind %s: field '%s.%s' should be %s" % (ks, f, k, keys[k]))
     statuses = cfg["status_sets"].get(ks, cfg["status_sets"]["default"])
     st = record.get("status")
     if st and st not in statuses:
@@ -899,11 +923,70 @@ def target_path(cfg, kc, obj, container):
     return base / (folder_name + suffix)
 
 
+def git_answer(cwd, *args):
+    """One `git` answer, or None when git itself says no (no repo, no remote, no git)."""
+    try:
+        p = subprocess.run(["git", "-C", str(cwd)] + list(args), capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", timeout=20)
+    except OSError:
+        return None
+    if p.returncode != 0:
+        return None
+    return (p.stdout or "").strip() or None
+
+
+def repo_block_from_git(path):
+    """Read (block, note) from a code folder's own git, or (None, why) when there is nothing to read.
+
+    Nothing is invented here. A folder with no git has no verifiable address, so the caller
+    refuses; a repo with no origin remote gets an empty `repo.remote` and a note naming the
+    field, because a manifest that guesses a URL becomes the address the next agent trusts.
+    """
+    top = git_answer(path, "rev-parse", "--show-toplevel")
+    if not top:
+        return None, ("%s is not a git working tree, so its code address cannot be read "
+                      "(git rev-parse --show-toplevel failed)" % path)
+    remote = git_answer(top, "remote", "get-url", "origin") or ""
+    resolved = Path(top).resolve()
+    # when the code is the brain's own folder, an absolute path would be a lie on every other
+    # clone: it says where the code sits on this machine, not what this record is about
+    local = "." if resolved == ROOT.resolve() else str(resolved).replace("\\", "/")
+    block = {"path": local,
+             "remote": remote,
+             "branch": git_answer(top, "rev-parse", "--abbrev-ref", "HEAD") or ""}
+    note = "" if remote else ("NOTE  no origin remote, so repo.remote is left empty rather than "
+                              "guessed -- fill it later with: hades.py set --field repo.remote")
+    return block, note
+
+
+def apply_code_repo(obj, path):
+    """Fill a new project/app record's `repo` block from real git. Returns a refusal, else None."""
+    declared = (schema()["by_kind"].get(obj["kind"]) or {}).get("object_keys") or {}
+    if "repo" not in declared:
+        return ("kind %s declares no 'repo' block, so --code-repo would write a field "
+                "the contract does not allow" % obj["kind"])
+    block, why = repo_block_from_git(path)
+    if block is None:
+        return why + " -- refusing to record an address it cannot check"
+    obj["repo"] = block
+    if why:
+        print(why)
+    print("CODE   repo.path=%s | repo.branch=%s | repo.remote=%s"
+          % (block["path"], block["branch"], block["remote"] or "(empty)"))
+    return None
+
+
 def cmd_plan(cfg, args):
     kc = kind_cfg(cfg, args.kind)
     if not kc:
         raise SystemExit("ERROR: unknown kind '%s' (see config kinds)" % args.kind)
     obj = make_obj(cfg, kc["kind"], args.name, args, new_id(kc["prefix"], taken=existing_ids(cfg)))
+    if getattr(args, "code_repo", None):
+        refused = apply_code_repo(obj, args.code_repo)
+        if refused:
+            print("REFUSED: %s" % refused)
+            print("REFUSED: nothing was planned, so there is no --approve to give")
+            return 2
     container = resolve_container(cfg, kc, args)
     tp = target_path(cfg, kc, obj, container)
     plan = {"plan_id": "PLAN-" + uuid.uuid4().hex[:12].upper(), "created_utc": now(),
@@ -932,7 +1015,10 @@ def find_record(cfg, ident):
 # different record. Retirement is what `supersedes` is for; `set` cannot rewrite history.
 IMMUTABLE_FIELDS = ("id", "kind", "created_at")
 # the audit trail is written by the tool that made the change, never typed by hand
-LEDGER_FIELDS = ("amendments",)
+# `schema_version` belongs beside it for the same reason: once a record carries the stamp, `set`
+# would otherwise let an author paint the number to quiet a gate -- the fabrication
+# scripts/schema_stamp.py exists to catch (phase 44)
+LEDGER_FIELDS = ("amendments", "schema_version")
 
 
 def parse_value(raw):
@@ -971,13 +1057,37 @@ def cmd_set(cfg, sch, args):
     known = set(sch.get("common_required", [])) | set(sch.get("common_types", {}))
     spec = sch["by_kind"].get(rec.get("kind") or "", {})
     known |= set(spec.get("required", [])) | set(spec.get("types", {})) | set(rec)
-    if args.field not in known:
+    nested = None
+    if "." in args.field:
+        parent, child = args.field.split(".", 1)
+        keys = (spec.get("object_keys") or {}).get(parent) or {}
+        if not keys or "." in child:
+            print("REFUSED: '%s' is not an amendable path -- inside a nested object only its "
+                  "declared keys can be set, one at a time%s"
+                  % (args.field, "" if keys else " (%s declares no object keys)" % parent))
+            return 2
+        if child not in keys:
+            print("REFUSED: '%s' is not a declared key of '%s' for kind %s (declared: %s) -- "
+                  "a typo inside a nested object adds a second truth no gate would ever name"
+                  % (args.field, parent, rec.get("kind"), "|".join(sorted(keys))))
+            return 2
+        nested = (parent, child)
+    elif args.field not in known:
         print("REFUSED: unknown field '%s' for kind %s and the record does not carry it "
               "-- a typo would silently add a second truth" % (args.field, rec.get("kind")))
         return 2
     value = parse_value(args.value)
     amended = json.loads(json.dumps(rec))
-    amended[args.field] = value
+    if nested:
+        holder = amended.get(nested[0])
+        if not isinstance(holder, dict):
+            print("REFUSED: '%s' on %s is %s, not an object, so there is nothing inside it to set"
+                  % (nested[0], args.id, type(holder).__name__))
+            return 2
+        holder[nested[1]] = value
+    else:
+        amended[args.field] = value
+    current = ((rec.get(nested[0]) or {}).get(nested[1]) if nested else rec.get(args.field))
     amended["updated_at"] = now()
     problems = validate(amended, cfg, sch, path) + check_entrypoints(path, amended)
     if problems:
@@ -988,13 +1098,13 @@ def cmd_set(cfg, sch, args):
     plan = {"plan_id": "PLAN-" + uuid.uuid4().hex[:12].upper(), "created_utc": now(),
             "applied": False, "mode": "amend", "target_kind": rec.get("kind"),
             "record_id": args.id, "target_path": rel(path), "field": args.field,
-            "from": rec.get(args.field), "to": value, "pre_image_sha1": pre_image_sha(path),
+            "from": current, "to": value, "pre_image_sha1": pre_image_sha(path),
             "record": amended}
     PLANS.mkdir(parents=True, exist_ok=True)
     dump_json(PLANS / (plan["plan_id"] + ".json"), plan)
     print("PLAN %s | amend %s --field %s | %s -> %s"
           % (plan["plan_id"], args.id, args.field,
-             json.dumps(rec.get(args.field), ensure_ascii=False),
+             json.dumps(current, ensure_ascii=False),
              json.dumps(value, ensure_ascii=False)))
     print("review it, then: hades.py apply --plan %s --approve" % plan["plan_id"])
     if args.approve:
@@ -1192,6 +1302,10 @@ def skill_md(obj):
 
 def cmd_new(cfg, sch, args):
     rc = cmd_plan(cfg, args)
+    if rc:
+        # a refused plan must not fall through to "apply the newest plan file", which would
+        # be some earlier, unrelated plan -- that is how a refusal becomes a written record
+        return rc
     args.plan = None
     import io
     # extract the plan id we just printed by scanning newest plan file
@@ -1654,7 +1768,10 @@ def build_parser():
     p = sub.add_parser("plan")
     for f in common:
         p.add_argument("--" + f.lstrip("-").replace("-", "_"))
-    p.add_argument("--type"); p.add_argument("--code-repo", action="store_true")
+    p.add_argument("--type")
+    p.add_argument("--code-repo", metavar="PATH",
+                   help="folder holding this project's code: its git fills repo.path, "
+                        "repo.remote and repo.branch (refused when the folder has no git)")
     p.add_argument("--url"); p.add_argument("--category"); p.add_argument("--org")
     p.add_argument("--version"); p.add_argument("--metric"); p.add_argument("--model")
     p.add_argument("--engine"); p.add_argument("--path"); p.add_argument("--project")
@@ -1675,7 +1792,9 @@ def build_parser():
                   "--channel", "--agent", "--metric", "--mode", "--template-kind", "--name-slug",
                   "--org", "--invocation"]:
         n.add_argument(extra)
-    n.add_argument("--code-repo", action="store_true")
+    n.add_argument("--code-repo", metavar="PATH",
+                   help="folder holding this project's code: its git fills repo.path, "
+                        "repo.remote and repo.branch (refused when the folder has no git)")
     n.add_argument("--approve", action="store_true")
     l = sub.add_parser("list")
     l.add_argument("--kind"); l.add_argument("--zone")

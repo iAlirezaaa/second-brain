@@ -1,0 +1,65 @@
+{
+  "kind": "project",
+  "id": "PRJ-0E1F18BD",
+  "name": "Second Brain OS",
+  "status": "active",
+  "classification": "public",
+  "created_at": "2026-11-02",
+  "tags": [
+    "second-brain",
+    "agent-toolchain",
+    "mcp",
+    "local-first",
+    "gates"
+  ],
+  "relations": {},
+  "notes": "Second Brain OS (engine codename HADES v3): a plain-markdown second brain whose rules are gates, not reminders. Sixteen zones, a registry of records, and a stdlib-only Python toolchain that measures the repo instead of describing it.",
+  "type": "program",
+  "repo": {
+    "path": ".",
+    "remote": "https://github.com/iAlirezaaa/second-brain-os.git",
+    "branch": "main"
+  },
+  "schema_version": "3.0.0",
+  "source_urls": [
+    "https://github.com/iAlirezaaa/second-brain-os"
+  ],
+  "updated_at": "2026-11-02T09:17:03Z",
+  "amendments": [
+    {
+      "field": "source_urls",
+      "from": null,
+      "to": [
+        "https://github.com/iAlirezaaa/second-brain-os"
+      ],
+      "utc": "2026-11-02T09:17:02Z",
+      "plan": "PLAN-2DEBB6E06A80"
+    },
+    {
+      "field": "evidence_paths",
+      "from": null,
+      "to": [
+        "README.md",
+        "scripts/health.py",
+        "15_SYSTEM/scripts/hades.py",
+        "15_SYSTEM/scripts/mcp_server.py",
+        "15_SYSTEM/schemas/manifest.schema.json",
+        "ROADMAP.md",
+        "CHANGELOG.md",
+        "HANDOFF.md"
+      ],
+      "utc": "2026-11-02T09:17:03Z",
+      "plan": "PLAN-2CD7556DBFAB"
+    }
+  ],
+  "evidence_paths": [
+    "README.md",
+    "scripts/health.py",
+    "15_SYSTEM/scripts/hades.py",
+    "15_SYSTEM/scripts/mcp_server.py",
+    "15_SYSTEM/schemas/manifest.schema.json",
+    "ROADMAP.md",
+    "CHANGELOG.md",
+    "HANDOFF.md"
+  ]
+}

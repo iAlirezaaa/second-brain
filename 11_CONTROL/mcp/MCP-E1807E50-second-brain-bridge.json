@@ -1,4 +1,5 @@
 {
+  "schema_version": "3.0.0",
   "kind": "mcp",
   "id": "MCP-E1807E50",
   "name": "second-brain bridge",
@@ -6,7 +7,11 @@
   "classification": "internal",
   "created_at": "2026-10-28",
   "tags": [],
-  "relations": {},
+  "relations": {
+    "parent_ids": [
+      "PRJ-0E1F18BD"
+    ]
+  },
   "notes": "MCP stdio door into the second brain: read tools (vault_search, memory_recall, registry_list, registry_show, doctor_status) and write tools (source_import records one explicitly named file from inside the brain as a private source; candidate_propose files a registered row on the quarantine shelf).",
   "transport": "stdio",
   "endpoint_or_command": "15_SYSTEM/scripts/mcp_server.py",
@@ -22,5 +27,5 @@
     "source_import",
     "candidate_propose"
   ],
-  "updated_at": "2026-11-01T00:00:00Z"
+  "updated_at": "2026-11-02T09:17:11Z"
 }

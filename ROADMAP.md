@@ -492,22 +492,40 @@ rules are "local deterministic parsing, every edge explained, no vector store").
       ROADMAP.md, CHANGELOG.md and HANDOFF.md, because a document at the repo root mentions every
       word — so the pool is zone notes only, the answer states how many shelf documents it skipped
       (10 here), naming one is refused, and `search` still returns them.
-- [ ] 🔵 **S** Confidence on every edge of the link graph — `extracted` (the author wrote the
+- [x] 🔵 **S** Confidence on every edge of the link graph — `extracted` (the author wrote the
       wikilink), `inferred` (a gate or the indexer deduced it), `ambiguous` (a row on
       `14_CANDIDATES/`, which is what "uncertain" means here: it waits for a human). Taken from
       graphify's `EXTRACTED | INFERRED | AMBIGUOUS` edge schema (`docs/how-it-works.md`, "Confidence
       tagging"), whose third label is "Uncertain — flagged in the report for manual review": an
       uncertain edge is escalated, not silently kept in the graph.
-- [ ] 🔵 **S** A link-graph readout in `health.py`: degree-0 notes and bridge notes (one link
+      `python scripts/link_check.py --confidence` prints the three counts and names every escalated
+      edge; the labels are checkable from the source text alone — no model, no embedding, no graph
+      library. Two things the labels replaced: the old resolver answered a stem collision by keeping
+      whichever path sorted first, so a *guessed* target was recorded as a healthy link, and a
+      `14_CANDIDATES/` target was printed as an ordinary edge. Both now escalate, and an ambiguous
+      edge is left out of the graph so it cannot buy false reachability.
+- [x] 🔵 **S** A link-graph readout in `health.py`: degree-0 notes and bridge notes (one link
       joining two otherwise separate clusters). Degree-0 is a **navigation** defect, not a retrieval
       one — full-text search reaches every indexed note whether or not anything links to it, and the
       first draft of this row claimed otherwise; what an orphan cannot do is be *arrived at* by a
       human or an agent following links out of the vault. Their god-node/Leiden signal, computed
       from the wikilinks already in the vault — no NetworkX, no embeddings, no new dependency.
-- [ ] 🔵 **S** `schema_version` stamped inside every generated JSON file, so a reader can tell
+      `python scripts/link_check.py --readout` is the gate: it prints the denominator ("notes
+      scanned", which is what proves the pass was not silence), the components, the degree-0 rows,
+      the bridge notes and the max degree, and it refuses while any edge is still escalated — a
+      graph it cannot settle is not certified healthy. The default broken-link run prints the same
+      shape beside its own verdict, so `OK — 0 broken links` can never again be read as a statement
+      about reachability; `health.py` runs both modes as two gates, because they are two claims.
+- [x] 🔵 **S** `schema_version` stamped inside every generated JSON file, so a reader can tell
       which contract wrote it and a gate can refuse a stale one instead of mis-parsing it
       (graphify stamps `graph.schema_version` in its `graph.json` "so integrations can detect
-      incompatible format changes").
+      incompatible format changes"). `python scripts/schema_stamp.py --check` is the gate and
+      `--stamp --write` is the one migration path; the writer stamps (`scripts/loop.py` calls
+      `stamp_payload()` when it appends to the ratchet history) rather than a later pass painting a
+      number onto a file it did not author. Every file the walk opens is printed with its contract,
+      its state and what to do about it — including the hand-authored ones (`rules/*.schema.json`,
+      the curated retrieval fixtures) that are named as authored rather than counted as clean, so
+      "0 missing" is a statement about generated output and not about the whole tree.
 - [ ] ⛔ graphify's parsing engine itself — ~40 tree-sitter grammars, NetworkX, graspologic,
       optional whisper/yt-dlp, and a Python 3.10+ floor: the unnecessary dependency charter §3
       forbids, and the "capabilities implemented inside the project itself" of §2. This repo's

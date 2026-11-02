@@ -27,8 +27,11 @@ the other is the closest existing product to this brain's own idea.
 | [[elephant-goldfish-to-hades-map]] | `google/elephant-goldfish-model` — design with an elephant, review with a goldfish: five stages, zero-context reviewers, one artifact per round | `scripts/goldfish_check.py`, `11_CONTROL/reviewers/`, `skills/goldfish-review/`, `skills/elephant-draft/`, `skills/drift-report/` |
 | [[graphify-to-hades-map]] | `Graphify-Labs/graphify` — the nearest peer: local deterministic parsing, every edge explained, no vector store (engine refused, its edge-confidence and schema-versioning schemas adopted) | `scripts/link_check.py`, `scripts/candidate_check.py`, `scripts/health.py`, `rules/*.schema.json`, `ROADMAP.md` phase 44 |
 
-Companion map in the same folder: [[eight-memory-planes]] — one row per memory plane, with its
-writer, its reader and the test that proves the store exists.
+Companion maps in the same folder: [[eight-memory-planes]] — one row per memory plane, with its
+writer, its reader and the test that proves the store exists — and [[conversation-memory-path]],
+which is not an upstream repo but the audit trail of this brain's own conversation-memory path
+(charter §11): one row per step, the exact command, the refusal quoted from the code, and the test
+that proves the refusal still fires, with an honest `NO_ROW` wherever the repo has no mechanism.
 
 Two house rules shape this folder, and they disagree on purpose:
 

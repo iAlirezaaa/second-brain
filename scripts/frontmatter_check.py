@@ -23,6 +23,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from common import DATE_RE, find_root, iter_notes, load_json, parse_frontmatter
 
+# every gate prints its verdict in UTF-8, so a Persian path or an em dash in a refusal reaches
+# the reader as text instead of as mojibake on a Windows console
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except AttributeError:
+        pass
+
 
 def registry_contract(root):
     """The record contract, assembled from the registry's own files.

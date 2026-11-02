@@ -1,4 +1,5 @@
 {
+  "schema_version": "3.0.0",
   "kind": "agent",
   "id": "AGT-7DE1AB28",
   "name": "structure-manager",
@@ -10,7 +11,11 @@
     "structure",
     "governance"
   ],
-  "relations": {},
+  "relations": {
+    "parent_ids": [
+      "PRJ-0E1F18BD"
+    ]
+  },
   "notes": "Structure manager, charter section 7: proposes creation and classification plans for projects, tasks, agents and skills, and never approves its own proposal: a human signs the apply. Engine limit stated instead of hidden: the shipped engine exposes no registry write tool at all, so this record's tool allowlist cannot name an apply tool today; the refusal is therefore enforced as a repo level check over this shipped record by tests/test_phase41_manager_agent_and_conversation_memory.py, which turns red if an apply, approve or write tool is ever named here.",
   "capabilities": [
     "kb-search",
@@ -40,7 +45,7 @@
   ],
   "memory_policy": "promote-only",
   "approved_for_harness_ids": [],
-  "updated_at": "2026-11-02T05:39:14Z",
+  "updated_at": "2026-11-02T09:17:11Z",
   "amendments": [
     {
       "field": "tool_allowlist",

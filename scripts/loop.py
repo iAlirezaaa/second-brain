@@ -30,6 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 import candidate_check
+import schema_stamp
 from common import (DATE_RE, clone_readable, find_root, iter_markdown, load_json,
                    parse_frontmatter, run_utf8, state_fingerprint)
 
@@ -274,6 +275,10 @@ def ratchet(metrics, history_path):
                             "ran_at": datetime.datetime.now(datetime.timezone.utc)
                                         .strftime("%Y-%m-%dT%H:%M:%SZ"),
                             "metrics": metrics})
+    # the stamp is written by the writer, not painted on later: a reader of history.json can now
+    # tell which shape these runs are in, and scripts/schema_stamp.py --check refuses a stale one
+    # instead of comparing a ratchet across two formats (phase 44)
+    history = schema_stamp.stamp_payload(history, "loop-history")
     history_path.write_text(json.dumps(history, indent=1, default=str), encoding="utf-8")
     return verdicts
 
