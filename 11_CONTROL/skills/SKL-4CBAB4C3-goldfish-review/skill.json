@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-4CBAB4C3",
+  "name": "goldfish-review",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-11-02",
+  "tags": [],
+  "relations": {},
+  "notes": "Five zero-context reviewer stages over one design document: zoom out, comprehend, critic, intermediate zoom out, implementation readiness. A reviewer that did not run is never counted as a reviewer with zero findings.",
+  "entrypoint": "skills/goldfish-review/SKILL.md",
+  "description": "Five zero-context reviewer stages over one design document: zoom out, comprehend, critic, intermediate zoom out, implementation readiness. A reviewer that did not run is never counted as a reviewer with zero findings.",
+  "approved_for_harness_ids": []
+}

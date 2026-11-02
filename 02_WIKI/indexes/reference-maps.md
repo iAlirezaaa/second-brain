@@ -15,13 +15,15 @@ updated: 2026-11-02
 their stack — and it forbids blind copying. Each map below is the standing answer for one of them:
 what upstream actually is (verified from its own README), what HADES adopted, what it refused with
 the reason, and the script **plus the test** holding each adopted piece. One line per map here, so
-no map is a note nobody links.
+no map is a note nobody links. The fourth row is the method the owner's brief added after the
+charter was written: the same discipline, pointed at a design process instead of a codebase.
 
 | Map | Upstream | Held by |
 |---|---|---|
 | [[superagi-to-hades-map]] | `TransformerOptimus/SuperAGI` — the orchestration stack: agents, tools, workflow, vector seam | `15_SYSTEM/scripts/backend/`, `15_SYSTEM/scripts/mcp_server.py`, `15_SYSTEM/scripts/runs.py` |
 | [[harness2-to-hades-map]] | `google-research/harness2` — recursive harness refinement: Propose → Probe → Compose, keep-base | `scripts/loop.py`, `scripts/probe.py`, `scripts/candidate_check.py`, `scripts/promote.py`, `scripts/base.py` |
 | [[claude-obsidian-to-hades-map]] | `AgriciDaniel/claude-obsidian` — a second brain that respects its vault: transaction core, lint, secret hygiene | `15_SYSTEM/scripts/hades.py`, `scripts/write_gate.py`, `scripts/link_check.py`, `scripts/issues.py` |
+| [[elephant-goldfish-to-hades-map]] | `google/elephant-goldfish-model` — design with an elephant, review with a goldfish: five stages, zero-context reviewers, one artifact per round | `scripts/goldfish_check.py`, `11_CONTROL/reviewers/`, `skills/goldfish-review/`, `skills/elephant-draft/`, `skills/drift-report/` |
 
 Companion map in the same folder: [[eight-memory-planes]] — one row per memory plane, with its
 writer, its reader and the test that proves the store exists.

@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-56FEF176",
+  "name": "drift-report",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-11-02",
+  "tags": [],
+  "relations": {},
+  "notes": "The scout half of the method: walk a bounded directory list, read what the documents cite, and report gone/stale/moved with the file that proves it -- past fifteen directories it stops and asks a human.",
+  "entrypoint": "skills/drift-report/SKILL.md",
+  "description": "The scout half of the method: walk a bounded directory list, read what the documents cite, and report gone/stale/moved with the file that proves it -- past fifteen directories it stops and asks a human.",
+  "approved_for_harness_ids": []
+}

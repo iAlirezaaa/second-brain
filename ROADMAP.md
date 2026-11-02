@@ -439,25 +439,34 @@ their eval harness (mem0, Khoj) while a claim with no public floor is a rumour.*
       23 tests in `tests/test_phase42_independent_eval_gate.py`, 5 more in
       `tests/test_phase36_dataset.py`.
 
-## Phase 43 — Design with an elephant, review with a goldfish · 🟡
+## Phase 43 — Design with an elephant, review with a goldfish · 🟢
 
-- [ ] 🔵 **M** `skills/elephant-draft` and `skills/goldfish-review`: the six brainstorm lenses
+- [x] 🔵 **M** `skills/elephant-draft` and `skills/goldfish-review`: the six brainstorm lenses
       translated into this repo's real constraints, the five review stages, the semantic split at
       `## Detailed Implementation Plan`, the severity/id scheme, the failed-reviewer rule and the
       clean-round / two-clean-rounds / five-round-cap / churn stop rules.
-- [ ] 🔵 **S** `11_CONTROL/reviewers/` — the goldfish personae as bounded, read-only definitions
+- [x] 🔵 **S** `11_CONTROL/reviewers/` — the goldfish personae as bounded, read-only definitions
       with their reading lists, so a harness can spawn exactly one.
-- [ ] 🔵 **M** `scripts/goldfish_check.py`: a review is only valid if every reviewer is recorded
+- [x] 🔵 **M** `scripts/goldfish_check.py`: a review is only valid if every reviewer is recorded
       `run`, no Blocker or Major is left unsettled, and every citation names a file a clone can
       open. An isolation rule with no gate is prose: if a harness has no subagent tool the review
       stops — "a review in the same context is not a Goldfish review".
-- [ ] ⛔ EGM's plugin manifests, marketplace install and harness-specific frontmatter: this repo
+- [x] ⛔ EGM's plugin manifests, marketplace install and harness-specific frontmatter: this repo
       ships plain files its own gates judge, and a plugin installer is the SuperAGI shape §2
       refuses.
 
+*Measured 2026-11-02: `python scripts/goldfish_check.py --personas` → "OK — 8 goldfish personae";
+`--self-test` → "SELF-TEST OK — 12 cases: the honest artifacts pass and every lie is refused";
+`python -m unittest discover -s tests -p test_phase43*` → 30 tests OK; the gate is the twelfth
+entry of `scripts/health.py` and prints an OK line inside an installed home, where no reviewer set
+is installed. Registered through the plan door: `hades.py doctor` → 22 records, `errors: 0`.*
+
 ## Phase 44 — Peer practices worth stealing, and the ones worth refusing · 🔵
 
-*Surveyed against mem0, Letta/MemGPT, Khoj, Basic Memory, Graphiti/Zep and SuperAGI.*
+*Surveyed against mem0, Letta/MemGPT, Khoj, Basic Memory, Graphiti/Zep, SuperAGI and
+[Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) (measured 2026-11-02: Apache-2.0,
+Python, 140,684 stars, last push 2026-11-01 — the closest peer this repo has, because its stated
+rules are "local deterministic parsing, every edge explained, no vector store").*
 
 - [ ] 🔵 **S** MCP tool behaviour tags (`read_only` / `destructive` / `idempotent`) on every
       door, cross-checked against the agent `tool_allowlist` (Basic Memory's progressive tool
@@ -466,6 +475,24 @@ their eval harness (mem0, Khoj) while a claim with no public floor is a rumour.*
       gate row rather than a stale certainty (Graphiti's bi-temporal edges, minus the LLM).
 - [ ] 🔵 **S** `kb.py --related <note>` — deterministic top-k neighbours from the FTS5 index, so
       "related notes" needs no embedding activation (Smart Connections' value, none of its cost).
+- [ ] 🔵 **S** Confidence on every edge of the link graph — `extracted` (the author wrote the
+      wikilink), `inferred` (a gate or the indexer deduced it), `ambiguous` (a row on
+      `14_CANDIDATES/`, which is what "uncertain" means here: it waits for a human). Taken from
+      graphify's `EXTRACTED | INFERRED | AMBIGUOUS` edge schema and its rule that an ambiguous
+      edge is "flagged for human review", not silently kept in the graph.
+- [ ] 🔵 **S** A link-graph readout in `health.py`: degree-0 notes (a page nothing points to is a
+      page retrieval cannot reach) and bridge notes (one link joining two otherwise separate
+      clusters). Their god-node/Leiden signal, computed from the wikilinks already in the vault —
+      no NetworkX, no embeddings, no new dependency.
+- [ ] 🔵 **S** `schema_version` stamped inside every generated JSON file, so a reader can tell
+      which contract wrote it and a gate can refuse a stale one instead of mis-parsing it
+      (graphify stamps its `graph.json` the same way).
+- [ ] ⛔ graphify's parsing engine itself — ~40 tree-sitter grammars, NetworkX, graspologic,
+      optional whisper/yt-dlp: the dependency wall charter §2 exists to refuse. This repo's
+      "AST" is the markdown link graph, which is already explicit, so only the schemas above
+      transfer. Its own docs also warn that node ids built from an inferred root "can end up
+      carrying path segments from the machine they were extracted on" — the reason every citation
+      in this repo stays repo-relative and `clone_readable()` refuses the rest.
 - [ ] ⛔ Postgres/pgvector, Neo4j, FastAPI+Redis+Celery, Letta's App Server, mem0's cloud and
       any LLM step inside the write path — a port, a daemon, a key or an unmeasured automatic
       rewrite is exactly what charter §2 exists to refuse.

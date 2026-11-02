@@ -1,0 +1,14 @@
+{
+  "kind": "skill",
+  "id": "SKL-F3808784",
+  "name": "elephant-draft",
+  "status": "draft",
+  "classification": "internal",
+  "created_at": "2026-11-02",
+  "tags": [],
+  "relations": {},
+  "notes": "Draft a design document with the whole context in hand: six brainstorm lenses, one semantic split header, and a feature/implementation range a cold reviewer can be pointed at without inheriting the drafter's assumptions.",
+  "entrypoint": "skills/elephant-draft/SKILL.md",
+  "description": "Draft a design document with the whole context in hand: six brainstorm lenses, one semantic split header, and a feature/implementation range a cold reviewer can be pointed at without inheriting the drafter's assumptions.",
+  "approved_for_harness_ids": []
+}
