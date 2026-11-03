@@ -20,6 +20,14 @@ FROZEN_BLOBS = {
     "10_ARCHIVE/foundations/2026-11-03-IDENTITY-v1.md": "53f9c861cb1a28f763686db78a435f52cc7176f8"
 }
 
+# These living documents are pinned too: updates require a deliberate, reviewed
+# change of both content and this fingerprint. The archived originals stay untouched.
+PROTECTED_GOAL_BLOBS = {
+    "00_START_HERE/GOAL.md": "406e94cd90d28269566efcd95c3e31f44352731f",
+    "00_START_HERE/GOAL_FA.md": "5d0360a92462186f253d4cff2c6f01e4643c0549",
+    "00_START_HERE/CHANGE_GOVERNANCE.md": "e1dd2d5e5530bee9510a447240aaa66c873ae62f"
+}
+
 REQUIRED_GOAL_FILES = {
     "00_START_HERE/GOAL.md": ("10_ARCHIVE/foundations/", "CHANGE_GOVERNANCE.md"),
     "00_START_HERE/GOAL_FA.md": ("GOAL.md", "10_ARCHIVE/foundations/"),
@@ -37,7 +45,7 @@ def git_blob_sha(content):
 def audit(root, frozen=None, required=None):
     """Return a list of explicit failures; never treat a missing archive as empty OK."""
     root = Path(root).resolve()
-    frozen = FROZEN_BLOBS if frozen is None else frozen
+    frozen = dict(FROZEN_BLOBS, **PROTECTED_GOAL_BLOBS) if frozen is None else frozen
     required = REQUIRED_GOAL_FILES if required is None else required
     problems = []
     for rel, expected in frozen.items():
@@ -80,8 +88,8 @@ def main(argv=None):
         for problem in problems:
             print("REFUSED goal/identity: " + problem)
         return 1
-    print("OK goal/identity: %d frozen original snapshots checked; %d durable goal entries present" %
-          (len(FROZEN_BLOBS), len(REQUIRED_GOAL_FILES)))
+    print("OK goal/identity: %d frozen originals and %d pinned goal documents checked; %d entrypoints present" %
+          (len(FROZEN_BLOBS), len(PROTECTED_GOAL_BLOBS), len(REQUIRED_GOAL_FILES)))
     return 0
 
 
