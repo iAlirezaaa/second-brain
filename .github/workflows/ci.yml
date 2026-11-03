@@ -106,7 +106,7 @@ jobs:
           cp 15_SYSTEM/backups/private/*.sbo1 "$RUNNER_TEMP/proof/"
           cp "$RUNNER_TEMP/envelope.json" "$RUNNER_TEMP/proof/envelope.json"
           mv "$RUNNER_TEMP/sbo1-key" "$RUNNER_TEMP/proof/sbo1-key"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sbo1-cross-machine-proof
           path: ${{ runner.temp }}/proof
