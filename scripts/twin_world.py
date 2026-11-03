@@ -31,7 +31,12 @@ class TwinRefused(ValueError):
 def safe_path(root, path):
     if not isinstance(path, str) or not path.strip() or len(path) > 500:
         raise TwinRefused("file path must be a non-empty relative string")
-    candidate = Path(path.replace("\\", "/"))
+    standardized = path.replace("\\", "/")
+    # Reject POSIX absolute paths even on Windows, where Path("/etc/x") is drive-relative.
+    # Also reject Windows drive-letter and UNC paths even on POSIX hosts.
+    if standardized.startswith("/") or (len(standardized) >= 2 and standardized[1] == ":"):
+        raise TwinRefused("absolute/traversal paths are not allowed")
+    candidate = Path(standardized)
     if candidate.is_absolute() or ".." in candidate.parts or "." in candidate.parts:
         raise TwinRefused("absolute/traversal paths are not allowed")
     if _blocked(candidate):
@@ -58,7 +63,7 @@ def _load(root, rel):
         if path.stat().st_size > MAX_FILE_BYTES:
             raise TwinRefused("source file is too large for Twin World 1a")
         try:
-            return path.read_text(encoding="utf-8"), label
+            return path.read_bytes().decode("utf-8"), label  # preserve CRLF for byte-accurate SHA
         except (OSError, UnicodeDecodeError):
             raise TwinRefused("source file is not a readable UTF-8 text file")
     return None, label
