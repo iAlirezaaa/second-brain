@@ -28,6 +28,14 @@
 | `rules/` | Governance | Machine-validated schemas and placement rules |
 | `vault-template/` | Example data | Minimal distributable template, not a personal vault |
 
+## GitHub root: necessary entrypoints only
+
+The repository tree is a first-class user interface. Keep at root only mandatory entrypoints, compatibility doors, build metadata, and established canonical documents that still have verified inbound references. Do **not** indiscriminately relocate `README.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `HANDOFF.md`, `ROADMAP.md`, `MEMORY.md`, `CHANGELOG.md`, `LICENSE`, `pyproject.toml`, `scripts/`, `skills/`, `tests/`, `rules/`, or numbered zones: many are stable imports or host entrypoints.
+
+For human navigation, start at [the permanent GOAL](GOAL.md), [the source-preservation policy](CHANGE_GOVERNANCE.md), and [the founding-idea archive](../10_ARCHIVE/foundations/README.md). `00_START_HERE` owns strategy/architecture. `02_WIKI` owns reviewed knowledge. `03_PROJECTS` owns projects. No extra generic `docs/` dumping ground.
+
+To reduce clutter, first inventory unreferenced root files and duplicate documents, then propose **FROM → TO**, link/import fixes, test results and rollback under the approval policy. Move nothing merely for cosmetic gain.
+
 ## Why there are two script directories
 
 `scripts/` is the stable **public command surface**: checks, installation,
