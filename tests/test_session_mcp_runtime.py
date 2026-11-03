@@ -34,6 +34,7 @@ class SessionMCPTests(unittest.TestCase):
         self.sid = brain.start(self.root, AGENT, "inspect task")["session"]
         self.tasks = brain.view(self.root, self.sid)["tasks"]
         self.task_id = self.tasks[2]["id"]
+        self.calls = []
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -52,8 +53,9 @@ class SessionMCPTests(unittest.TestCase):
                 "actor_id": actor, "task_id": self.task_id if task_id is None else task_id}
         args.update(kwargs)
         with patch.dict(mcp_server.TOOL_FUNCS, {
-            "capabilities": lambda root, data: "SAFE_RESULT",
-            "candidate_propose": lambda root, data: "PROPOSAL_ONLY"}):
+            "capabilities": lambda root, data: self.calls.append("capabilities") or "SAFE_RESULT",
+            "candidate_propose": lambda root, data: self.calls.append("candidate_propose") or
+            "PROPOSAL_ONLY"}):
             return mcp_server.handle_tool_call(self.root, {"name": name, "arguments": args})
 
     def test_strict_mode_blocks_legacy_mcp_call_before_execution(self):
@@ -90,9 +92,31 @@ class SessionMCPTests(unittest.TestCase):
 
     def test_mcp_write_denied_if_not_in_actor_allowlist(self):
         self.ready()
-        out = self.call(name="candidate_propose")
+        out = self.call(name="candidate_propose", secret="PRIVATE_ARGUMENT")
         self.assertTrue(out["isError"])
         self.assertIn("tool_allowlist", out["content"][0]["text"])
+        events = brain.timeline(self.root, self.sid)["events"]
+        denied = [event for event in events if event["kind"] == "tool_denied"]
+        self.assertEqual(1, len(denied))
+        self.assertEqual({"tool": "mcp.candidate_propose", "task_id": self.task_id,
+                          "reason": "allowlist_missing"}, denied[0]["details"])
+        self.assertFalse(any(event["kind"] in ("tool_attempt", "tool_failed")
+                             for event in events))
+        self.assertNotIn("PRIVATE_ARGUMENT", str(events))
+        self.assertEqual([], self.calls)
+
+    def test_mcp_denial_audit_failure_keeps_refusal_and_never_calls_tool(self):
+        self.ready()
+        with patch.object(mcp_server.session_bridge, "audit",
+                          side_effect=ValueError("audit unavailable")):
+            out = self.call(name="candidate_propose")
+        self.assertTrue(out["isError"])
+        self.assertEqual(
+            "REFUSED: MCP write candidate_propose is not in the registered actor's tool_allowlist",
+            out["content"][0]["text"])
+        self.assertEqual([], self.calls)
+        events = brain.timeline(self.root, self.sid)["events"]
+        self.assertFalse(any(event["kind"].startswith("tool_") for event in events))
 
     def test_mcp_write_allowed_for_explicit_registered_actor_grant(self):
         self.ready()
@@ -121,6 +145,8 @@ class SessionMCPTests(unittest.TestCase):
                 "session_id": self.sid, "actor_id": ""}})
         self.assertTrue(out["isError"])
         self.assertIn("registered agent", out["content"][0]["text"])
+        self.assertFalse(any(event["kind"].startswith("tool_")
+                             for event in brain.timeline(self.root, self.sid)["events"]))
 
     def test_mcp_refuses_non_object_arguments(self):
         out = mcp_server.handle_tool_call(

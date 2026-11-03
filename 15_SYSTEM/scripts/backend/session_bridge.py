@@ -41,13 +41,13 @@ def require(root, session_id="", actor_id="", task_id=None):
         raise ValueError("session refused: %s" % exc)
 
 
-def audit(root, session_id, actor_id, tool, status, payload="", task_id=None):
+def audit(root, session_id, actor_id, tool, status, payload="", task_id=None, reason=None):
     """Session-bound metadata only: never persist tool input/output bodies."""
     if not session_id:
         return
     brain = _module()
     try:
         return brain.audit_tool(Path(root), session_id, actor_id or "human",
-                                tool, status, payload, task_id)
+                                tool, status, payload, task_id, reason)
     except brain.Refused as exc:
         raise ValueError("session audit refused: %s" % exc)

@@ -116,17 +116,31 @@ class Registry:
             session_bridge.require(ctx.root, ctx.session_id, ctx.actor_id, ctx.task_id)
         except ValueError as exc:
             raise ToolError(str(exc))
+
+        def refuse_write(reason, message):
+            if ctx.session_id:
+                try:
+                    session_bridge.audit(ctx.root, ctx.session_id, ctx.actor_id,
+                                         qualified, "denied", "", ctx.task_id,
+                                         reason=reason)
+                except ValueError:
+                    # The policy refusal remains authoritative even when its audit cannot be saved.
+                    pass
+            raise ToolError(message)
+
         if tool.writes:
             if not ctx.allow_writes:
-                raise ToolError("tool %s writes; this context is not approved (--approve)"
-                                % qualified)
+                refuse_write("approval_missing",
+                             "tool %s writes; this context is not approved (--approve)"
+                             % qualified)
             if not ctx.actor_id:
-                raise ToolError("tool %s writes; this context has no actor (--agent)"
-                                % qualified)
+                refuse_write("actor_missing",
+                             "tool %s writes; this context has no actor (--agent)" % qualified)
             if qualified not in ctx.allowlist:
-                raise ToolError("tool %s is not in actor %s's tool_allowlist "
-                                "(an empty list means zero write tools)"
-                                % (qualified, ctx.actor_id or "(none)"))
+                refuse_write("allowlist_missing",
+                             "tool %s is not in actor %s's tool_allowlist "
+                             "(an empty list means zero write tools)"
+                             % (qualified, ctx.actor_id or "(none)"))
         if ctx.session_id:
             try:
                 session_bridge.audit(ctx.root, ctx.session_id, ctx.actor_id,

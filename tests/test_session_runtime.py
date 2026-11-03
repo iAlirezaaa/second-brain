@@ -36,6 +36,20 @@ class MemoryProbe(Tool):
         return "PRIVATE_RESULT_SHOULD_NOT_BE_PERSISTED"
 
 
+class MemoryWriteProbe(Tool):
+    name = "test.memory_write_probe"
+    description = "Mock idempotent write tool used to verify permission refusals."
+    behavior = "idempotent"
+    writes = True
+
+    def __init__(self):
+        self.calls = 0
+
+    def run(self, root, ctx, args):
+        self.calls += 1
+        return "PRIVATE_WRITE_RESULT"
+
+
 class SessionRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -49,7 +63,8 @@ class SessionRuntimeTests(unittest.TestCase):
         agent = self.root / "11_CONTROL" / "agents" / "actor"
         agent.mkdir(parents=True)
         (agent / "agent.json").write_text(
-            '{"id":"AGT-ABCD1234","kind":"agent","status":"draft"}',
+            '{"id":"AGT-ABCD1234","kind":"agent","status":"draft",'
+            '"tool_allowlist":[]}',
             encoding="utf-8")
         self.sid = brain.start(self.root, ACTOR, "inspect a task")["session"]
         self.tasks = brain.view(self.root, self.sid)["tasks"]
@@ -61,8 +76,10 @@ class SessionRuntimeTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def ctx(self, session=None, actor=ACTOR, task_id=None):
-        return Context(self.root, actor_id=actor, actor_kind="agent",
+    def ctx(self, session=None, actor=ACTOR, task_id=None, allow_writes=False,
+            allowlist=(), actor_kind="agent"):
+        return Context(self.root, actor_id=actor, actor_kind=actor_kind,
+                        allow_writes=allow_writes, allowlist=allowlist,
                        session_id=self.sid if session is None else session,
                        task_id=self.work_id if task_id is None else task_id)
 
@@ -100,6 +117,120 @@ class SessionRuntimeTests(unittest.TestCase):
         self.assertEqual(["tool_attempt", "tool_ok"], [e["kind"] for e in trace["events"]][-2:])
         self.assertNotIn("PRIVATE_RESULT_SHOULD_NOT_BE_PERSISTED", str(trace))
         self.assertEqual(64, len(trace["events"][-1]["details"]["result_sha256"]))
+
+    def test_preflight_reports_draft_status_and_configured_access(self):
+        self.ready()
+        result = brain.preflight(self.root, self.sid, ACTOR, self.work_id)
+        self.assertEqual("draft", result["actor_status"])
+        self.assertEqual([], result["registered_tool_allowlist"])
+        self.assertEqual("valid", result["allowlist_state"])
+        self.assertEqual("preflight grants no writes; host tool gates apply",
+                         result["write_access"])
+
+    def test_preflight_reports_malformed_allowlist_without_granting_access(self):
+        self.ready()
+        agent = next((self.root / "11_CONTROL" / "agents").glob("*/agent.json"))
+        agent.write_text('{"id":"AGT-ABCD1234","kind":"agent","status":"draft",'
+                         '"tool_allowlist":"not-a-list"}', encoding="utf-8")
+        result = brain.preflight(self.root, self.sid, ACTOR, self.work_id)
+        self.assertEqual("draft", result["actor_status"])
+        self.assertEqual([], result["registered_tool_allowlist"])
+        self.assertEqual("invalid", result["allowlist_state"])
+
+    def test_preflight_reports_missing_actor_record_without_changing_preflight(self):
+        self.ready()
+        for path in (self.root / "11_CONTROL" / "agents").glob("*/agent.json"):
+            path.unlink()
+        result = brain.preflight(self.root, self.sid, ACTOR, self.work_id)
+        self.assertEqual("unknown", result["actor_status"])
+        self.assertEqual([], result["registered_tool_allowlist"])
+        self.assertEqual("missing", result["allowlist_state"])
+
+    def test_write_denial_without_approval_is_audited_without_payload(self):
+        self.ready()
+        tool = MemoryWriteProbe()
+        self.registry = Registry()
+        self.registry.register(tool)
+        with self.assertRaisesRegex(ToolError, "not approved \(--approve\)"):
+            self.registry.execute(self.ctx(), tool.name, {"secret": "PRIVATE_ARGUMENT"})
+        events = brain.timeline(self.root, self.sid)["events"]
+        denied = [event for event in events if event["kind"] == "tool_denied"]
+        self.assertEqual(1, len(denied))
+        self.assertEqual({"tool": tool.name, "task_id": self.work_id,
+                          "reason": "approval_missing"}, denied[0]["details"])
+        self.assertEqual(0, tool.calls)
+        self.assertNotIn("PRIVATE_ARGUMENT", str(events))
+        self.assertNotIn("PRIVATE_WRITE_RESULT", str(events))
+        self.assertFalse(any(event["kind"] in ("tool_attempt", "tool_failed")
+                             for event in events))
+
+    def test_write_denial_for_missing_allowlist_is_audited(self):
+        self.ready()
+        tool = MemoryWriteProbe()
+        self.registry = Registry()
+        self.registry.register(tool)
+        with self.assertRaisesRegex(ToolError, "tool_allowlist"):
+            self.registry.execute(self.ctx(allow_writes=True), tool.name,
+                                  {"secret": "PRIVATE_ARGUMENT"})
+        event = brain.timeline(self.root, self.sid)["events"][-1]
+        self.assertEqual("tool_denied", event["kind"])
+        self.assertEqual({"tool": tool.name, "task_id": self.work_id,
+                          "reason": "allowlist_missing"}, event["details"])
+        self.assertEqual(0, tool.calls)
+        self.assertNotIn("PRIVATE_ARGUMENT", str(event))
+
+    def test_write_denial_for_missing_actor_is_audited_in_human_session(self):
+        human_sid = brain.start(self.root, "human", "human-owned write refusal") ["session"]
+        human_tasks = brain.view(self.root, human_sid)["tasks"]
+        brain.finish(self.root, human_sid, human_tasks[0]["id"], "skills/inspect/SKILL.md")
+        brain.finish(self.root, human_sid, human_tasks[1]["id"], "02_WIKI/evidence.md")
+        work_id = human_tasks[2]["id"]
+        tool = MemoryWriteProbe()
+        self.registry = Registry()
+        self.registry.register(tool)
+        with self.assertRaisesRegex(ToolError, "context has no actor"):
+            self.registry.execute(self.ctx(session=human_sid, actor="", task_id=work_id,
+                                            allow_writes=True), tool.name, {})
+        event = brain.timeline(self.root, human_sid)["events"][-1]
+        self.assertEqual("tool_denied", event["kind"])
+        self.assertEqual({"tool": tool.name, "task_id": work_id,
+                          "reason": "actor_missing"}, event["details"])
+        self.assertEqual(0, tool.calls)
+
+    def test_agent_missing_actor_is_preflight_refusal_not_audited(self):
+        self.ready()
+        before = len(brain.timeline(self.root, self.sid)["events"])
+        tool = MemoryWriteProbe()
+        self.registry = Registry()
+        self.registry.register(tool)
+        with self.assertRaisesRegex(ToolError, "actor does not own"):
+            self.registry.execute(self.ctx(actor=""), tool.name, {})
+        events = brain.timeline(self.root, self.sid)["events"]
+        self.assertEqual(before, len(events))
+        self.assertEqual(0, tool.calls)
+
+    def test_denial_audit_failure_preserves_policy_error_and_never_executes(self):
+        self.ready()
+        tool = MemoryWriteProbe()
+        self.registry = Registry()
+        self.registry.register(tool)
+        with patch.object(session_bridge, "audit", side_effect=ValueError("audit unavailable")):
+            with self.assertRaisesRegex(ToolError, "not approved \(--approve\)") as caught:
+                self.registry.execute(self.ctx(), tool.name, {})
+        self.assertEqual("tool %s writes; this context is not approved (--approve)" % tool.name,
+                         str(caught.exception))
+        self.assertEqual(0, tool.calls)
+
+    def test_denial_audit_rejects_unbounded_reason_and_payload(self):
+        before = len(brain.timeline(self.root, self.sid)["events"])
+        with self.assertRaisesRegex(brain.Refused, "reason is invalid"):
+            brain.audit_tool(self.root, self.sid, ACTOR, "test.write", "denied", "",
+                             self.work_id, reason="PRIVATE_REASON")
+        with self.assertRaisesRegex(brain.Refused, "cannot include a payload"):
+            brain.audit_tool(self.root, self.sid, ACTOR, "test.write", "denied",
+                             "PRIVATE_ARGUMENT", self.work_id,
+                             reason="allowlist_missing")
+        self.assertEqual(before, len(brain.timeline(self.root, self.sid)["events"]))
 
     def test_failed_tool_is_audited_but_does_not_close_session(self):
         self.ready()
