@@ -143,7 +143,8 @@ math — two clocks exist (nightly loop + backend schedules); one should tell th
       interface, `cosine`/`rank` as pure functions, and `HashingEmbedder` — a sha256
       bag-of-words double, deterministic across processes, with `production = False`.
       `scripts/vector.py status|probe` shows the seam running offline; `scripts/vector_check.py`
-      is the eighth health gate. `11_CONTROL/vector/activation.json` is the evidence door
+      is the eighth health gate. `15_SYSTEM/scripts/backend/vector.py::EVIDENCE` defines
+      a future, currently absent activation file at 11_CONTROL/vector/activation.json
       (verdict, BM25/candidate rates, positive margin, ≥5 cases with a case-set digest,
       approver and date). **Refused by default:** no embedder dependency, no socket, and
       activation stays shut even with perfect evidence while no production embedder is
