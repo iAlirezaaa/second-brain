@@ -153,7 +153,7 @@ def promote(item, proposals_path, root):
         # a promoted row is an `adopt`: the ledger keeps the decision so the count
         # identity survives the row leaving the shelf
         candidate_check.append_event(src.parent, {
-            "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "id": str(src_fm.get("id") or src.stem), "event": "disposition",
             "disposition": "adopt", "note": "promoted to %s" % destination})
     print(f"PROMOTED  {item} → {destination}")
