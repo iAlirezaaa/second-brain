@@ -21,8 +21,8 @@ status: active
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 1090 |
-| health gates (`python scripts/health.py`) | 16 |
+| tests collected (`python -m unittest discover -s tests`) | 1106 |
+| health gates (`python scripts/health.py`) | 17 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
 | agent-host doors (`python scripts/sync_hosts.py --list`) | 5 |
