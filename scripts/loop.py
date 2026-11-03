@@ -23,10 +23,12 @@ is the alarm; the record is the rule.
 import argparse
 import datetime
 import glob
+import io
 import json
 import re
 import sqlite3
 import sys
+import tokenize
 from collections import Counter
 from pathlib import Path
 
@@ -271,7 +273,20 @@ def hygiene(root):
         for path in glob.glob(str(root / pattern), recursive=True):
             files_scanned += 1
             text = Path(path).read_text(encoding="utf-8", errors="replace")
-            debt += len(TODO_RE.findall(text))
+            # In Python, only explicit comment markers are actionable debt.
+            # Never count this script's own examples, regex, or docstrings
+            # as outstanding project tasks (issue #56).
+            if path.endswith(".py"):
+                try:
+                    tokens = tokenize.generate_tokens(io.StringIO(text).readline)
+                    comments = (tok.string for tok in tokens
+                                if tok.type == tokenize.COMMENT)
+                    debt += sum(bool(TODO_RE.search(comment)) for comment in comments)
+                except (tokenize.TokenError, IndentationError):
+                    # A syntax-invalid source is not a healthy zero denominator.
+                    debt += 1
+            else:
+                debt += sum(bool(TODO_RE.search(line)) for line in text.splitlines())
     return {"todo_hygiene": debt, "files_scanned": files_scanned}
 
 
@@ -489,7 +504,7 @@ def write_rows(root, planned, report_rel, today):
                                    if item and clone_readable(item) and (root / item).exists()]
         (shelf / ("%s.md" % cid)).write_text(row_text(cid, today, row, evidence), encoding="utf-8")
         candidate_check.append_event(shelf, {
-            "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "id": cid, "event": "proposed", "priority": row["priority"],
             "dimension": row["dimension"], "cue": row["cue"]})
         written.append((cid, row))
@@ -519,7 +534,7 @@ def dispose(root, cid, label, note):
         return 1
     path = shelf / ("%s.md" % cid)
     candidate_check.append_event(shelf, {
-        "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "id": cid, "event": "disposition", "disposition": label, "note": note or ""})
     if label == "drop" and path.is_file():
         path.unlink()  # dropped means off the shelf; the ledger keeps the reason

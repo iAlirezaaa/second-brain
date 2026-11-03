@@ -49,11 +49,11 @@ KEEP = 5          # bases on disk; the journal keeps every line, the bytes get r
 
 
 def now():
-    return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def stamp():
-    return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 def journal_rows(root, name):

@@ -354,7 +354,7 @@ def register(root, file_arg):
         print("ALREADY  %s is in the ledger" % cid)
         return 0
     append_event(path.parent, {
-        "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "id": cid, "event": "proposed", "priority": "hand",
         "dimension": str(fm.get("dimension") or ""), "cue": str(fm.get("cue") or "")})
     print("REGISTERED %s -> %s" % (cid, (path.parent / "ledger.jsonl").name))

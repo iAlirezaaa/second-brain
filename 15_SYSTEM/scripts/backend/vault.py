@@ -32,7 +32,7 @@ import platform
 import re
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import common  # noqa: F401  (safe_rel, find_root; path bootstrapped by the package)
@@ -72,11 +72,11 @@ class VaultError(Exception):
 
 
 def now():
-    return datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def stamp():
-    return datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
 
 def plane_list(cfg):

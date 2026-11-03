@@ -226,7 +226,7 @@ def main():
                          bool(stdout.strip() or stderr.strip()))
 
     record = {
-        "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "outcome": outcome, "returncode": returncode,
         "delivered": bool(outcome == "pass"),
         "moves": moves, "unsanctioned": off_surface, "sanctioned_prefixes": sanctioned,

@@ -192,7 +192,7 @@ def extract_model_block(text):
 
 
 def render(path, state, model_block, measured):
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     body = model_block.strip()
     if not body.startswith(H["inflight"]):
         body = H["inflight"] + "\n\n" + body
@@ -260,8 +260,8 @@ def check(root, head_override=None):
         print(f"STALE — repo_head={hmatch.group(1)} but HEAD={current}")
         return 2
     try:
-        generated = datetime.datetime.strptime(match.group(1), "%Y-%m-%dT%H:%M:%SZ")
-        age_hours = (datetime.datetime.utcnow() - generated).total_seconds() / 3600
+        generated = datetime.datetime.strptime(match.group(1), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
+        age_hours = (datetime.datetime.now(datetime.timezone.utc) - generated).total_seconds() / 3600
     except ValueError:
         print("STALE — unreadable generated timestamp")
         return 2
