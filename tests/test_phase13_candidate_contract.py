@@ -209,6 +209,26 @@ class TestContractValidation(Harness):
         result = self.check()
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("0 shelf candidate", result.stdout)
+        # An installed home may have no proposals yet. The source checkout must not
+        # accept the same zero denominator as evidence of a healthy candidate shelf.
+        self.assertEqual(0, self.check("--require-minimum").returncode)
+        (self.tmp / "pyproject.toml").write_text("[project]\nname='fixture'\n",
+                                                  encoding="utf-8")
+        refused = self.check("--require-minimum")
+        self.assertEqual(1, refused.returncode, refused.stdout + refused.stderr)
+        self.assertIn("REFUSED", refused.stdout)
+        self.assertIn("zero shelf candidates", refused.stdout)
+        self.assertIn("14_CANDIDATES/loop", refused.stdout)
+        as_json = self.check("--require-minimum", "--json")
+        self.assertEqual(1, as_json.returncode, as_json.stdout + as_json.stderr)
+        self.assertTrue(json.loads(as_json.stdout)["ledger_problems"])
+        # The composite gate must actually enable the strict mode; a flag that no
+        # shipping path exercises would leave issue #60 open in practice.
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import health
+        self.assertIn("candidate_check.py --require-minimum", health.GATES)
+        self.assertIn("--require-minimum",
+                      health.gate_argv("candidate_check.py --require-minimum", []))
 
 
 class TestNoEntry(Harness):

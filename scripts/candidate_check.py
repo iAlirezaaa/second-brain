@@ -34,7 +34,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import clone_readable, find_root, load_json, parse_frontmatter, state_fingerprint
+from common import (clone_readable, find_root, is_repo_checkout, load_json,
+                    parse_frontmatter, state_fingerprint)
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -369,6 +370,8 @@ def main():
     parser.add_argument("--register", metavar="FILE", default=None,
                         help="enter a hand-authored row into the shelf ledger so it can be counted")
     parser.add_argument("--json", action="store_true", dest="as_json")
+    parser.add_argument("--require-minimum", action="store_true",
+                        help="when checking the source repo, refuse an empty candidate shelf")
     args = parser.parse_args()
 
     root = Path(args.root) if args.root else find_root(Path(__file__))
@@ -403,6 +406,10 @@ def main():
     if not args.file:
         shelf_dir = Path(args.dir) if Path(args.dir).is_absolute() else root / args.dir
         ledger_issues, identity = ledger_problems(root, shelf_dir, targets)
+        if args.require_minimum and is_repo_checkout(root) and not targets:
+            ledger_issues.append(
+                "zero shelf candidates to judge at %s (missing or empty source-repo shelf); "
+                "an unobserved gate is not healthy" % args.dir)
 
     if args.as_json:
         print(json.dumps({

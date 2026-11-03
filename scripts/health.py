@@ -53,7 +53,7 @@ ROOT_ONLY_GATES = {"plane_check.py": [], "candidate_check.py": [], "memory.py": 
 # an entry may carry its own flags -- "link_check.py --readout" runs the same script a second
 # way, because the broken-link verdict and the graph-shape verdict are different claims
 GATES = ["link_check.py", "link_check.py --readout", "frontmatter_check.py", "plane_check.py",
-         "candidate_check.py", "memory.py", "sync_hosts.py", "doc_report.py", "vector_check.py",
+         "candidate_check.py --require-minimum", "memory.py", "sync_hosts.py", "doc_report.py", "vector_check.py",
          "issues.py", "version.py", "ci_floor.py", "goldfish_check.py",
          "schema_stamp.py --check", "roadmap_check.py --check", "vault_check.py",
          "battery_check.py"]
