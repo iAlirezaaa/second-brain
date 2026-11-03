@@ -2,7 +2,7 @@
   "schema_version": "1",
   "repo": "iAlirezaaa/second-brain-os",
   "fetched_at": "2026-11-03",
-  "note": "Synchronized with the 24 open upstream issues; closed and candidate fixes require CI evidence and owner-reviewed resolution.",
+  "note": "14 originally open issues now closed upstream after tested fixes in PR #69/#70; 10 remain open with explicit gaps. The public tracker and this ledger are reconciled.",
   "issues": [
     {
       "number": 3,
@@ -204,30 +204,50 @@
     {
       "number": 64,
       "title": "CI red on all four jobs since 744cbb0: two harness battery checks fail",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        "15_SYSTEM/scripts/test_hades.py",
+        "scripts/ci_hades_plane.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 63,
       "title": "issues.py --check reports health when a repo checkout has no ledger",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        "scripts/issues.py",
+        "tests/test_ci_issue_hardening.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 62,
       "title": "parse_frontmatter drops lines it cannot parse, cutting shipped reviewer laws",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #62; no confirmed complete fix has been merged."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "86ca10d4a4821f3174f73a3f9d4a44f3e5511e4b",
+      "evidence": [
+        "scripts/common.py",
+        "tests/test_frontmatter_losslessness.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 61,
       "title": "doc_report --write turns a failed measurement into a row, then certifies it fresh",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        "scripts/doc_report.py",
+        "tests/test_ci_issue_hardening.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 60,
@@ -239,9 +259,14 @@
     {
       "number": 59,
       "title": "link_check --confidence prints len(edges) twice and cannot exit 1",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        "scripts/link_check.py",
+        "tests/test_ci_issue_hardening.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 58,
@@ -253,16 +278,26 @@
     {
       "number": 57,
       "title": "datetime.utcnow() deprecated at 10 call sites; handoff.py subtracts it",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #57; no confirmed complete fix has been merged."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "86ca10d4a4821f3174f73a3f9d4a44f3e5511e4b",
+      "evidence": [
+        "scripts/handoff.py",
+        "tests/test_utc_datetime.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 56,
       "title": "loop.py hygiene() counts its own source as the repo's TODO debt (9 of 10)",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #56; no confirmed complete fix has been merged."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "86ca10d4a4821f3174f73a3f9d4a44f3e5511e4b",
+      "evidence": [
+        "scripts/loop.py",
+        "tests/test_loop_hygiene.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 55,
@@ -274,9 +309,14 @@
     {
       "number": 54,
       "title": "14_CANDIDATES/README.md cites ROADMAP Phase 9.5, which does not exist",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #54; no confirmed complete fix has been merged."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "86ca10d4a4821f3174f73a3f9d4a44f3e5511e4b",
+      "evidence": [
+        "14_CANDIDATES/README.md",
+        "tests/test_backlog_governance.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 53,
@@ -288,9 +328,14 @@
     {
       "number": 52,
       "title": "CONTRIBUTING's gate table lists 10 of the 15 gates health.py runs",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #52; no confirmed complete fix has been merged."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "86ca10d4a4821f3174f73a3f9d4a44f3e5511e4b",
+      "evidence": [
+        "CONTRIBUTING.md",
+        "tests/test_backlog_governance.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 51,
@@ -323,9 +368,14 @@
     {
       "number": 47,
       "title": "The documented wiki build leaves 23 generated pages untracked in the human plane",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #47; no confirmed complete fix has been merged."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "86ca10d4a4821f3174f73a3f9d4a44f3e5511e4b",
+      "evidence": [
+        ".gitignore",
+        "tests/test_backlog_governance.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 46,
@@ -337,30 +387,50 @@
     {
       "number": 45,
       "title": "The nightly runs --no-tests, so the ratchet never sees the test suite",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        ".github/workflows/loop.yml",
+        "tests/test_ci_issue_hardening.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 44,
       "title": "loop.yml cron (30 3 * * *) disagrees with the schedule record (daily_at 02:00)",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        ".github/workflows/loop.yml",
+        "tests/test_ci_issue_hardening.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 43,
       "title": "loop.py --due: rc 1 (refused) takes the same branch as rc 3 (not due)",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        ".github/workflows/loop.yml",
+        "tests/test_ci_issue_hardening.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 42,
       "title": "continue-on-error turns the loop's own refusals into a green job",
-      "upstream": "open",
-      "state": "open",
-      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+      "upstream": "closed",
+      "state": "closed",
+      "commit": "b7acec8030145e89ee21b710d2afbd1607c7d167",
+      "evidence": [
+        ".github/workflows/loop.yml",
+        "tests/test_ci_issue_hardening.py"
+      ],
+      "resolution": "Merged and tested on main; see upstream issue discussion for exact regression proof."
     },
     {
       "number": 41,
