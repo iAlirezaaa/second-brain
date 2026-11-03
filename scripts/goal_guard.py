@@ -38,6 +38,9 @@ REQUIRED_GOAL_FILES = {
 
 def git_blob_sha(content):
     """Return the same hash Git uses for a stored blob, not a file-system mtime."""
+    # Windows Git checkouts may present canonical LF blobs as CRLF bytes.
+    # Normalize only that transport conversion before checking the Git blob identity.
+    content = content.replace(b"\r\n", b"\n")
     raw = b"blob " + str(len(content)).encode("ascii") + b"\0" + content
     return hashlib.sha1(raw).hexdigest()
 

@@ -37,7 +37,7 @@ status: active
 ## 2. In-Flight Work
 
 - **GOAL foundation is in draft PR #76** (`feat/goal-identity-maturity-20261103`, starting from main commit `31da3d4`). It adds the durable GOAL in English and Persian, freezes the original charter / product vision / constitution, indexes the founding ideas, adds a protected-change policy and `goal_guard.py`, and wires that guard into CI and the nightly loop. No original source or user data was moved.
-- **CI is red at the recorded head `88696b7`** (run 41598135423). All four OS/Python matrix jobs fail at the same three tests: archive index missing Markdown frontmatter; phase-4 Persian golden retrieval still expects the old charter although the new GOAL is now the leading result; and the corresponding decidability check sees that same outdated target. Backup jobs were skipped downstream. Fixes are being made on the PR branch; rerun and inspect all checks before calling this foundation verified.
+- **CI remains red at head `4dcab14`** (run 41655227602). Both Linux jobs passed the full 1111-test suite plus health and pristine-clone checks. Both Windows jobs fail only `test_real_repo_has_frozen_origins_and_goal`: Git for Windows checks out LF source blobs as CRLF bytes, while the gate hashes raw working-tree bytes. The archive-frontmatter and Persian golden-query failures from the previous run are fixed. Normalize only CRLF checkout conversion before fingerprinting, and add a regression assertion; rerun the full matrix.
 - **Follow-up issue #77 remains open:** connect the permanent GOAL to `scripts/loop.py` and session planning; the protected-document gate alone does not implement a GOAL optimizer.
 - **Follow-up issue #78 remains open:** benchmark adaptive maturity independently for storage, retrieval, indexing, runtime and compute; no architecture switching is claimed shipped.
 - **Follow-up issue #79 remains open:** audit root information architecture before proposing any moves; physical cleanup requires explicit owner approval.
@@ -50,14 +50,14 @@ status: active
 
 ## 4. Blockers & Open Questions
 
-- The last verified CI run is failed; its three failures are recorded above. No passing run on a corrected head has yet been observed.
+- The last verified CI run is partially green and partially failed: Linux 3.9/3.12 passed; Windows 3.9/3.12 failed on line-ending normalization. No fully passing run has been observed.
 - Local shell startup currently fails with a Windows CET runtime error, and this generated workspace contains only `outputs/` and `work/`, not a repository checkout. Use GitHub Actions as current test evidence; do not report local tests or regenerated handoff state as successful.
 - The GOAL-loop and maturity-engineering follow-ups require separate measured implementation and review.
 
 ## 5. Next Actions
 
-- [ ] Correct archive metadata and the Persian golden retrieval target on the PR branch.
-- [ ] Wait for the new CI run; inspect full job output and fix any remaining failures without weakening gates.
+- [x] Add valid metadata to the founding-ideas index and repoint the Persian golden case to the canonical GOAL. Linux CI confirms these corrections.
+- [ ] Normalize Windows checkout CRLF before the Git-blob fingerprint comparison; assert LF/CRLF equivalence without weakening content-change detection.
 - [ ] Run / verify `goal_guard.py --check`, health gates, full tests, and fresh-clone checks from CI.
 - [ ] Refresh this handoff through `scripts/handoff.py` in a real checkout; the generated §1 snapshot still reflects an older commit and test run.
 - [ ] Continue with issue #77 only after the foundation PR is reviewed; keep #78 and #79 evidence-led and approval-gated.

@@ -17,6 +17,8 @@ class GoalGuardTests(unittest.TestCase):
     def test_git_blob_hash_is_length_delimited(self):
         self.assertEqual("ce013625030ba8dba906f756967f9e9ca394464a",
                          goal_guard.git_blob_sha(b"hello\n"))
+        self.assertEqual(goal_guard.git_blob_sha(b"hello\n"),
+                         goal_guard.git_blob_sha(b"hello\r\n"))
 
     def test_missing_frozen_original_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
