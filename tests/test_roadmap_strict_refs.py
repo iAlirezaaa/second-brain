@@ -22,6 +22,7 @@ class RoadmapCitationHardened(unittest.TestCase):
         (self.root / "scripts" / "version.py").write_text(
             "def main(): pass\n", encoding="utf-8")
         (self.root / "tests").mkdir()
+        (self.root / "02_WIKI").mkdir()  # a missing note here is local, not upstream
 
     def run_plan(self, sentence, filename="custom-plan.md"):
         plan = self.root / filename
@@ -62,7 +63,9 @@ class RoadmapCitationHardened(unittest.TestCase):
     def test_misspelled_local_root_cannot_be_foreign(self):
         result = self.run_plan(self.cited("scriptsS/version.py"))
         self.assertEqual(1, result.returncode, result.stdout)
-        self.assertIn("did you mean scripts", result.stdout)
+        self.assertIn("repo holds", result.stdout)
+        self.assertIn("scripts/version.py", result.stdout)
+        self.assertNotIn("FOREIGN", result.stdout)
 
     def test_noted_label_names_the_supplied_plan(self):
         result = self.run_plan(self.cited("external-project/file.js"))
