@@ -78,12 +78,16 @@ jobs:
           else
             git commit -m "loop: record reviewable nightly findings (run ${{ github.run_id }})"
             git push origin HEAD:refs/heads/loop/nightly
+            # The repository does not grant GitHub Actions permission to create
+            # pull requests. PR #80 was opened through an authorized reviewer.
+            # Reuse it; if it is deleted, fail visibly without elevating token
+            # permissions. The committed report still survives on loop/nightly.
             if gh pr view loop/nightly --json number >/dev/null 2>&1; then
               echo "Existing review PR updated."
             else
-              gh pr create --base main --head loop/nightly \
-                --title "chore(loop): review continuous improvement findings" \
-                --body "Generated candidate reports and verified task signals. Review before promotion; never auto-merge."
+              echo "Missing review PR for loop/nightly. Report is safely on the branch."
+              echo "A reviewer must create the PR; never enable Actions PR creation implicitly."
+              exit 1
             fi
           fi
 
