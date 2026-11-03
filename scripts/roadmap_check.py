@@ -38,6 +38,7 @@ finding. In an installed brain home the roadmap is the source repo's plan, not t
 the gate says so in one OK line rather than judging promises the home never made.
 """
 import argparse
+import difflib
 import fnmatch
 import re
 import subprocess
@@ -87,8 +88,10 @@ def shape_of(token):
     about a folder, not a claim that a path resolves, and this gate does not pretend otherwise.
     """
     token = token.strip()
-    if not token or " " in token or NOT_A_PATH.match(token) or token.startswith("http"):
+    if not token or NOT_A_PATH.match(token) or token.startswith("http"):
         return None
+    # Backticks can contain flags; judge their leading repo-relative path.
+    token = token.split()[0]
     member = None
     matched = MEMBER.match(token)
     if matched:
@@ -107,7 +110,7 @@ def shape_of(token):
     if not token.rstrip("/"):
         return None
     directory = token.endswith("/")
-    if not directory and ("." not in last or last.startswith(".")):
+    if not directory and ("." not in last or last.startswith(".")) and token != ".github/CODEOWNERS":
         return None
     if token.startswith("/"):
         return ("ABSOLUTE", token, anchor, member)
@@ -163,17 +166,17 @@ class Checker:
         except OSError:
             return ""
 
-    def declared_by(self, basename):
-        """Tracked Python that names this file, so a not-yet-created journal is evidence, not a lie.
+    def declared_by(self, rel):
+        """Tracked Python that names this exact repo-relative path, not merely its basename.
 
         Only source code counts: a path mentioned in a prose note is a quotation, and calling that
         "the code declares it" would let an upstream file masquerade as this repo's own state.
         """
-        if basename not in self._grep:
-            hits = [rel for rel in self.tracked_files()
-                    if rel.endswith(".py") and basename in self.sources_text(rel)]
-            self._grep[basename] = hits
-        return self._grep[basename]
+        if rel not in self._grep:
+            hits = [source for source in self.tracked_files()
+                    if source.endswith(".py") and rel in self.sources_text(source)]
+            self._grep[rel] = hits
+        return self._grep[rel]
 
     def resolve(self, rel):
         """EXISTS / glob hit, or nothing — the caller decides whether that is a defect."""
@@ -232,14 +235,16 @@ def classify(checker, kind, rel, anchor, member, row):
                 "cite the repo-relative path so a stranger can open it")
     # only a file name can be declared: a folder's last word (`maps`) is a substring of half the
     # repo, and treating that as a witness would turn a missing directory into evidence
-    declared = checker.declared_by(basename) if "." in basename else []
+    declared = checker.declared_by(rel) if "." in basename else []
     if declared:
-        return ("DECLARED", "%s is created or read by %s" % (basename, declared[0]), "")
+        return ("DECLARED", "%s is created or read by %s" % (rel, declared[0]), "")
     if checker.is_ignored(rel):
         return ("STATE", "%s is gitignored machine-plane state" % rel, "")
     first = rel.split("/", 1)[0]
-    if first in checker.local_roots():
-        return ("MISSING", "%s is not in this repo and no code names it" % rel,
+    close_root = difflib.get_close_matches(first, checker.local_roots(), n=1, cutoff=0.85)
+    if first in checker.local_roots() or close_root:
+        hint = " (did you mean %s?)" % close_root[0] if close_root and first not in checker.local_roots() else ""
+        return ("MISSING", "%s is not in this repo and no code names it%s" % (rel, hint),
                 "the row claims it: ship it, or correct the row to the path that exists")
     return ("FOREIGN", "%s belongs outside this clone (an upstream path the row describes)" % rel,
             "")
@@ -253,9 +258,10 @@ def check(root, plan_path):
         print("REFUSED  %s cannot be read: %s" % (plan_path, exc))
         return 1
     rows = read_rows(text)
-    counts, findings, notes, uncited = {}, [], [], 0
+    counts, findings, notes, uncited, skipped = {}, [], [], 0, 0
     for row in rows:
         found = citations(row["text"])
+        skipped += len(CODE.findall(row["text"])) - len(found)
         if not found and row["closed"]:
             uncited += 1
         for token, (kind, rel, anchor, member) in found:
@@ -265,7 +271,7 @@ def check(root, plan_path):
                 state, advice, fix = "PLANNED", "%s is not in this repo yet" % rel, ""
             counts[state] = counts.get(state, 0) + 1
             if state in ("FOREIGN", "STATE"):
-                notes.append("NOTED    ROADMAP.md:%d `%s` — %s" % (row["line"], token, advice))
+                notes.append("NOTED    %s:%d `%s` — %s" % (plan_path.name, row["line"], token, advice))
             if state in ("MISSING", "NOT_REPO_RELATIVE", "BAD_ANCHOR", "BAD_MEMBER",
                          "OUT_OF_BOUNDARY"):
                 findings.append("REFUSED  %s:%d %s row cites `%s` — %s; %s"
@@ -281,11 +287,11 @@ def check(root, plan_path):
         return 1
     closed = sum(1 for r in rows if r["closed"])
     print("OK — %d row(s) in %s (%d closed, %d open); %d path citation(s) checked: %s; "
-          "%d closed row(s) carry no path citation at all — counted, not refused, because the "
+          "%d skipped non-path token(s); %d closed row(s) carry no path citation at all — counted, not refused, because the "
           "honest gap in this roadmap is evidence that was never written down, and a number that "
           "moves here is a number that can be closed"
           % (len(rows), plan_path.name, closed, len(rows) - closed, sum(counts.values()),
-             ", ".join("%s %d" % (k, counts[k]) for k in sorted(counts)) or "none", uncited))
+             ", ".join("%s %d" % (k, counts[k]) for k in sorted(counts)) or "none", skipped, uncited))
     return 0
 
 
