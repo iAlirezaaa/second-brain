@@ -51,7 +51,12 @@ class RoadmapCitationHardened(unittest.TestCase):
             "OUTPUT = 'does-not-exist.md'\n", encoding="utf-8")
         result = self.run_plan(self.cited("02_WIKI/does-not-exist.md"))
         self.assertEqual(1, result.returncode, result.stdout)
-        self.assertIn("MISSING", result.stdout)
+        self.assertIn(
+            "REFUSED  custom-plan.md:1 closed row cites `02_WIKI/does-not-exist.md`",
+            result.stdout,
+        )
+        self.assertIn("is not in this repo and no code names it", result.stdout)
+        self.assertNotIn("DECLARED", result.stdout)
 
     def test_exact_full_path_is_a_declaration_only(self):
         (self.root / "scripts" / "writer.py").write_text(
