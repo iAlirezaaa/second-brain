@@ -28,6 +28,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Never allow automated improvement to proceed over damaged founding evidence.
+      - name: Protect permanent GOAL and frozen original ideas
+        run: python scripts/goal_guard.py --check
+
       - name: Is the scheduled cycle due?
         id: due
         if: github.event_name == 'schedule'
