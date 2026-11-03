@@ -136,6 +136,42 @@ def _invalidate_handoff(conn, sid, reason):
         event(conn, sid, "handoff_stale", {"reason": reason})
 
 
+def actor_records(root, actor):
+    """Find registry records for an agent id without interpreting its access policy."""
+    if not re.fullmatch(r"AGT-[0-9A-F]{8}", str(actor or "")):
+        return []
+    matches = []
+    for path in (Path(root) / "11_CONTROL" / "agents").glob("*/agent.json"):
+        try:
+            row = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if row.get("id") == actor and row.get("kind") == "agent":
+            matches.append(row)
+    return matches
+
+
+def actor_access(root, actor):
+    """Report the registered actor status and configured write allowlist without granting access."""
+    if actor == "human":
+        return {"actor_status": "human", "registered_tool_allowlist": [],
+                "allowlist_state": "not_applicable"}
+    matches = actor_records(root, actor)
+    if len(matches) != 1:
+        return {"actor_status": "unknown", "registered_tool_allowlist": [],
+                "allowlist_state": "missing"}
+    row = matches[0]
+    status = row.get("status")
+    status = status if isinstance(status, str) and status else "unknown"
+    allowlist = row.get("tool_allowlist")
+    if not isinstance(allowlist, list) or any(not isinstance(name, str) for name in allowlist):
+        return {"actor_status": status, "registered_tool_allowlist": [],
+                "allowlist_state": "invalid"}
+    return {"actor_status": status,
+            "registered_tool_allowlist": sorted(set(allowlist)),
+            "allowlist_state": "valid"}
+
+
 def preflight(root, sid, actor, task_id=None):
     """Read-only safety gate before an orchestrator invokes any agent work tool."""
     if not sid:
@@ -158,26 +194,50 @@ def preflight(root, sid, actor, task_id=None):
             raise Refused("task_id must select an open work task in this session")
     elif not any(t["category"] == "work" and t["state"] == "todo" for t in tasks):
         raise Refused("create or reopen a work task before invoking tools")
-    return {"session": sid, "actor": actor,
-            "task_id": task_id, "preflight": "passed", "writes_allowed": "by tool gate only"}
+    return {"session": sid, "actor": actor, "task_id": task_id,
+            "preflight": "passed", "writes_allowed": "by tool gate only",
+            **actor_access(root, actor),
+            "write_access": "preflight grants no writes; host tool gates apply"}
 
 
-def audit_tool(root, sid, actor, tool, result, payload, task_id=None):
+def audit_tool(root, sid, actor, tool, result, payload, task_id=None, reason=None):
     """Private metadata-only audit; never persist tool arguments or response bodies."""
-    if result not in ("ok", "failed", "attempt"):
+    if result not in ("ok", "failed", "attempt", "denied"):
         raise Refused("tool audit result is invalid")
     tool = require_text(tool, "tool name", 120)
-    digest = hashlib.sha256(str(payload).encode("utf-8", errors="replace")).hexdigest()
+    if result == "denied":
+        if reason not in ("approval_missing", "actor_missing", "allowlist_missing"):
+            raise Refused("tool denial reason is invalid")
+        if payload not in (None, ""):
+            raise Refused("tool denial audit cannot include a payload")
+        if task_id is not None and (isinstance(task_id, bool) or not isinstance(task_id, int)):
+            raise Refused("tool denial task_id must be an integer or null")
+        details = {"tool": tool, "task_id": task_id, "reason": reason}
+    else:
+        if reason is not None:
+            raise Refused("tool audit reason is only valid for a denial")
+        digest = hashlib.sha256(str(payload).encode("utf-8", errors="replace")).hexdigest()
+        details = {"tool": tool, "result_sha256": digest, "result_length": len(str(payload)),
+                   "task_id": task_id}
     with closing(connect(root, create=True)) as conn:
         with conn:
             session = _session(conn, sid, active=True)
             if session["actor"] != actor:
                 raise Refused("actor does not own session")
-            event(conn, sid, "tool_" + result, {
-                "tool": tool, "result_sha256": digest, "result_length": len(str(payload)),
-                "task_id": task_id})
+            if result == "denied" and task_id is not None:
+                task = conn.execute("SELECT category,state FROM tasks WHERE session_id=? AND id=?",
+                                    (sid, task_id)).fetchone()
+                if task is None or task["category"] != "work" or task["state"] != "todo":
+                    raise Refused("tool denial task_id must select an open work task in this session")
+            event(conn, sid, "tool_denied" if result == "denied" else "tool_" + result, details)
             _invalidate_handoff(conn, sid, "tool event after handoff")
-    return {"event": "tool_" + result, "session": sid, "digest": digest}
+    output = {"event": "tool_denied" if result == "denied" else "tool_" + result,
+              "session": sid}
+    if result == "denied":
+        output["reason"] = reason
+    else:
+        output["digest"] = digest
+    return output
 
 
 def timeline(root, sid, limit=100):
@@ -221,16 +281,7 @@ def skills(root, query=""):
 def valid_actor(root, actor):
     if actor == "human":
         return True
-    if not re.fullmatch(r"AGT-[0-9A-F]{8}", actor):
-        return False
-    for path in (Path(root) / "11_CONTROL" / "agents").glob("*/agent.json"):
-        try:
-            row = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        if row.get("id") == actor and row.get("kind") == "agent" and row.get("status") != "deprecated":
-            return True
-    return False
+    return any(row.get("status") != "deprecated" for row in actor_records(root, actor))
 
 
 def start(root, actor, goal):

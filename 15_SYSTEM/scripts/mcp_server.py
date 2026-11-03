@@ -753,7 +753,17 @@ def handle_tool_call(root, params):
             if not actor or actor == "human":
                 raise ToolRefused("MCP session calls need an explicit registered agent; human approval is never impersonated on this wire")
             session_bridge.require(root, sid, actor, task_id)
-            _mcp_session_permission(root, name, actor)
+            try:
+                _mcp_session_permission(root, name, actor)
+            except ToolRefused:
+                try:
+                    session_bridge.audit(root, sid, actor, "mcp." + name,
+                                         "denied", "", task_id,
+                                         reason="allowlist_missing")
+                except ValueError:
+                    # Preserve the policy refusal; an audit failure must never permit execution.
+                    pass
+                raise
             session_bridge.audit(root, sid, actor, "mcp." + name, "attempt", "", task_id)
             attempted = bool(sid)
         text = fn(root, args)
