@@ -120,7 +120,9 @@ class CIGovernanceTests(unittest.TestCase):
         wf = (ROOT / ".github/workflows/loop.yml").read_text(encoding="utf-8")
         self.assertIn("refs/heads/loop/nightly", wf)
         self.assertNotIn("continue-on-error: true", wf)
-        self.assertIn("gh pr create", wf)
+        self.assertIn("gh pr view loop/nightly", wf)
+        self.assertNotIn("gh pr create", wf)
+        self.assertIn("Missing review PR", wf)
         self.assertIn("if [ \"$CYCLE_RC\" != \"0\" ]", wf)
 
     def test_nightly_always_runs_tests_and_honors_due_refusal(self):
