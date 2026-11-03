@@ -504,7 +504,7 @@ def write_rows(root, planned, report_rel, today):
                                    if item and clone_readable(item) and (root / item).exists()]
         (shelf / ("%s.md" % cid)).write_text(row_text(cid, today, row, evidence), encoding="utf-8")
         candidate_check.append_event(shelf, {
-            "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "id": cid, "event": "proposed", "priority": row["priority"],
             "dimension": row["dimension"], "cue": row["cue"]})
         written.append((cid, row))
@@ -534,7 +534,7 @@ def dispose(root, cid, label, note):
         return 1
     path = shelf / ("%s.md" % cid)
     candidate_check.append_event(shelf, {
-        "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "id": cid, "event": "disposition", "disposition": label, "note": note or ""})
     if label == "drop" and path.is_file():
         path.unlink()  # dropped means off the shelf; the ledger keeps the reason
