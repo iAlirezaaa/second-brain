@@ -17,7 +17,11 @@ class TestNightlyReportPublishing(unittest.TestCase):
         self.assertIn("HEAD:refs/heads/loop/nightly", text)
         self.assertNotIn("git push origin main", text)
         self.assertNotIn("HEAD:refs/heads/main", text)
-        self.assertNotIn("force", text.split("git push origin HEAD:refs/heads/loop/nightly")[1])
+        # Check the actual push command, not comments or later workflow steps.
+        pushes = [line.strip() for line in text.splitlines()
+                  if line.strip().startswith("git push ")]
+        self.assertEqual(["git push origin HEAD:refs/heads/loop/nightly"], pushes)
+        self.assertFalse(any("--force" in line or " -f " in line for line in pushes))
 
     def test_existing_pr_is_reused_without_requesting_pr_creation_privilege(self):
         text = WORKFLOW.read_text(encoding="utf-8")
