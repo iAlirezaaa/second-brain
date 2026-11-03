@@ -23,3 +23,10 @@ rules/                             @iAlirezaaa
 
 # Generated numbers and the disposable shelf: reviewable, but never the source of a claim.
 14_CANDIDATES/                     @iAlirezaaa
+
+# Original ideas and durable GOAL: owner review must not be bypassed.
+00_START_HERE/GOAL.md             @iAlirezaaa
+00_START_HERE/GOAL_FA.md          @iAlirezaaa
+00_START_HERE/CHANGE_GOVERNANCE.md @iAlirezaaa
+10_ARCHIVE/foundations/           @iAlirezaaa
+scripts/goal_guard.py             @iAlirezaaa
