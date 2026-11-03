@@ -129,7 +129,17 @@ def main():
         if args.battery:
             code, out = run(clone, "15_SYSTEM/scripts/test_hades.py")
             tail = [l for l in out.splitlines() if l.startswith("checks:")]
-            require("the HADES test battery is green", code == 0 and bool(tail), out)
+            # Do not hide the failed battery checks behind the first 300 stdout characters.
+            # CI must name the exact broken invariant so a clone can reproduce it.
+            failed = []
+            lines = out.splitlines()
+            for index, line in enumerate(lines):
+                if line.startswith("FAIL "):
+                    failed.append(line)
+                    if index + 1 < len(lines) and lines[index + 1].lstrip().startswith("->"):
+                        failed.append(lines[index + 1])
+            detail = " ; ".join(failed) if failed else out
+            require("the HADES test battery is green", code == 0 and bool(tail), detail)
             if tail:
                 print("     %s" % tail[-1])
     finally:

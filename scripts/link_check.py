@@ -314,12 +314,13 @@ def graph_readout(root):
 
 def print_confidence(vault):
     """Report mode: measured counts per label, then every ambiguous edge by name."""
-    edges, _broken = classify_links(vault)
+    edges, broken = classify_links(vault)
     counts = dict((label, 0) for label in LABELS)
     for edge in edges:
         counts[edge.label] += 1
     print("edge confidence over %s" % vault)
-    print("  %d edge(s) classified from %d wikilink(s)" % (len(edges), len(edges)))
+    print("  %d edge(s) classified from %d wikilink(s); %d broken" %
+          (len(edges), len(edges) + len(broken), len(broken)))
     for label in LABELS:
         print("  %-10s %d" % (label, counts[label]))
     ambiguous = [e for e in edges if e.label == "ambiguous"]
@@ -332,7 +333,7 @@ def print_confidence(vault):
             print("             reason: %s" % edge.reason)
     else:
         print("no ambiguous edge — every link names one settled target (nothing escalated).")
-    return counts
+    return counts, broken, ambiguous
 
 
 def print_readout(vault):
@@ -368,6 +369,8 @@ def print_readout(vault):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--vault", default=None, help="vault dir (default: repo's vault-template)")
+    parser.add_argument("--require-notes", action="store_true",
+                        help="refuse an empty or unscannable vault instead of passing zero checks")
     parser.add_argument("--confidence", action="store_true",
                         help="print edge-label counts and name every ambiguous edge")
     parser.add_argument("--readout", action="store_true",
@@ -376,9 +379,19 @@ def main():
     args = parser.parse_args()
     root = find_root(Path(__file__))
     vault = Path(args.vault) if args.vault else root / "vault-template"
+    if not vault.is_dir():
+        print("REFUSED — vault directory does not exist: %s" % vault)
+        return 1
+    if args.require_notes and not any(iter_notes(vault)):
+        print("REFUSED — no notes to judge in %s" % vault)
+        return 1
 
     if args.confidence:
-        print_confidence(vault)
+        _counts, broken, ambiguous = print_confidence(vault)
+        if broken or ambiguous:
+            print("REFUSED — %d broken and %d ambiguous edge(s)" %
+                  (len(broken), len(ambiguous)))
+            return 1
         return 0
 
     # one pass over the notes: the broken list and the graph shape are the same measurement,

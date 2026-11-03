@@ -1,0 +1,3 @@
+# Optional separate Python 3.10+ environment for local System-1 inference.
+# Do not install in the Python 3.9 stdlib-only core environment.
+laya>=0.4.12,<0.5

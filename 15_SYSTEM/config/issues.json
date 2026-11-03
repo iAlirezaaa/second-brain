@@ -1,8 +1,8 @@
 {
   "schema_version": "1",
   "repo": "iAlirezaaa/second-brain-os",
-  "fetched_at": "2026-11-02",
-  "note": "snapshot از api.github.com؛ با scripts/issues.py --fetch مقایسه می‌شود",
+  "fetched_at": "2026-11-03",
+  "note": "Synchronized with the 24 open upstream issues; closed and candidate fixes require CI evidence and owner-reviewed resolution.",
   "issues": [
     {
       "number": 3,
@@ -200,6 +200,174 @@
         "tests/test_phase3.py"
       ],
       "note": "گیت‌هاب هم بسته‌اش است؛ شاهد در کامیت و تست‌ها مانده."
+    },
+    {
+      "number": 64,
+      "title": "CI red on all four jobs since 744cbb0: two harness battery checks fail",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 63,
+      "title": "issues.py --check reports health when a repo checkout has no ledger",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 62,
+      "title": "parse_frontmatter drops lines it cannot parse, cutting shipped reviewer laws",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #62; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 61,
+      "title": "doc_report --write turns a failed measurement into a row, then certifies it fresh",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 60,
+      "title": "Five gates print OK over a zero denominator; link_check accepts a missing vault",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 59,
+      "title": "link_check --confidence prints len(edges) twice and cannot exit 1",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 58,
+      "title": "The suite leaks its mkdtemp fixtures: 23 sites in 13 files, never removed",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #58; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 57,
+      "title": "datetime.utcnow() deprecated at 10 call sites; handoff.py subtracts it",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #57; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 56,
+      "title": "loop.py hygiene() counts its own source as the repo's TODO debt (9 of 10)",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #56; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 55,
+      "title": "roadmap_check drops space-bearing citations and launders fake paths as DECLARED",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #55; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 54,
+      "title": "14_CANDIDATES/README.md cites ROADMAP Phase 9.5, which does not exist",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #54; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 53,
+      "title": "No measured document reports the HADES battery's 120 checks, though ROADMAP claims one does",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #53; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 52,
+      "title": "CONTRIBUTING's gate table lists 10 of the 15 gates health.py runs",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #52; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 51,
+      "title": "MCP drift: server serves 13 tools, the registry declares 10, HANDOFF names 6",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #51; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 50,
+      "title": "HANDOFF says 421 tests beside its own 843, and its staleness gate is never run",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #50; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 49,
+      "title": "No gate reads the repo's own notes: health.py judges only vault-template",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #49; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 48,
+      "title": "LIFECYCLE documents 14_CANDIDATES/outputs/ while .gitignore makes it uncommittable",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #48; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 47,
+      "title": "The documented wiki build leaves 23 generated pages untracked in the human plane",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #47; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 46,
+      "title": "Documented interpreter py -3.10 is not installed, and the docs justify it with a false claim",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. The detailed failure, reproduction steps and acceptance criteria are recorded in GitHub issue #46; no confirmed complete fix has been merged."
+    },
+    {
+      "number": 45,
+      "title": "The nightly runs --no-tests, so the ratchet never sees the test suite",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 44,
+      "title": "loop.yml cron (30 3 * * *) disagrees with the schedule record (daily_at 02:00)",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 43,
+      "title": "loop.py --due: rc 1 (refused) takes the same branch as rc 3 (not due)",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 42,
+      "title": "continue-on-error turns the loop's own refusals into a green job",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
+    },
+    {
+      "number": 41,
+      "title": "Nightly loop report never lands: the workflow pushes to protected main and is rejected",
+      "upstream": "open",
+      "state": "open",
+      "gap": "Open upstream. Candidate fix and regression coverage are under review in PR #69 or on current main; verify the acceptance criteria and full CI before closure."
     }
   ]
 }

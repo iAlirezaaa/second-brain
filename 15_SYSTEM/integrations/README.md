@@ -69,3 +69,7 @@ rebuildable index, provenance, evidence-backed lessons, retrieval measurement an
 transfer with conflicts. A person can seal the planes it lives in with `python scripts/vault.py
 --seal`, but nothing happens by itself: `encrypted_private_backup` is off, no scheduler runs that
 command, and no restore has been proved on a machine that never held the bytes.
+
+## Optional System-1 model
+
+`core.laya_decide` is an opt-in read-only orchestration-toolkit decision proposal, **not** a native MCP tool or an automatically executing route. See [Laya installation and contract](laya.md). It is disabled unless `SBO_LAYA_ENABLED=1` and the Laya package is installed in Python 3.10+.

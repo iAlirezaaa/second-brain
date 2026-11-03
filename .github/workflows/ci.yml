@@ -1,10 +1,21 @@
 name: ci
+# One PR run per pushed commit; superseded commits cancel instead of flooding the queue.
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +63,7 @@ jobs:
   # scripts/vault_check.py still refuses to open encrypted_private_backup until a human has read
   # a real green run.
   backup-seal:
+    timeout-minutes: 20
     needs: test
     runs-on: ubuntu-24.04
     defaults:
@@ -103,6 +115,7 @@ jobs:
   # The restoring machine never wrote these bytes and cannot see the sealing machine's disk. No
   # escape hatch is passed here: this job either proves a restore on a different host or fails.
   backup-restore:
+    timeout-minutes: 20
     needs: [test, backup-seal]
     strategy:
       fail-fast: false

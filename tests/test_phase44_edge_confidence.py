@@ -181,7 +181,10 @@ class TestEscalationIsVisible(unittest.TestCase):
             "14_CANDIDATES/cand-one.md": "a\n",
         })
         result = run_utf8([sys.executable, LINK_CHECK, "--vault", str(self.vault), "--confidence"])
-        self.assertEqual(result.returncode, 0, result.stdout)
+        # Issue #59: confidence mode is now an enforcing gate, not a green
+        # report over unresolved ambiguity. It must name both edges and refuse.
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("REFUSED", result.stdout)
         out = result.stdout
         self.assertIn("ambiguous  2", out)                   # count per label ("  %-10s %d")
         self.assertIn("extracted  0", out)

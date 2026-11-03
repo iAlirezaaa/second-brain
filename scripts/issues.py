@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from common import clone_readable, find_root, load_json, state_fingerprint  # noqa: E402
+from common import clone_readable, find_root, load_json, state_fingerprint, is_repo_checkout  # noqa: E402
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -171,7 +171,10 @@ def check(root):
     # machine-plane gates, this one stays quiet while its file is absent rather than
     # inventing a defect for a folder that never claimed to track issues
     if not ledger_path(root).exists():
-        print("OK — this folder keeps no issue ledger (structural root only)")
+        if is_repo_checkout(Path(root)):
+            print("REFUSED: this repository checkout is missing %s" % LEDGER)
+            return 1
+        print("OK — installed home has no issue ledger (no repository issue contract)")
         return 0
     data, bad = read_ledger(root)
     problems = bad + problems_in(data, root)
