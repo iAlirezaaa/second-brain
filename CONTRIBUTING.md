@@ -70,6 +70,7 @@ exactly the same gate names; `tests/test_backlog_governance.py` checks drift.
 | `scripts/schema_stamp.py --check` | stale generated JSON schemas |
 | `scripts/roadmap_check.py --check` | missing roadmap evidence |
 | `scripts/vault_check.py` | unjustified backup claims |
+| `scripts/battery_check.py` | a door battery that fails, hangs, or reports no counts |
 
 A new gate must be implemented, registered, tested and documented together;
 removing a failing gate is not a repair.
