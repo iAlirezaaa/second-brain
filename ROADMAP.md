@@ -865,11 +865,28 @@ of those paths anyway.*
       `12_RUNTIME`, the human command in the refusal, and `run_id not in text`, so a closed plane
       that still echoes one id fails. Run it with `python 15_SYSTEM/scripts/test_hades.py`;
       the check count is that command's to print, not this file's.
-- [ ] 🔵 **M** the gap that let a green-local commit go public-red, still open: `health.py` and
-      `python -m unittest discover -s tests` do not run the v3 battery, so the only pre-push loop
-      this repo has cannot see it. Wiring it in as a gate — one stated-skip line in an installed
-      home, the same shape as the other repo-only gates — is the next change; until then the
-      battery is a CI-only judge and every phase that touches the door can break it silently.
+- [x] 🔵 **M** the gap that let a green-local commit go public-red closed: `scripts/battery_check.py`
+      is now a gate of `scripts/health.py`, so the pre-push loop runs the v3 battery and cannot
+      pass a tree the door disagrees with; `python scripts/doc_report.py --check` prints how many
+      gates the loop has, because that count is a measurement and not this file's to type.
+      The gate takes no `--vault` argument — it judges the repo, not the records — and in an
+      installed brain home it prints one stated-skip line, the same shape
+      `scripts/roadmap_check.py` uses, so `tests/test_phase16_host_independence.py` still counts one
+      OK line per gate. A battery that is missing, hangs past `--timeout`, exits without its
+      `checks:` summary, or reports a nonzero exit under a zero fail count is `INVALID`, never a
+      silent pass: a gate that runs nothing is not a green gate. The loop now has two doors and
+      they are not the same claim: `python scripts/health.py` runs every gate, the battery
+      included, and is what the pre-push loop and CI run; `python scripts/base.py --save` runs
+      `health.py --fast`, which skips the one gate named in `FAST_SKIPS` and prints that skip in
+      the skipped gate's own OK line, so saving a dozen bases does not spend a dozen batteries on
+      bytes the plain loop already judged. A fast loop is a schedule, not a verdict: it cannot
+      silence a gate — `tests/test_phase16_host_independence.py` counts one OK per gate in both
+      modes, and `tests/test_phase49_battery_gate_watches_the_battery.py` proves a red gate still
+      exits 1 under `--fast` — and a red house is still refused as a base. The battery's own
+      seconds are printed by `python scripts/battery_check.py`.
+      The gain is that the class of bug the row above records cannot be shipped blind a second time.
+      Source: that row, and the law in `scripts/health.py`'s own docstring that a judge nothing runs
+      before pushing is a rumour about a gate, not a gate.
 - [x] 🔵 **S** the four documents that promised the opposite corrected in the same change:
       `README.md`, `AGENTS.md`, `15_SYSTEM/integrations/README.md` and
       `02_WIKI/reference_maps/superagi-to-hades-map.md` no longer say reads are open — they name the

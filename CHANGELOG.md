@@ -7,6 +7,22 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 ## [Unreleased]
 
 ### Added
+- **The pre-push loop can now see the v3 battery.** `scripts/battery_check.py` joins `GATES` in
+  `scripts/health.py`: it runs `15_SYSTEM/scripts/test_hades.py`, reads the `checks:` summary that
+  battery prints, and calls the tree undeliverable when the count is red, when the script is
+  missing, when it hangs past `--timeout`, or when it exits without printing a summary at all. A
+  gate that runs nothing is not a pass. In an installed brain home it prints one stated-skip line
+  like the other repo-only judges, so `tests/test_phase16_host_independence.py` still counts exactly
+  one OK per gate. `tests/test_phase49_battery_gate_watches_the_battery.py` drives it with synthetic
+  batteries — green, red, silent, missing, hanging past the timeout, and a nonzero exit under a zero
+  fail count — so all six verdicts are measured in milliseconds while the real battery's own seconds
+  are spent only once, by `health.py`. The loop keeps two doors and says which it opened:
+  `python scripts/health.py` runs every gate including the battery, and `python scripts/base.py
+  --save` runs `health.py --fast`, which skips that one gate and prints the skip in the skipped
+  gate's own OK line — a fast loop is a schedule, not a verdict, and it still refuses a red house
+  as a base. This exists because `c889ee5` went public-red under the battery
+  while the local suite and the health loop stayed green: the judge that catches what the loop
+  cannot see was the one judge the loop did not run.
 - **Phase 52, the cipher gets a door, and the door refuses more than it accepts.**
   `15_SYSTEM/scripts/backend/vault.py` and `scripts/vault.py` put the SBO1 container over the
   planes `private_planes` names in `15_SYSTEM/config/system.json`: seal, inspect, verify,

@@ -9,7 +9,9 @@ those bytes are the state the record describes. A memory of "it worked yesterday
 Three promises, each with a test in tests/test_phase20_known_good_base.py:
 
   * a base is measured, not assumed -- `--save` runs the health gates first and refuses a red
-    house, so nothing that could not pass becomes the thing everybody falls back to;
+    house, so nothing that could not pass becomes the thing everybody falls back to; the
+    battery gate is the one exception, named in `gates()` below, because a base is a claim
+    about these bytes and the battery re-drives the door at every save;
   * the base is the brain, not its paperwork -- the snapshot covers the same inventory as
     `common.state_fingerprint` (so the quarantine shelf, the runtime plane and the backups
     folder itself are outside it). Recovery reverts content; it never rewrites the ledger,
@@ -78,11 +80,18 @@ def append_row(root, name, row):
 
 
 def gates(root):
-    """Run the house's own health command inside this root -- the only honest pre-flight."""
+    """Run the house's own health command inside this root -- the only honest pre-flight.
+
+    `--fast` skips exactly one gate and names it in the loop's output: the door battery spends
+    tens of seconds re-driving the MCP door, and a session that saves a dozen bases would pay
+    for a dozen batteries. Everything that judges the bytes being snapshotted still runs, and a
+    red house is still refused. The full measure -- the one that includes the battery -- is
+    `python scripts/health.py`, which the pre-push loop and CI run.
+    """
     script = root / "scripts" / "health.py"
     if not script.is_file():
         return 1, "scripts/health.py is not here, so nothing can be called measured"
-    result = run_utf8([sys.executable, str(script)], cwd=str(root))
+    result = run_utf8([sys.executable, str(script), "--fast"], cwd=str(root))
     return result.returncode, (result.stdout + result.stderr).strip()
 
 
