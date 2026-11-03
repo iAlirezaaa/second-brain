@@ -36,349 +36,37 @@ status: active
 
 ## 2. In-Flight Work
 
-- **Phase 46 is the work in this tree — an installed brain can be upgraded.** `python
-  scripts/install.py --upgrade HOME` (`scripts/install.py::do_upgrade`) judges every path this engine ships
-  against `15_SYSTEM/generated/install.json`, the record an install lays inside the home, and prints
-  one verdict per path: `UPDATED` / `ADDED` / `ABSENT` (restore) / `KEPT` (a person edited it here —
-  never touched, and its old *and* present digests carry into the next record) / `YOURS` (a file at a
-  shipped path with no record of it — left exactly where it is, deliberately not recorded, the rest
-  of the home still moves, exit 1). Nothing is deleted; `scripts/install.py::PROTECTED_DIRS`
-  keeps `12_RUNTIME/`, `13_LAB/`, the shelf, the ledger, `.kb/`, `.brain-data/`, `.obsidian/` and
-  backups out of the plan, and `scripts/install.py::plan_refusals` stops the act when the plan
-  itself names one — a bug in the installer, not in the home. `--dry-run` compares the home's
-  `tree_fingerprint` on entry and exit, so "nothing was written" is measured; every write is
-  re-hashed from disk before the record is restamped, and each act appends a line to
-  `15_SYSTEM/logs/install.jsonl`. Proof: `python -m unittest discover -s tests -p "test_phase46*.py"`
-  and `TestTheRealHome`, which installs a home, runs its health and suite, upgrades it with a note in
-  `01_INBOX/`, and re-runs both. Two choices differ from the first draft on purpose: a lost engine
-  file is restored by default (a home missing a gate script cannot judge itself), and a collision
-  skips-and-reports instead of aborting the act. A path this engine *retired* is named rather than
-  deleted: `scripts/install.py::judge_removed` reads the record the other way round and prints
-  `ORPHAN` (the home still holds it — kept in the record so the next act reports it again) or `GONE`
-  (the home already lost it — reported once, dropped from the record); `--clean-orphans` was refused
-  because deleting a file means deleting a note someone may have moved into it.
-- **Phase 35 shipped on `phase-35-install-whole-brain`**: an installed brain is now a whole
-  brain (issue #27). `scripts/install.py` reads the sixteen zones from
-  `15_SYSTEM/config/system.json` and lays them, plus `15_SYSTEM/{scripts,schemas,memory,integrations,migrations,templates}`,
-  `02_WIKI/reference_maps`, `AGENTS.md`, `.gitignore` and `tests/test_installed_home.py`; the
-  home config carries `"home": true` and points every plane's `test` at that proof.
-  `vault-template/` is only the starter (`index.md`, `_templates`) — the old
-  `00_Inbox…90_Agent_Output` folders no longer exist in an install, and the migration note is
-  in `CHANGELOG.md`. `test_phase16_host_independence` now runs the *installed* `health.py`
-  rather than the source repo's script (the old test passed a home with no readers, no map and
-  no registry door while judging the repo), and a new zone-shape test compares the install to
-  the source. Measured in a fresh home: 16 zones laid, 6 plane stores, `34 kinds, 16 zones,
-  8 planes proved by tests/test_installed_home.py`, health 8/8 OK (12 tracked stores, 4
-  disposable absent by design), 5 tests in the home, `NO_ENTRY` from `memory.py --recall`);
-  the repo suite is 421 tests, 2 skipped.
-- **Phase 30 shipped on `phase-30-registry-hardening`**: the four registry leftovers from the
-  phase 21–24 handoff are closed in four commits. `b9563ac` — a `supersedes` link now writes a
-  `mode: link` plan (record's `pre_image_sha1`, `--approve` to apply, STALE refusal after a
-  byte change, amendment recorded); additive relations still write through. `710dd20` —
-  `doctor` walks `supersedes` as a directed graph and errors on each cycle
-  (`A -> B -> A`), leaving self-edges to the self-supersession check. `bf65c1e` — all 34
-  kinds own a status set in `system.json` (20 sets added; before, 20 kinds fell back to
-  `default`), and `GUIDE_FA_EN.md` lists them in both languages. `4a5f094` — `probe.py`
-  refuses `scripts/base.py` (recovery belongs to the owner) and `scripts/install.py` (writes
-  outside the repo) by name. 19 tests in `tests/test_phase30_registry_hardening.py`;
-  `test_phase21_registry_enumeration_and_amendments` and `test_phase23_superseded_leaves_the_index`
-  now pass `--approve` where they relied on the direct write.
-- **Phase 29 shipped on `phase/29-vector-seam`**: the semantic layer has a seam and no model.
-  `backend/vector.py` holds one `Embedder` interface, pure `cosine`/`rank`, and a sha256
-  bag-of-words double (`production = False`) that is deterministic across processes; a test
-  patches `socket` to prove nothing dials out. `scripts/vector.py status|probe` prints
-  OFF/REFUSED/ACTIVE and runs the double on five fixed docs (measured: `bm25 ranking` →
-  `ranking.md` 0.213, `schedule due` → 0.535, `یادگیری حافظه` → 0.535; repeat identical);
-  `scripts/vector_check.py` is the eighth health gate. The flag stays `false`. Activation
-  requires the flag, a shape-checked `11_CONTROL/vector/activation.json`, and a production
-  embedder — the last is unregistered, so even perfect evidence refuses. 22 tests
-  (`tests/test_phase29_vector_seam.py`).
-- **Phase 28 shipped on `phase/28-scheduler-seam`**: the rituals now have one clock. The
-  `schedule` kind (34 in the contract) holds the spec objects `backend/schedules.py` already
-  reads: `SCH-0D1E2F3A` = nightly loop, `{"daily_at": "02:00"}` UTC, target
-  `scripts/loop.py`; `SCH-0D1E2F3B` = weekly ritual, `{"every_minutes": 10080}`.
-  `python scripts/loop.py --due` imports that due-math instead of re-deriving it and prints a
-  verdict without writing: 0 due, 3 not due (with the next run), 1 refused (no record, paused,
-  unreadable spec). Cycle history now stamps `ran_at`, so a second cycle on the same day is
-  judged by the hour. The skills say the command; `.github/workflows/loop.yml` asks for a
-  verdict only on `schedule` events, and a manual dispatch stays a human override. Verified at
-  fixed clocks: last run `2026-10-27T03:30Z`, so the 28th at 01:00 is not due (next
-  `2026-10-28T02:00Z`) and the 28th at 02:00 is due; the weekly record is due with an empty
-  `--last-run`. `hades.py doctor` reports 15 zones / 17 records / 0 errors, and
-  `tests/test_phase28_schedule_seam.py` adds 14 tests.
-- **Phase 27 closed on `phase/27-recency-decision`**: the last item — a BM25 recency boost,
-  allowed only behind a measured win — was measured and refused. Date coverage: 3 of 43 corpus
-  notes declare `updated:`; the other 40 fall back to mtime, one distinct day (the checkout)
-  in a clone. A recency-aware re-rank on the shared golden set moved recall@1 / MRR by 0.000
-  at every weight from 0.05 to 1.0. Nothing in `kb.py` ranks by date;
-  `tests/test_phase27_repo_corpus.py` pins an older exact match above a fresher weak one.
-  Item 2 merged earlier as `8d41827`: retirement marked on `list` (`records: N (active A,
-  retired R)` + `[retired by ID]`), `search` (marker + count), `show` and the MCP door; item 1
-  as `b2e17ad`: 43 notes indexed here, 28 in an installed home, ingest 81 ms, median query
-  3.8 ms over 40 runs (max 5.9 ms).
-- **Phase 26 shipped on `phase/26-eight-plane-map`**: the charter's eight memory planes are
-  now a machine-checked map, not a paragraph.
-  - `15_SYSTEM/config/system.json` → `memory_planes`: for every plane, the tracked store the
-    clone must open, the disposable store that may be absent by design, the reader, the
-    proving test and the map row.
-  - `02_WIKI/reference_maps/eight-memory-planes.md`: one row per plane (store, writer,
-    reader, proof), the provenance each store actually keeps, and what the clone can open
-    today — 0 project records, 26 lessons, 2 draft agents, 0 task rows, 1 `wiki_note`
-    decision, `kb.py` still template-only.
-  - `scripts/plane_check.py`, the seventh health gate: refuses a plane missing from the
-    config, a tracked store that does not open, an empty folder without `.gitkeep`, or a
-    reader/test/map that no longer exists; disposable stores are reported, never required.
-  - `tests/test_phase26_memory_planes.py`: nine tests — four prove the shipped map, four break
-    a fixture on purpose (missing lessons file, dropped plane, missing reader, empty task
-    folder) and read the gate's refusal, one proves a fixture with no disposable state stays
-    green.
-  - Gaps filed rather than half-built, so the map does not overclaim: #25 (lessons carry no
-    plane field, so error memory is unlabelled), #24 (nothing detects a contradiction);
-    #20 keeps the conversation-extraction path and `kb.py` (phase 27) open.
-- **Phase 25 shipped** (`44494c1`): `00_START_HERE/CHARTER_AUDIT.md` walks charter §1–§15 with a
-  command per row — 11 honoured, 3 partial, 1 gap. Gaps filed as #20 (eight memory planes,
-  conversation reader, repo-corpus index), #21 (manager agent not registered) and #22 (only the
-  SuperAGI reference has a standing map). The audit is the yardstick from here.
-- **Phases 31–34 shipped this round** (`d7be640`, `0653e5c`, `719d877`, `9bb5468`): the private
-  source memory the charter's §5 asks for.
-  - `backend/sources.py` + `scripts/sources.py`: explicit import of one selected file or a
-    reviewed manifest into `.brain-data/sources/<id>/` — raw bytes authoritative, metadata
-    (kind, origin, filename, import time, format, sha256), content-addressed id, idempotent
-    re-import. `rebuild` validates every record and atomically replaces a disposable SQLite
-    index; `search` is BM25-style (legacy scan path kept) and returns provenance with each hit.
-    Codex JSONL, Claude Code stream JSON and Cursor stream JSON adapters index only
-    user/assistant text and refuse mixed sessions.
-  - `backend/learning.py`: a lesson is a proposal that must cite an exact quote in an imported
-    source; `evaluate` checks checksum + quote + retrieval; `approve` needs `--approve` and
-    writes a receipt; `recall` returns approved lessons with origin. MCP exposes propose and
-    recall; approval is CLI-only.
-  - `backend/retrieval_eval.py`: recall/MRR on a curated case set; comparison refuses different
-    cases/limits/corpus and any regression fails the verdict — local evidence, not approval.
-  - `backend/source_sync.py`: preview-first transfer between two data directories; conflicts
-    (same kind+origin, different content) are named and copied only with `--allow-conflicts`;
-    both versions stay; approval receipts import only with `--include-approvals`;
-    `verify-copy` compares every record byte-for-byte.
-  - `backend/access.py`: the default tool read boundary (env files, keys, `.git`, secrets,
-    runtime/lab/candidate/backup zones, client metadata) in `tools_kit`, `vault_search` and MCP
-    resources; MCP resources now serve only the advertised list.
-  - `backend/capabilities.py` + `backend/install_skill.py`: catalogue with origin, permissions,
-    harness approval and install state; plan → apply → never replace, `--approve` required.
-- **Doors**: MCP is now 13 tools (`source_search`, `source_import`, `lesson_propose`,
-  `lesson_recall`, `capabilities` added). `tests/test_hades.py` and
-  `tests/test_phase22_harness_bridge.py` assert the 13-tool set.
-- **Measured before this handoff**: 343 unittests OK (1 skipped), 120/120 HADES checks, 7/7
-  health gates, 26 lessons, 6 candidate rows on the shelf. Every number is in §1's generated
-  block; the gate list is counted there, not typed here.
-- **CI on `87734be` (measured, not assumed)**: ubuntu-latest 3.9 and 3.12 succeeded;
-  windows-latest 3.12 failed five tests and windows-latest 3.9 was cancelled by fail-fast.
-  The push had **bypassed the four required checks**; the remote said so. All five failures
-  had one cause: GitHub's Windows temp path is an 8.3 alias (`RUNNER~1`) while
-  `Path.resolve()` returns `runneradmin`, so `relative_to` denied every read
-  (`backend/access.py`) and crashed `capabilities.inventory`. Fixed on
-  `fix/windows-short-paths`: `readable()` resolves both spellings and treats the resolved
-  path as authoritative; `inventory()` resolves each record path and skips outsiders. A
-  regression test feeds `readable()` a short root and a resolved path. From now on: branch,
-  PR, required checks, then merge — no direct push to `main`.
-- **One real measured run (lab only)**: 34 tracked docs / 215,104 bytes imported through a
-  reviewed batch manifest in 114 ms; index rebuild included. Store 226,555 B, index
-  1,851,392 B (≈8.6× the raw corpus), median search 1.1–2.0 ms over five queries; one extra
-  duplicate import added 0 records; transfer of 35 sources to a second directory verified
-  byte-for-byte; a same-origin variant produced one conflict, refused without
-  `--allow-conflicts`, copied both versions with it. A three-doc run passed the full
-  propose → evaluate → approve → recall path (lesson id `194000dd…`, origin preserved).
-  The lab lives in gitignored `13_LAB/`; it is a measurement, not imported memory.
-- **What is not true yet**: nothing has been imported into this repo's `.brain-data` — the
-  pipeline is proven by temp-vault tests, the golden fixture and the lab run above, not by
-  real personal data here. The owner chooses what to import; no session is discovered or
-  collected automatically. Search latency is measured only up to 215 KB of corpus; the
-  index at that size is ~8.6× the raw bytes, so a large store needs a size plan.
+- **GOAL foundation is in draft PR #76** (`feat/goal-identity-maturity-20261103`, starting from main commit `31da3d4`). It adds the durable GOAL in English and Persian, freezes the original charter / product vision / constitution, indexes the founding ideas, adds a protected-change policy and `goal_guard.py`, and wires that guard into CI and the nightly loop. No original source or user data was moved.
+- **CI is red at the recorded head `88696b7`** (run 41598135423). All four OS/Python matrix jobs fail at the same three tests: archive index missing Markdown frontmatter; phase-4 Persian golden retrieval still expects the old charter although the new GOAL is now the leading result; and the corresponding decidability check sees that same outdated target. Backup jobs were skipped downstream. Fixes are being made on the PR branch; rerun and inspect all checks before calling this foundation verified.
+- **Follow-up issue #77 remains open:** connect the permanent GOAL to `scripts/loop.py` and session planning; the protected-document gate alone does not implement a GOAL optimizer.
+- **Follow-up issue #78 remains open:** benchmark adaptive maturity independently for storage, retrieval, indexing, runtime and compute; no architecture switching is claimed shipped.
+- **Follow-up issue #79 remains open:** audit root information architecture before proposing any moves; physical cleanup requires explicit owner approval.
 
 ## 3. Decisions & Rejected Approaches
 
-- Numbers live between two markers that a script owns; refused: a shields.io badge and a CI
-  log line, because neither is read by the agent that opens the folder.
-- A base is measured, never declared: `--save` runs the gates and refuses a red house. Refused:
-  `--force`, which would make the thing everyone falls back to a state that already failed.
-- Snapshots live in the gitignored `15_SYSTEM/backups/` and their *records* in the tracked shelf
-  journal, and `15_SYSTEM/backups/` is paperwork for the fingerprint. Refused: keeping the
-  identity open to the backup folder, because then saving a base would invalidate the very
-  fingerprint it just wrote.
-- Recovery restores bytes and reports additions; it does not delete. Refused: a mirror-accurate
-  restore, because a script asked to go backwards is not also given permission to lose work.
-- Evidence is refused when it lives behind the git boundary, even if the path resolves here;
-  refused: adding `.kb/` to the allowed list, and refused: a `--skip-missing-evidence` flag.
-  Both make the claim weaker than the file it cites, and both would have left the same landmine
-  for the next reader.
-- The loop exports the rows it read rather than citing the index it read them from; the snapshot
-  is small, tracked, and diffable, so the next cycle's claim can be re-derived.
-- Prose is not a note — one predicate (`common.is_prose`) instead of a per-gate exclude list;
-  refused: skipping "README.md" inside each checker, which is how the two gates drifted apart.
-- `AGENTS.md` is the single law; every other host file is generated from it. Refused: per-host
-  hand-written rules — five doors, five versions of the truth.
-- Generated record bodies carry valid note frontmatter; the duplicate `SKILL.md` stubs inside
-  each registry folder were deleted rather than synced, because a copy that can drift is a
-  second truth, not a mirror.
-- Validation belongs at the door (`memory.py --add` refuses a bad verdict or confidence), not
-  only in `--check`: a refusal that arrives after the write is a cleanup task, not a gate.
-- An amendment takes the structural path (`set` plans, `apply --approve` performs). Refused: a
-  write-on-the-spot `edit`, because the plane every agent reads before acting is definitions,
-  and an unapproved change to a definition is the same class of act as creating one.
-- `id`, `kind` and `created_at` are immutable in `set`. Refused: allowing them, which would
-  rewrite every relation that points at the old value and leave the audit trail describing an
-  event no reader can follow.
-- Retirement is a verdict, not a shredder: a superseded record leaves the *index* and stays on
-  disk, named with the record that retired it. Refused: deleting the file (history gone) and
-  refused: leaving it in the active index (one thing, two definitions, `errors: 0`).
-- Records are enumerated by content — a registry-shaped `id` plus a declared `kind`. Refused:
-  renaming every markdown record `note.md` to fit the old match, because a generated body
-  (`OVERVIEW.md`, `SKILL.md`) carries the same id and would then read as a second record.
-- One file, one contract: `frontmatter_check.py` judges a markdown by the contract its own content
-  claims — the same recognizer `iter_records` uses (a registry-shaped `id` **and** a declared
-  `kind`) — and reads the record's required fields and status vocabulary from
-  `15_SYSTEM/config/system.json` and `15_SYSTEM/schemas/manifest.schema.json` rather than a second
-  list typed in the gate. Refused: emitting a note `title`/`status` beside the record's `name`/
-  `status`, which is two names for one field and a disagreement waiting to happen; refused:
-  exempting record files from the gate, which is how a definition escapes every judge it has.
-- A markdown record's prose lives in a field that round-trips (`notes`/`claim` in frontmatter,
-  rendered into the body). Refused: blocking `set` on markdown kinds, which would have protected
-  the paragraph by making half the registry unfixable.
-- The charter outranks the task, and the conflict is filed rather than absorbed. Refused: letting
-  an agent reconcile the owner's brief silently — a request that contradicts a law in the brief is
-  either a misreading or a change of direction, and both are the owner's to see, in
-  `14_CANDIDATES/loop/` with the section number attached.
-- Port the pattern, refuse the stack: SuperAGI's FastAPI + Postgres + Celery answer to "how agents
-  work" is replaced by one stdlib package behind the same gates. Refused: importing its server
-  stack, which would break §2 of the charter (independence from apps) on contact.
-- The MCP door stays at 8 tools; workflow execution goes through the `orchestrator.py` CLI and the
-  backend engine, not through new MCP verbs — the door is for harnesses, the engine is for runs.
-- Write tools are double-gated: `--approve` AND a place in the actor's `tool_allowlist`. Refused:
-  a single global switch, which would let one wrong prompt flip every actor to trusted.
-- The workflow's `steps.json` lives beside its record (`body_path` amended through the plan door),
-  so the executable definition is versioned with the record that owns it.
-- Shared logic moves to a single source (`backend/search.py`) instead of being copied between
-  `mcp_server.py` and the backend — two BM25 indexes would drift into two different truths.
-- Measured numbers and gates count what a **fresh clone reproduces**: doctor exempted boundary
-  zones from the README demand, and `doc_report` excludes gitignored dirs from the zones count.
-  Refused: deleting the local dirs instead — the bug was in the claim, not in the state.
-- Private sources live in `.brain-data/`, gitignored and behind the clone boundary; the raw
-  bytes are authoritative and the SQLite index is disposable and rebuilt from them. Refused:
-  storing imported text in tracked markdown (personal data would enter the public repo) and
-  refused: making the index the truth (a corrupt index must cost a rebuild, not the data). `scripts/vault.py` now seals that plane on request, over the scope `private_planes` names, and it is still a human command: `encrypted_private_backup` stays off until a restore is proved on a machine that never held the bytes.
-- A lesson is a proposal, never an asserted fact: it needs an exact quote from an imported
-  source, `evaluate` re-checks the evidence, and `approve` is a local explicit command. Refused:
-  auto-approving a proposal whose query retrieves its own source — that measures the query, not
-  the lesson.
-- The benchmark's verdict is local evidence, not permission: `compare-benchmarks` refuses
-  different cases/limits/corpora and calls any regression a failure, but a green comparison
-  does not apply the change. Refused: treating a candidate's own query set as independent.
-- Transfer keeps both versions on a conflict. Refused: auto-merging or picking a winner —
-  two devices that disagree are a human decision, and the preview exists to show it.
-- Approval receipts are local decisions and are imported only with `--include-approvals`.
-  Refused: treating a copied receipt as verified, because nothing signs it.
-- The read boundary is a tool-level path guard, not an OS ACL and not a secret scanner; it
-  refuses known paths and filenames and keeps the file door, search and MCP resources in
-  agreement. Refused: claiming it makes ordinary files safe.
-- The capability catalogue never installs, and install never replaces: plan binds file digests,
-  apply needs `--approve`, an existing destination is a refusal. Refused: `--force`, which
-  would make "approved" mean "approved last time".
+- Preserve the charter, vision and constitution as byte-for-byte archived snapshots; keep the new founding-ideas index human-readable and metadata-valid.
+- Update the retrieval golden case to name the new Persian GOAL as canonical for “هدف دائمی پروژه”; do not weaken retrieval assertions or mark the failed run green.
+- Keep PR #76 in draft until the corrected head has a full passing run and the human reviews it. Do not merge or treat CODEOWNERS/fingerprints as cryptographic proof of approval.
 
 ## 4. Blockers & Open Questions
 
-- **The private store has no protection of its own.** `.brain-data/` is gitignored and behind
-  the clone boundary, but it is not encrypted, not backed up, and not synchronised. Transfer is
-  a plaintext folder copy. Choosing an encrypted backup and checking a restore is the owner's
-  decision, not something this repo can claim.
-- **Search is measured on this repo only.** The corpus is the brain's tracked human plane (43
-  notes here, 28 in an installed home); ingest takes 101 ms and a query a median 3.8 ms, which
-  says nothing about thousands of notes or a large private store. Matching is word-based (every
-  query term must occur, partial-word matches allowed); the golden set is five cases plus the
-  shared fixture — enough to catch a regression, not to claim retrieval quality. Four of the
-  five cases were within 0.14 BM25 units of their runner-up until 2026-10-28; they were
-  re-picked by measured margin (1.23–3.74) and a 0.5 decidability floor now fails an ambiguous
-  case by name instead of letting a 0.0006 tie decide.
-- **No note carries a trustworthy date yet.** 3 of 43 corpus notes declare `updated:`; the
-  other 40 take the file's mtime, and a fresh clone stamps every file with the checkout day
-  (one distinct fallback date, measured 2026-10-28). Time-aware ranking is refused until every
-  note carries a true date — e.g. its commit date — and a labeled case set exists where
-  freshness, not relevance, decides the order.
-- **Adapters are format-specific.** The three JSONL adapters follow documented stream formats;
-  they do not parse undocumented local history databases, and nothing scans for sessions. A
-  Cursor Markdown export needs `--format text`.
-- **Transfer receipts are not authenticated.** `--include-approvals` trusts the selected source
-  directory; `verify-copy` proves equality, not encryption or a successful restore exercise.
-- **The eight memory planes are still only partly mapped** (#20): conversation memory now has a
-  reader (`source_search`, `lesson_recall`) and private sources have provenance; the map is
-  `02_WIKI/reference_maps/eight-memory-planes.md` and `kb.py` now indexes the repo corpus (phase
-  27); the manager agent (#21) and two reference maps (#22) are unregistered.
-- **Registry leftovers are closed except one** (phase 30): a `supersedes` link goes through
-  the plan door, `doctor` errors on a `supersedes` cycle, and all 34 kinds own a status set.
-  What remains: retirement is marked in `list`, `search`, `show` and the MCP door (phase 27),
-  but `search` marks only the retired record's own file — a prose note that merely quotes a
-  retired id is not marked. The cycle walk reports one edge per cycle (the first target), so a
-  record with two superseded targets is not fully walked.
-- **A schedule record says *when*, not that anything will wake it.** The Actions cron is the
-  only alarm; a machine with no runner never checks, and a cron line the record does not match
-  is invisible to `--due`. The weekly check derives its last run from
-  `git log --grep='ritual(weekly)'`, so a cycle announced in another message reads as overdue.
-  `--due` is arithmetic on UTC — a local-time expectation is wrong by the offset, not by a bug.
-- **The vector gate checks the shape of evidence, not its honesty.** No production embedder
-  exists, so activation is refused today by construction; a future session that wants to
-  enable it must install a model (owner's approval) and register it with
-  `production = True`. The hashing double measures lexical overlap that BM25 already
-  measures, so its scores are a seam test, never a semantic claim; nothing in `kb.py`,
-  `sources.py` or the MCP door calls `vector.rank`, and the gate is what keeps it that way.
-  `11_CONTROL/vector/activation.json` is unwritten — no evaluation has been run to fill it.
-- **The installer upgrades in place** (phase 46 closed the phase-35 flat-copy limit): a non-empty
-  target is still refused by `--target`, and `--upgrade HOME` is the way forward — it rewrites what
-  the engine changed, keeps and names what a person edited, and refuses a path its own record cannot
-  vouch for. The home config names `tests/test_installed_home.py` as every plane's proof, and a home
-  that deletes it needs a new proof or a narrower map. A retired path is named, not deleted: an
-  upgrade reports `ORPHAN` while the home still holds it and `GONE` once it does not, and there is no
-  flag that removes either. One limit stays open: nothing syncs two homes — a second device is still
-  a copy, not a replica.
-- **A base is local by construction** (bytes in the gitignored backups). `--recover` is a
-  recovery on the machine that saved it.
-- **Python 3.9 floor** holds; CI runs 4 matrices. RAM behaviour on weaker machines is unclaimed.
+- The last verified CI run is failed; its three failures are recorded above. No passing run on a corrected head has yet been observed.
+- Local shell startup currently fails with a Windows CET runtime error, and this generated workspace contains only `outputs/` and `work/`, not a repository checkout. Use GitHub Actions as current test evidence; do not report local tests or regenerated handoff state as successful.
+- The GOAL-loop and maturity-engineering follow-ups require separate measured implementation and review.
 
 ## 5. Next Actions
 
-- [x] audit the charter section by section and file the gaps — phase 25, issues #20–#22
-- [x] ship the private source memory, its lessons, measurement, transfer and capability gate —
-      phases 31–34, green at 333 tests / 120 HADES checks / 6 gates
-- [ ] push `main` and confirm all four CI matrices are green on the four commits above
-- [ ] **use the pipeline on real selected data**: import one document and one conversation
-      export, rebuild, search with provenance, propose/evaluate/approve one lesson, then record
-      what the store actually looks like (size, query latency). No claim before that run.
-- [x] phase 26: write the eight-plane mapping with evidence and file the remaining gaps — the
-      map, the gate and nine tests shipped; what is left is #24, #25 and phase 27
-- [x] phase 27 item 1: point `kb.py` at the tracked repo corpus (human plane only) with the
-      golden set as the regression harness — shipped; the remaining recency item was measured
-      and refused (0.000 delta, 3/43 dated notes), so phase 27 is closed
-- [ ] #21 register the manager agent through the plan door; #22 add the two missing reference
-      map files
-- [x] decide, with a measurement first, how retired records surface in `search`/`list` —
-      measured (4 rows / 1 retired / 0 markers; 5 hits / 1 retired / 0 markers), then marked on
-      `list`, `search`, `show` and the MCP door
-- [ ] decide the per-kind status vocabularies
-- [ ] human disposes the six shelf rows — agents propose, the owner decides
-- [ ] before the next risky change, `python scripts/base.py --save --note why`
-- [ ] re-measure before quoting any number: `python scripts/doc_report.py` prints the table
+- [ ] Correct archive metadata and the Persian golden retrieval target on the PR branch.
+- [ ] Wait for the new CI run; inspect full job output and fix any remaining failures without weakening gates.
+- [ ] Run / verify `goal_guard.py --check`, health gates, full tests, and fresh-clone checks from CI.
+- [ ] Refresh this handoff through `scripts/handoff.py` in a real checkout; the generated §1 snapshot still reflects an older commit and test run.
+- [ ] Continue with issue #77 only after the foundation PR is reviewed; keep #78 and #79 evidence-led and approval-gated.
 
 ## 6. Pointers
 
-- roadmap: `ROADMAP.md` (phases 31–34 are this round) · contract: `AGENTS.md` · cold start:
-  `skills/first-session/SKILL.md` · charter: `00_START_HERE/PROJECT_CHARTER.md` ·
-  audit: `00_START_HERE/CHARTER_AUDIT.md`
-- private source memory: `15_SYSTEM/scripts/sources.py` + `backend/sources.py`; guide:
-  `15_SYSTEM/integrations/local-sources.md`
-- lessons/eval: `backend/learning.py`, `backend/retrieval_eval.py`,
-  `tests/fixtures/retrieval-golden.json` · transfer: `backend/source_sync.py` ·
-  boundary: `backend/access.py` · catalogue/install: `backend/capabilities.py`,
-  `backend/install_skill.py`
-- backend/runs/MCP: `15_SYSTEM/scripts/backend/`, `orchestrator.py`, `runs.py`,
-  `mcp_server.py` · SuperAGI map: `02_WIKI/reference_maps/superagi-to-hades-map.md`
-- loop shelf: `14_CANDIDATES/loop/` · open issues:
-  https://github.com/iAlirezaaa/second-brain-os/issues
+- Durable GOAL: `00_START_HERE/GOAL.md` · Persian summary: `00_START_HERE/GOAL_FA.md`
+- Protected changes: `00_START_HERE/CHANGE_GOVERNANCE.md` · immutable ideas: `10_ARCHIVE/foundations/README.md`
+- Guard: `scripts/goal_guard.py` · implementation follow-ups: GitHub issues #77, #78, #79 · foundation PR #76
 
 ## 7. Environment & Verification
 

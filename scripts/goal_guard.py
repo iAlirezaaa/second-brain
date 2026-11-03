@@ -17,7 +17,7 @@ FROZEN_BLOBS = {
     "10_ARCHIVE/foundations/2026-11-03-PROJECT_CHARTER.snapshot.txt": "40dfe74182c8fd574e2b1b890bfd67836ca80dfb",
     "10_ARCHIVE/foundations/2026-11-03-PRODUCT_VNEXT.snapshot.txt": "2a57e4f62dab19d3577ea03dc471e809875323ab",
     "10_ARCHIVE/foundations/2026-11-03-CONSTITUTION.snapshot.txt": "744bb27b7ec03cb6b0fe45600b76d9701ffb2a0a",
-    "10_ARCHIVE/foundations/2026-11-03-IDENTITY-v1.md": "53f9c861cb1a28f763686db78a435f52cc7176f8"
+    "10_ARCHIVE/foundations/2026-11-03-IDENTITY-v1.md": "44192569113cb31b2426c0dff3f860d7d4d7472d"
 }
 
 # These living documents are pinned too: updates require a deliberate, reviewed

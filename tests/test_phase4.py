@@ -29,7 +29,7 @@ GOLDEN_SET = [
     ("writer reader proof", "02_WIKI/reference_maps/eight-memory-planes.md"),
     ("charter audit yardstick", "00_START_HERE/CHARTER_AUDIT.md"),
     ("کنسول cp1252", "00_START_HERE/START.md"),
-    ("هدف اصلی پروژه", "00_START_HERE/PROJECT_CHARTER.md"),
+    ("هدف دائمی پروژه", "00_START_HERE/GOAL_FA.md"),
 ]
 
 
