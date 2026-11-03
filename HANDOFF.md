@@ -36,37 +36,37 @@ status: active
 
 ## 2. In-Flight Work
 
-- **GOAL foundation is in draft PR #76** (`feat/goal-identity-maturity-20261103`, starting from main commit `31da3d4`). It adds the durable GOAL in English and Persian, freezes the original charter / product vision / constitution, indexes the founding ideas, adds a protected-change policy and `goal_guard.py`, and wires that guard into CI and the nightly loop. No original source or user data was moved.
-- **CI remains red at head `4dcab14`** (run 41655227602). Both Linux jobs passed the full 1111-test suite plus health and pristine-clone checks. Both Windows jobs fail only `test_real_repo_has_frozen_origins_and_goal`: Git for Windows checks out LF source blobs as CRLF bytes, while the gate hashes raw working-tree bytes. The archive-frontmatter and Persian golden-query failures from the previous run are fixed. Normalize only CRLF checkout conversion before fingerprinting, and add a regression assertion; rerun the full matrix.
-- **Follow-up issue #77 remains open:** connect the permanent GOAL to `scripts/loop.py` and session planning; the protected-document gate alone does not implement a GOAL optimizer.
-- **Follow-up issue #78 remains open:** benchmark adaptive maturity independently for storage, retrieval, indexing, runtime and compute; no architecture switching is claimed shipped.
-- **Follow-up issue #79 remains open:** audit root information architecture before proposing any moves; physical cleanup requires explicit owner approval.
+- **GOAL foundation is in draft PR #76**, branch `feat/goal-identity-maturity-20261103`, current code head `717a788`. It adds the durable English/Persian GOAL, byte-for-byte snapshots of the original charter / product vision / constitution, a founding-ideas index, protected-change policy, `goal_guard.py`, CI/nightly guards and navigation. Original source concepts remain preserved; no user data or application folders were moved.
+- **CI is green at `717a788`** (run 41657442898): Ubuntu and Windows on Python 3.9 and 3.12 passed the full 1111-test suite, health/frontmatter gates, protected-GOAL check and pristine-clone HADES battery. Backup seal and both Windows restore jobs passed. This verifies this PR head in GitHub Actions; no local run was made.
+- The corrective evidence is retained in history: first CI exposed missing frontmatter and a stale retrieval expectation; the next run exposed Windows CRLF conversion in Git blob checksums; the current guard normalizes CRLF only, and an assertion proves LF/CRLF equivalence.
+- **Follow-up issue #77 remains open:** connect the permanent GOAL to `scripts/loop.py` and session planning. The guard protects documents; it is not itself a GOAL optimizer.
+- **Follow-up issue #78 remains open:** benchmark adaptive maturity independently across storage, retrieval, indexing, runtime and compute. No architecture switching is claimed shipped.
+- **Follow-up issue #79 remains open:** audit repository root findability before proposing any physical moves; structural changes require owner approval.
 
 ## 3. Decisions & Rejected Approaches
 
-- Preserve the charter, vision and constitution as byte-for-byte archived snapshots; keep the new founding-ideas index human-readable and metadata-valid.
-- Update the retrieval golden case to name the new Persian GOAL as canonical for “هدف دائمی پروژه”; do not weaken retrieval assertions or mark the failed run green.
-- Keep PR #76 in draft until the corrected head has a full passing run and the human reviews it. Do not merge or treat CODEOWNERS/fingerprints as cryptographic proof of approval.
+- Preserve original sources as frozen snapshots and keep the index versioned, readable and metadata-valid.
+- Make the Persian retrieval golden case target `GOAL_FA.md` for “هدف دائمی پروژه”; retain the ranking/margin tests rather than weakening them.
+- Keep PR #76 as a draft for explicit owner review; green CI is evidence, not approval to merge. Hash pinning and CODEOWNERS are safeguards, not cryptographic identity.
 
 ## 4. Blockers & Open Questions
 
-- The last verified CI run is partially green and partially failed: Linux 3.9/3.12 passed; Windows 3.9/3.12 failed on line-ending normalization. No fully passing run has been observed.
-- Local shell startup currently fails with a Windows CET runtime error, and this generated workspace contains only `outputs/` and `work/`, not a repository checkout. Use GitHub Actions as current test evidence; do not report local tests or regenerated handoff state as successful.
-- The GOAL-loop and maturity-engineering follow-ups require separate measured implementation and review.
+- The PR implementation is verified at its current GitHub head, but it is **not merged** and the follow-up GOAL-loop, maturity and information-architecture work remains open.
+- The generated workspace has only `outputs/` and `work/`, not a repository checkout; local command startup also fails with a Windows CET runtime error. Therefore §1 has not been regenerated by `scripts/handoff.py` and still reports the older `4db4f66`/421-test snapshot. Treat the current Actions run as test evidence and §1 as stale until a real checkout can refresh it.
 
 ## 5. Next Actions
 
-- [x] Add valid metadata to the founding-ideas index and repoint the Persian golden case to the canonical GOAL. Linux CI confirms these corrections.
-- [ ] Normalize Windows checkout CRLF before the Git-blob fingerprint comparison; assert LF/CRLF equivalence without weakening content-change detection.
-- [ ] Run / verify `goal_guard.py --check`, health gates, full tests, and fresh-clone checks from CI.
-- [ ] Refresh this handoff through `scripts/handoff.py` in a real checkout; the generated §1 snapshot still reflects an older commit and test run.
-- [ ] Continue with issue #77 only after the foundation PR is reviewed; keep #78 and #79 evidence-led and approval-gated.
+- [ ] Owner reviews draft PR #76 and explicitly decides whether to merge; do not merge autonomously.
+- [ ] On the next real repo checkout, run `python scripts/handoff.py` and verify the generated §1 head/test snapshot, then commit that refreshed handoff.
+- [ ] Start issue #77 as the next implementation stage: GOAL gap profile and loop/session wiring, preserving bounded task semantics and testing protected-goal mutation refusal.
+- [ ] Measure issue #78 workload baselines before proposing any backend or database changes.
+- [ ] Complete issue #79's FROM → TO path/import audit before requesting approval for root moves.
 
 ## 6. Pointers
 
-- Durable GOAL: `00_START_HERE/GOAL.md` · Persian summary: `00_START_HERE/GOAL_FA.md`
-- Protected changes: `00_START_HERE/CHANGE_GOVERNANCE.md` · immutable ideas: `10_ARCHIVE/foundations/README.md`
-- Guard: `scripts/goal_guard.py` · implementation follow-ups: GitHub issues #77, #78, #79 · foundation PR #76
+- Draft PR #76 · permanent goal `00_START_HERE/GOAL.md` · Persian `00_START_HERE/GOAL_FA.md`
+- Change governance `00_START_HERE/CHANGE_GOVERNANCE.md` · frozen ideas `10_ARCHIVE/foundations/README.md`
+- Guard `scripts/goal_guard.py` · follow-ups #77, #78, #79 · current CI run 41657442898
 
 ## 7. Environment & Verification
 
