@@ -622,7 +622,7 @@ def add(root, args):
         return 1
     row = {
         "id": cid,
-        "date": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "cue": args.cue,
         "lesson": args.lesson,
         "evidence": evidence,
