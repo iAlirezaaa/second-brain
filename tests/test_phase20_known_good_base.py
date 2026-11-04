@@ -264,6 +264,14 @@ class TestTheCommandIsDiscoverable(unittest.TestCase):
         self.assertIn("current", out.lower())
         self.assertIn("DIFFERS", out)
         shutil.rmtree(str(root), ignore_errors=True)
+        # The fixture holder, not just its inner repo, must be owned by a test.
+        # The independent owner exercises cleanup even if a test aborts early.
+        owner = unittest.TestCase()
+        owned = green_root(owner)
+        holder = owned.parent
+        self.assertTrue(holder.is_dir())
+        owner.doCleanups()
+        self.assertFalse(holder.exists(), "green_root leaked its outer temp holder")
 
     def test_the_law_is_written_in_the_canon(self):
         """A mechanism nobody is told about is a mechanism nobody uses."""
