@@ -39,8 +39,11 @@ GOOD = {
 }
 
 
-def fixture(flag=False, evidence=None, raw_config=None):
-    root = Path(tempfile.mkdtemp())
+def fixture(owner, flag=False, evidence=None, raw_config=None):
+    """Create a test-owned root; cleanup runs even when an assertion fails."""
+    temp = tempfile.TemporaryDirectory()
+    owner.addCleanup(temp.cleanup)
+    root = Path(temp.name)
     config = root / vector.CONFIG
     config.parent.mkdir(parents=True, exist_ok=True)
     if raw_config is not None:
@@ -162,12 +165,12 @@ class CosineAndRankArePlainMath(unittest.TestCase):
 
 class TheGateRefusesByName(unittest.TestCase):
     def test_off_means_off_and_the_flag_is_named(self):
-        state = vector.gate(fixture(flag=False))
+        state = vector.gate(fixture(self, flag=False))
         self.assertFalse(state["active"])
         self.assertIn("feature_flags.vector_search is false", state["problems"])
 
     def test_an_on_flag_without_evidence_is_refused(self):
-        state = vector.gate(fixture(flag=True))
+        state = vector.gate(fixture(self, flag=True))
         self.assertFalse(state["active"])
         self.assertTrue(any(vector.EVIDENCE.as_posix() in problem
                             for problem in state["problems"]))
@@ -183,7 +186,7 @@ class TheGateRefusesByName(unittest.TestCase):
             (dict(GOOD, approved_at="yesterday"), "approved_at"),
         ]
         for evidence, needle in defects:
-            state = vector.gate(fixture(flag=True, evidence=evidence))
+            state = vector.gate(fixture(self, flag=True, evidence=evidence))
             self.assertFalse(state["active"], evidence)
             self.assertTrue(any(needle in problem for problem in state["problems"]),
                             "%r not named in %s" % (needle, state["problems"]))
@@ -191,16 +194,16 @@ class TheGateRefusesByName(unittest.TestCase):
     def test_a_missing_key_is_named_not_defaulted(self):
         evidence = dict(GOOD)
         del evidence["cases"]
-        state = vector.gate(fixture(flag=True, evidence=evidence))
+        state = vector.gate(fixture(self, flag=True, evidence=evidence))
         self.assertIn("missing cases", " ".join(state["problems"]))
 
     def test_perfect_evidence_still_cannot_activate_a_test_double(self):
-        state = vector.gate(fixture(flag=True, evidence=GOOD))
+        state = vector.gate(fixture(self, flag=True, evidence=GOOD))
         self.assertFalse(state["active"])
         self.assertTrue(any("no production embedder" in problem for problem in state["problems"]))
 
     def test_unreadable_config_is_a_refusal_not_a_traceback(self):
-        state = vector.gate(fixture(raw_config="{not json"))
+        state = vector.gate(fixture(self, raw_config="{not json"))
         self.assertFalse(state["active"])
         self.assertIsNone(state["flag"])
         self.assertIn("cannot read", " ".join(state["problems"]))
@@ -220,7 +223,7 @@ class TheCommandsSayTheSameThing(unittest.TestCase):
         self.assertIn("OFF — vector_search is false", result.stdout)
 
     def test_status_refuses_a_flipped_flag(self):
-        root = fixture(flag=True)
+        root = fixture(self, flag=True)
         result = run([SCRIPTS / "vector.py", "status", "--root", root])
         self.assertEqual(1, result.returncode)
         self.assertIn("REFUSED", result.stdout)
@@ -237,7 +240,7 @@ class TheCommandsSayTheSameThing(unittest.TestCase):
         result = run([SCRIPTS / "vector_check.py"])
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("vector_search is off", result.stdout)
-        flipped = fixture(flag=True, evidence=GOOD)
+        flipped = fixture(self, flag=True, evidence=GOOD)
         result = run([SCRIPTS / "vector_check.py", "--root", flipped])
         self.assertEqual(1, result.returncode)
         self.assertIn("INVALID", result.stdout)
