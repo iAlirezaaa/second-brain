@@ -204,6 +204,13 @@ class TheGateRefusesByName(unittest.TestCase):
         self.assertFalse(state["active"])
         self.assertIsNone(state["flag"])
         self.assertIn("cannot read", " ".join(state["problems"]))
+        # A temporary fixture belongs to a test and must be removed on teardown.
+        # Use a separate owner to verify the cleanup before this test ends.
+        owner = unittest.TestCase()
+        owned_root = fixture(owner, flag=True)
+        self.assertTrue(owned_root.is_dir())
+        owner.doCleanups()
+        self.assertFalse(owned_root.exists(), "fixture leaked after owner cleanup")
 
 
 class TheCommandsSayTheSameThing(unittest.TestCase):
