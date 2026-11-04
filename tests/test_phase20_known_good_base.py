@@ -17,6 +17,7 @@ What `scripts/base.py` promises, and what these tests hold it to:
      refuses instead of quietly doing nothing;
   6. nothing restores outside the repo, whatever a manifest claims.
 """
+import atexit
 import json
 import shutil
 import subprocess
@@ -34,8 +35,8 @@ from common import run_utf8  # noqa: E402
 BASE = str(SCRIPTS / "base.py")
 BASES_JOURNAL = "14_CANDIDATES/loop/bases.jsonl"
 RECOVERY_JOURNAL = "14_CANDIDATES/loop/recovery.jsonl"
-_SNAPSHOT_CACHE = []
 _MASTER = None
+_MASTER_OWNER = None
 
 
 def tracked_files():
@@ -46,22 +47,26 @@ def tracked_files():
 
 def green_master():
     """One verified clone replica, built once: proving the house is green costs a gate run."""
-    global _MASTER
+    global _MASTER, _MASTER_OWNER
     if _MASTER is None:
-        tmp = Path(tempfile.mkdtemp())
+        owner = tempfile.TemporaryDirectory()
+        tmp = Path(owner.name)
         for rel in tracked_files():
             destination = tmp / rel
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(str(ROOT / rel), str(destination))
         result = run_utf8([sys.executable, str(tmp / "scripts" / "health.py")], cwd=str(tmp))
         if result.returncode != 0:
+            owner.cleanup()
             raise AssertionError("the fixture clone is not green:\n%s%s"
                                  % (result.stdout, result.stderr))
+        _MASTER_OWNER = owner
+        atexit.register(owner.cleanup)
         _MASTER = tmp
     return _MASTER
 
 
-def green_root():
+def green_root(owner):
     """A private copy of that replica: `--save` refuses a red house, so the fixture has to be
     a house that can be saved, and the only honest way to get one is to build the clone and
     run the gates inside it. Each test mutates its own copy, never the master.
@@ -69,14 +74,15 @@ def green_root():
     The copy starts with no bases and no recoveries recorded: a clone may legitimately carry
     this machine's journals, and a test about "nothing has been measured yet" has to mean it.
     """
-    holder = Path(tempfile.mkdtemp())
+    temp = tempfile.TemporaryDirectory()
+    owner.addCleanup(temp.cleanup)
+    holder = Path(temp.name)
     destination = holder / "repo"
     shutil.copytree(str(green_master()), str(destination))
     for name in (BASES_JOURNAL, RECOVERY_JOURNAL):
         stale = destination / name
         if stale.is_file():
             stale.unlink()
-    _SNAPSHOT_CACHE.append(holder)
     return destination
 
 
@@ -93,7 +99,7 @@ def journal(root, name):
 
 class TestABaseIsMeasuredNotAssumed(unittest.TestCase):
     def setUp(self):
-        self.root = green_root()
+        self.root = green_root(self)
 
     def tearDown(self):
         shutil.rmtree(str(self.root), ignore_errors=True)
@@ -148,7 +154,7 @@ class TestABaseIsMeasuredNotAssumed(unittest.TestCase):
 
 class TestRecoveryGoesBack(unittest.TestCase):
     def setUp(self):
-        self.root = green_root()
+        self.root = green_root(self)
         saved = run(self.root, "--save", "--note", "known good")
         self.assertEqual(saved.returncode, 0, saved.stdout + saved.stderr)
         self.base = journal(self.root, BASES_JOURNAL)[-1]
@@ -222,7 +228,7 @@ class TestRecoveryGoesBack(unittest.TestCase):
                          "a no-op was written to the journal as a fall back")
 
     def test_a_base_that_was_never_recorded_refuses(self):
-        fresh = green_root()
+        fresh = green_root(self)
         result = run(fresh, "--recover")
         self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
         self.assertIn("REFUSED", result.stdout)
@@ -254,7 +260,7 @@ class TestRecoveryGoesBack(unittest.TestCase):
 
 class TestTheCommandIsDiscoverable(unittest.TestCase):
     def test_status_reports_the_base_and_the_current_state(self):
-        root = green_root()
+        root = green_root(self)
         run(root, "--save", "--note", "for status")
         (root / "vault-template" / "README.md").write_text("changed\n", encoding="utf-8")
         result = run(root, "--status")
