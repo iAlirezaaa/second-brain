@@ -4,3 +4,4 @@
 {"cue": "an agent harness needs a way into the brain, and agents need a place to record what they did", "date": "2026-10-27T21:14:26Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-28-har-01", "priority": "hand"}
 {"cue": "an agent searches or reads files through the backend or MCP resources", "date": "2026-10-28T09:07:15Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-28-access-01", "priority": "hand"}
 {"cue": "a source import is interrupted before its metadata is written", "date": "2026-10-28T09:35:10Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-10-28-source-01", "priority": "hand"}
+{"cue": "the test suite is red", "date": "2026-11-05T09:08:17Z", "dimension": "invariant", "event": "proposed", "id": "cand-2026-11-05-c1-01", "priority": "P1"}
