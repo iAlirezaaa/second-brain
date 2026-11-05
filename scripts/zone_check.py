@@ -105,6 +105,9 @@ def main():
             print(f"BAD FENCE  {problem}")
         return 1
     proposals = load_json(args.proposals)["proposals"]
+    if not proposals:
+        print("REFUSED — 0 proposals supplied; nothing to judge against the zone fence.")
+        return 1
     violations = check_proposals(proposals, config)
     if violations:
         for violation in violations:
