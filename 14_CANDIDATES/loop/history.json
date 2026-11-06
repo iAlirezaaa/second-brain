@@ -213,6 +213,42 @@
      "summary": "Ran 1106 tests in 213.348s"
     }
    }
+  },
+  {
+   "date": "2026-11-06",
+   "ran_at": "2026-11-06T09:09:13Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 611.694s"
+    }
+   }
   }
  ]
 }
