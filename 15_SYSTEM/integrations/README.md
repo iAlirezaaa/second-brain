@@ -39,6 +39,26 @@ send excerpts returned by read tools to its model provider; do not connect a
 private vault to an untrusted host. Strict session checks are separately
 opt-in (`SBO_REQUIRE_SESSION=1`) and are not an OS-enforced sandbox.
 
+## Verify the local MCP wire before configuring a host
+
+```sh
+python scripts/mcp_smoke.py
+```
+
+The diagnostic launches the **shipped** server over stdio with one temporary,
+synthetic Markdown note. It verifies the JSON-RPC initialize exchange,
+`tools/list`, a `vault_search` result citing that note, and a refused
+`candidate_propose` in a second process with `SBO_REQUIRE_SESSION=1`
+but no session credentials. It checks that the candidate shelf was not
+created, prints a JSON result and exits nonzero on failure. Both processes
+run only against a disposable root and are bounded by a timeout; existing
+host configurations and private brain data are never read by this probe.
+
+This is a local transport and strict-gate smoke test, **not** a verification
+that any specific version of Claude Desktop, Claude Code, Codex, or OpenCode
+connects, nor an OS-level sandbox or a blanket read-only guarantee. Outside
+strict session mode, the actual MCP server still exposes write tools.
+
 ## Tools exposed
 
 | tool | write? | what it does |
