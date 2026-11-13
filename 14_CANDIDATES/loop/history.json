@@ -105,6 +105,402 @@
      "summary": "skipped"
     }
    }
+  },
+  {
+   "date": "2026-11-03",
+   "ran_at": "2026-11-03T09:12:28Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 0,
+     "summary": "Ran 1106 tests in 345.730s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-04",
+   "ran_at": "2026-11-04T08:47:45Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 0,
+     "summary": "Ran 1106 tests in 266.877s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-05",
+   "ran_at": "2026-11-05T09:08:17Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 213.348s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-06",
+   "ran_at": "2026-11-06T09:09:13Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 611.694s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-07",
+   "ran_at": "2026-11-07T08:35:28Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 502.654s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-08",
+   "ran_at": "2026-11-08T08:48:14Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 411.972s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-09",
+   "ran_at": "2026-11-09T09:25:11Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 445.450s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-10",
+   "ran_at": "2026-11-10T09:34:08Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 649.774s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-11",
+   "ran_at": "2026-11-11T09:03:56Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 405.948s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-12",
+   "ran_at": "2026-11-12T09:33:18Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 539.531s"
+    }
+   }
+  },
+  {
+   "date": "2026-11-13",
+   "ran_at": "2026-11-13T09:17:53Z",
+   "metrics": {
+    "link_check": {
+     "script": "link_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "frontmatter_check": {
+     "script": "frontmatter_check.py",
+     "returncode": 0,
+     "problems": []
+    },
+    "vault": {
+     "stale_inbox": [],
+     "orphans": [],
+     "awaiting_approval": [],
+     "inbox_status_lived": 0
+    },
+    "kb_gaps": {
+     "open": 0,
+     "recent": [],
+     "note": "no .kb index anywhere \u2014 ingest first",
+     "snapshot": ""
+    },
+    "hygiene": {
+     "todo_hygiene": 1,
+     "files_scanned": 48
+    },
+    "tests": {
+     "returncode": 1,
+     "summary": "Ran 1106 tests in 373.132s"
+    }
+   }
   }
  ]
 }
