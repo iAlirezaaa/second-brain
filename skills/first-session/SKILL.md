@@ -13,10 +13,21 @@ walk it in this order.
 
 ```
 git clone https://github.com/iAlirezaaa/second-brain-os
-cd second-brain
+cd second-brain-os
 python scripts/health.py            # every gate: links, frontmatter, shelf, memory, hosts, doc numbers
 python -m unittest discover -s tests
 ```
+
+To see a useful local result before adding any private data, run:
+
+```sh
+python scripts/kb.py ingest
+python scripts/kb.py search "memory"
+```
+
+This searches the checked-in Markdown corpus; its derived index is stored at
+`.kb/kb.sqlite` (ignored by Git). It does not require a model, account or network.
+A keyword hit is not a semantic or factual guarantee.
 
 Every number you are about to write down or repeat comes from this run, not from a document.
 If a gate is red, that red is the task — say so in your first message instead of building

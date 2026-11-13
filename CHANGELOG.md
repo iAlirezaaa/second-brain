@@ -6,7 +6,7 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-### Fixed (pending CI verification)
+### Fixed
 - In the Phase 44 validity-window test fixture, compute relative expiration and
   verification dates from the runner's current date, not the historical
   2026-11-02 test-writing day. This avoids date-driven red CI on valid

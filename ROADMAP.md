@@ -27,7 +27,7 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## P0 — CI time-invariant test gates (issue #88; verification pending)
+## P0 — CI time-invariant test gates (issue #88; verified on CI #270; merged in #89)
 
 - [ ] **S** Phase 44 validity-window fixtures: replace the frozen test epoch in
       `tests/test_phase44_lesson_validity_windows.py` with the runner's calendar day.
@@ -37,13 +37,44 @@ over something it cannot see is a silent gate, not a clean house.
       clock, permissions, memory ledger, or stale-memory refusal.
 - [ ] Verify across Python 3.9/3.12 and Ubuntu/Windows, then merge only if
       `python scripts/health.py`, the unittest suite and the clean-clone checks pass.
-      PR #87 has a separate onboarding regex failure to address independently.
+      PR #87 regression was corrected on its branch; this track still needs onboarding CI/merge.
 
 **Next 1:** repair the independent regression in PR #87 and rerun its CI.
 **Next 2:** capture a reproducible under-five-minute offline recall journey
 from a clean clone and measure search success and time without fabricated results.
 
 ---
+## Product adoption and discoverability track (planned, evidence-gated)
+
+**North-star:** independent users can install, recall a useful sourced note,
+understand the privacy boundary and safely connect an AI host in minutes. Organic
+stars are a *lagging signal*, never a substitute for usability or verified quality.
+The plan below does not claim shipped features.
+
+- [ ] **P0 — Five-minute first success:** repair onboarding, keep an offline first-recall
+      walkthrough in `README.md` and `skills/first-session/SKILL.md`, and verify it in
+      `tests/test_first_session_onboarding.py` (tracked as issue #86; pending CI/merge).
+- [ ] **P0 — Trust first:** finish high-impact bugs in the open issue ledger and CI;
+      require a reproducible clean-clone pass on Windows and Ubuntu before promotion.
+- [ ] **P1 — One-click-ish host setup:** independently test an opt-in, reversible
+      setup path for Claude Code, Codex and OpenCode; no silent permissions.
+- [ ] **P1 — Show, don't promise:** add a short reproducible demonstration,
+      offline setup comparison, clear source provenance and measured retrieval examples.
+- [ ] **P1 — Distribution:** refresh repository topics and social preview, publish
+      trustworthy release notes, provide contributor-friendly issues, and engage relevant
+      communities without spam, paid/automated stars or fabricated benchmarks.
+- [ ] **P2 — Optional local interface:** plan a low-dependency read-only dashboard for
+      memory, sources, agent runs and permission denials; keep CLI and Markdown usable.
+- [ ] **P2 — Competitor-informed evaluation:** benchmark graph/entity retrieval,
+      time-aware recall, source-backed search and agent memory blocks against a frozen
+      local baseline before adding implementations; retain the stdlib offline fallback.
+
+**Next two slices after onboarding:** (1) audit a CI/health refusal with an
+independently reproducible test; (2) build a disposable, documented five-minute
+MCP client integration and ensure the permission gate refuses unsafe writes.
+
+---
+
 ## Shipped history (compressed)
 
 Phases 0–8 (vault template, integrity toolchain, inbox triage + write gate, FTS5 keyword KB,
