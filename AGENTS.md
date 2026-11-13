@@ -125,7 +125,7 @@ added since are named and left where they are instead of being deleted by a scri
 asked to go backwards.
 
 ## Windows / encoding
-Run every script as `py -3.10 <script>` (PowerShell: `py -3.10`). Plain `python` on this machine is 3.9 with a `cp1252` stdout, which raises `UnicodeEncodeError` on Persian text. Scripts reconfigure their own stdout, but a subprocess or shell redirect can still break — do not trust an exit code 0 with no output as success.
+Use Python **3.9 or newer**, verified with `python --version`; on Windows the optional launcher can select an installed Python 3 with `py -3` (verify with `py -3 --version`). Do not require a fixed interpreter minor version that the user might not have. Some Windows terminals use a non-UTF-8 encoding, so check Persian output and configure a UTF-8 terminal when needed; a silent command is not evidence of success.
 
 ## Safety and routing
 - Default read scope: `00`–`10` plus `11_CONTROL`. Default denied: `12_RUNTIME`, `13_LAB`, `14_CANDIDATES`, `15_SYSTEM/generated`, `15_SYSTEM/backups`, `09_OPERATIONS` (whole zone, client data), and anything holding credentials. Owner approval plus OS-enforced access is required for protected data; folder visibility is not access.
