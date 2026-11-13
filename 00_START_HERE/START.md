@@ -19,7 +19,7 @@ windows-latest اثبات می‌کند). ابتدا `python --version` را ب�
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 1124 |
+| tests collected (`python -m unittest discover -s tests`) | 1126 |
 | health gates (`python scripts/health.py`) | 17 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
@@ -46,6 +46,19 @@ python scripts/first_success.py --repeat 3
 شکست بخورد با کد خطا خارج می‌شود. هیچ فایل شخصی یا سرویس ابری لازم ندارد.
 مدت ثبت‌شده شامل Clone و راه‌اندازی کاربر نیست؛ بنابراین اثبات نمی‌کند
 کل تجربهٔ شروع پروژه کمتر از پنج دقیقه طول می‌کشد.
+
+## آزمون آفلاین اتصال MCP با دادهٔ ساختگی
+
+```powershell
+python scripts/mcp_smoke.py
+```
+
+این تست سرور MCP واقعی مخزن را با یک یادداشت موقت ساختگی راه می‌اندازد،
+پاسخ شروع ارتباط، فهرست ابزارها و جست‌وجوی همراه با مسیر منبع را بررسی می‌کند.
+سپس در حالت کنترل سخت‌گیرانهٔ Session درخواست نوشتن بدون Session را می‌فرستد
+و باید رد شود، بدون اینکه پوشهٔ کاندید ساخته شود. گزارش JSON و کد خروج
+معتبر تولید می‌شود؛ اطلاعات شخصی یا تنظیمات Claude/OpenCode خوانده نمی‌شود.
+این آزمون به معنی تأیید اتصال برنامه‌های خارجی یا تضمین امنیت سیستم‌عامل نیست.
 
 ## ۱) اول بررسی کن که سالم است
 
