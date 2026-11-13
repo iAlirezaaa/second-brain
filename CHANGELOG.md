@@ -12,7 +12,8 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   the legacy V1 `mcp.second-brain` layout. The native V2 entry uses
   `disabled` instead of `enabled`, starting `disabled: true` until a person reviews
   write-tool permissions. The checked-in placeholder template, docs and
-  existing host-config regression test enforce the same shape. No client
+  existing host-config regression test and Persian START guide enforce the
+  same shape. No client
   settings are touched; actual OpenCode V2 connection remains unverified.
   V2 still accepts supported V1 configurations for migration; the previous
   snippet was **not** independently shown to fail. References:

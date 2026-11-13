@@ -39,7 +39,7 @@ over something it cannot see is a silent gate, not a clean house.
       supported V1 configurations for migration. **No prior connection
       failure has been reproduced or claimed.**
 - [ ] Make the generated snippet, placeholder example, regression assertions
-      and English integration docs agree; preserve Claude Desktop behavior
+      and English/Persian onboarding docs agree; preserve Claude Desktop behavior
       and all refusal tests. No host configuration is mutated.
 - [ ] Require the full Ubuntu/Windows Python 3.9/3.12 health/unit-test matrix
       and backup jobs before merging. This is **schema compliance only**:
