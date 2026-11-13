@@ -6,13 +6,22 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-### Fixed (pending CI verification)
+### Added (pending CI and review)
+- Reproducible local first-recall smoke probe: `scripts/first_success.py`
+  runs the real keyword KB ingest + search CLI against only disposable,
+  synthetic notes, verifies the resulting source path and local index, then
+  reports JSON success rate and wall-clock timings across bounded trials.
+  `tests/test_first_success_probe.py` covers success, failure, bounds and
+  structured output. It does **not** time Git clone, installation, semantic
+  retrieval or real-user workloads (issue #93).
+
+### Fixed (verified by CI #275; merged PR #91)
 - KB corpus no longer follows aliased Markdown files or symlinked parent folders,
   including links that resolve outside the brain root, nor crashes on broken
   links. `kb.py ingest` rebuilds its derived search index without those aliases.
   This is an index hygiene boundary, not a race-free filesystem sandbox;
   synthetic regression coverage: `tests/test_kb_corpus_symlink_boundary.py`.
-  Tracked by #90; release only after the full Windows/Linux CI matrix passes.
+  Tracked by #90; all seven Windows/Linux CI jobs passed before merge.
 
 ### Fixed
 - In the Phase 44 validity-window test fixture, compute relative expiration and
