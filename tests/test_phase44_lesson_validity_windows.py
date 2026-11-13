@@ -45,7 +45,12 @@ from common import run_utf8  # noqa: E402
 MEMORY = str(SCRIPTS / "memory.py")
 SCHEMA = ROOT / "rules" / "memory.schema.json"
 MAP = ROOT / "02_WIKI" / "reference_maps" / "eight-memory-planes.md"
-TODAY = date(2026, 11, 2)
+# CLI tests spawn a real subprocess whose clock is the runner's clock.
+# Keep the fixture relative to that same calendar day: the original frozen
+# 2026-11-02 epoch started calling an intended 'current' row stale after
+# 2026-11-06, and an intended 'future' verification became historical.
+# This changes test data only; production cannot override the real clock.
+TODAY = date.today()
 
 
 def day(offset):
