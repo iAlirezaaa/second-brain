@@ -6,6 +6,13 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed
+- In the Phase 44 validity-window test fixture, compute relative expiration and
+  verification dates from the runner's current date, not the historical
+  2026-11-02 test-writing day. This avoids date-driven red CI on valid
+  behavior and preserves the production stale-claim refusal. Tracked in #88;
+  no production runtime, persisted user data or permissions are changed.
+
 ### Added
 - **The pre-push loop can now see the v3 battery.** `scripts/battery_check.py` joins `GATES` in
   `scripts/health.py`: it runs `15_SYSTEM/scripts/test_hades.py`, reads the `checks:` summary that

@@ -27,6 +27,23 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P0 — CI time-invariant test gates (issue #88; verified on CI #270; merged in #89)
+
+- [ ] **S** Phase 44 validity-window fixtures: replace the frozen test epoch in
+      `tests/test_phase44_lesson_validity_windows.py` with the runner's calendar day.
+      The failing baseline is [CI run 43397264607](https://github.com/iAlirezaaa/second-brain-os/actions/runs/43397264607):
+      four failed OS/Python jobs; two phase-44 failures come from 2026-11-02
+      fixtures expiring on 2026-11-06. This patch does not change the runtime
+      clock, permissions, memory ledger, or stale-memory refusal.
+- [ ] Verify across Python 3.9/3.12 and Ubuntu/Windows, then merge only if
+      `python scripts/health.py`, the unittest suite and the clean-clone checks pass.
+      PR #87 regression was corrected on its branch; this track still needs onboarding CI/merge.
+
+**Next 1:** repair the independent regression in PR #87 and rerun its CI.
+**Next 2:** capture a reproducible under-five-minute offline recall journey
+from a clean clone and measure search success and time without fabricated results.
+
+---
 ## Product adoption and discoverability track (planned, evidence-gated)
 
 **North-star:** independent users can install, recall a useful sourced note,
