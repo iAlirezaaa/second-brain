@@ -27,15 +27,41 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## P0 — Portable Python entrypoints (issue #46; PR under review)
+## P1 — Portable MCP host registration (issue #96; pending CI/review)
 
-- [ ] **S** Replace the stale `py -3.10` Windows command pin in the public
+- [ ] **M** Replace host-specific or working-directory-dependent examples with
+      read-only JSON generation in `scripts/mcp_config.py` for Claude Desktop and
+      OpenCode. It must print absolute paths for the current interpreter and
+      checkout, never change host settings, and fail closed if the server is absent.
+- [ ] Verify five synthetic integration tests in `tests/test_mcp_host_config.py`
+      across Python 3.9/3.12 on Windows and Ubuntu; ensure examples clearly
+      show placeholders and document write-tool exposure before PR merge.
+      This generates registration JSON only, not a successful host handshake.
+- [x] CI #283 exposed two Windows-only *test expectation* failures: a temp
+      checkout was expressed using an 8.3 `RUNNER~1` alias while the generator
+      resolved that same directory to its canonical long path. Both client
+      assertions now expect the resolved fixture path; no application or
+      permission logic is relaxed (PR #97, verification pending).
+- [ ] Re-run all four Windows/Ubuntu Python 3.9/3.12 tests and the cross-machine
+      backup jobs on the updated PR head before considering a merge.
+
+**Next 1:** add a bounded real MCP stdio handshake + provenance-bearing read
+test, with an explicitly denied write and no private data.
+**Next 2:** build a user-guided reversible registration workflow that preserves
+other host entries; require a separate approval and rollback check before
+writing any client configuration.
+
+---
+
+## P0 — Portable Python entrypoints (issue #46; CI #280 green, PR #95 merged)
+
+- [x] **S** Replace the stale `py -3.10` Windows command pin in the public
       first-session guide, `AGENTS.md`, rendered agent-host entrypoints and the
       Persian `00_START_HERE/START.md`. Test portability with
       `tests/test_portable_python_entrypoints.py` and keep generated hosts in
       sync. The supported floor remains Python 3.9, verified by the OS CI matrix.
-- [ ] Verify this focused onboarding slice on Linux and Windows CI and merge
-      only on green. Issue #46 stays **open**: older project-internal documents
+- [x] Verified this focused onboarding slice across seven Linux/Windows CI jobs
+      in run #280 and merged PR #95. Issue #46 stays **open**: older project-internal documents
       may still carry hardcoded interpreter commands; they need their own scoped
       audit and an inventory before closure.
 
@@ -46,13 +72,13 @@ with a denied-write fixture and no added runtime permissions.
 
 ---
 
-## P0 — Reproducible offline first-recall smoke metrics (issue #93; PR pending)
+## P0 — Reproducible offline first-recall smoke metrics (issue #93; PR #94 merged)
 
-- [ ] **S** Add `scripts/first_success.py` with an independent disposable synthetic
+- [x] **S** Add `scripts/first_success.py` with an independent disposable synthetic
       note fixture per trial, real CLI ingest/search, machine-readable success and latency,
       a bounded repeat count and a nonzero failure exit; guard with
-      `tests/test_first_success_probe.py` (four regressions; pending CI/merge).
-- [ ] Confirm on Python 3.9/3.12 Ubuntu/Windows CI, then mark verified.
+      `tests/test_first_success_probe.py` (four regressions; merged PR #94).
+- [x] Verified on Python 3.9/3.12 Ubuntu/Windows CI before PR #94 merged.
       The measurement excludes clone/setup and is **not** an end-to-end five-minute
       UX test or semantic-memory benchmark; do not claim these from synthetic timings.
 
