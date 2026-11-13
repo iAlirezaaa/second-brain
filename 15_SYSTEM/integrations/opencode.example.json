@@ -3,7 +3,10 @@
   "mcp": {
     "second-brain": {
       "type": "local",
-      "command": ["python", "15_SYSTEM/scripts/mcp_server.py"],
+      "command": [
+        "ABSOLUTE_PATH_TO_PYTHON",
+        "ABSOLUTE_PATH_TO_SECOND_BRAIN_OS/15_SYSTEM/scripts/mcp_server.py"
+      ],
       "enabled": true
     }
   }
