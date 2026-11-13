@@ -10,23 +10,23 @@ config shape. Registry record: `MCP-E1807E50` (`11_CONTROL/mcp/`).
 ## Generate a relocatable local host config
 
 From the cloned repository, generate **one** config snippet for the host on
-**this machine** (Python 3.9+; use \`python3\` on Unix or \`py -3\` on Windows
-if \`python\` is unavailable):
+**this machine** (Python 3.9+; use `python3` on Unix or `py -3` on Windows
+if `python` is unavailable):
 
-\`\`\`sh
+```sh
 python scripts/mcp_config.py --client claude-desktop
 python scripts/mcp_config.py --client opencode
-\`\`\`
+```
 
 The CLI prints JSON to stdout and does not edit either app's settings. It uses
-the absolute path to this checkout's \`mcp_server.py\` and the interpreter that
+the absolute path to this checkout's `mcp_server.py` and the interpreter that
 ran the CLI, so it works when the host launches from another working directory
 and when paths contain spaces or non-ASCII characters. Re-run it if the checkout
-or Python environment moves. The \`*.example.json\` files are **templates with
+or Python environment moves. The `*.example.json` files are **templates with
 placeholders**, not copy-paste-ready configurations.
 
 Back up your existing host configuration, then manually merge only the generated
-\`mcpServers.second-brain\` entry (Claude Desktop) or \`mcp.second-brain\`
+`mcpServers.second-brain` entry (Claude Desktop) or `mcp.second-brain`
 entry (OpenCode) into it. Preserve your other servers. Restart the host.
 The generator neither installs a package nor connects a host nor changes
 permissions. It does not demonstrate a successful MCP handshake; the host still
@@ -37,8 +37,7 @@ tools; generating a config does not put it into read-only mode. Review host tool
 approvals and the access boundary before enabling it. A model-backed host may
 send excerpts returned by read tools to its model provider; do not connect a
 private vault to an untrusted host. Strict session checks are separately
-opt-in (\`SBO_REQUIRE_SESSION=1\`) and are not an OS-enforced sandbox.
-
+opt-in (`SBO_REQUIRE_SESSION=1`) and are not an OS-enforced sandbox.
 
 ## Tools exposed
 
