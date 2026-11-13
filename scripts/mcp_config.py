@@ -24,10 +24,11 @@ def generate(client, root, python_executable):
     root = Path(root).expanduser().resolve()
     server = root / SERVER
     if not (root / "AGENTS.md").is_file() or server.is_symlink() or not server.is_file():
-        raise ValueError("not a Second Brain OS checkout with a regular MCP server: %s" % root)
+        raise ValueError("not a Second Brain OS checkout: expected AGENTS.md and a regular " 
+                         "15_SYSTEM/scripts/mcp_server.py under --root")
     executable = Path(python_executable).expanduser().absolute()
     if not executable.is_file():
-        raise ValueError("Python interpreter is not a file: %s" % executable)
+        raise ValueError("Python interpreter is not an executable file; use Python 3.9+")
     if client == "claude-desktop":
         return {"mcpServers": {"second-brain": {
             "command": str(executable), "args": [str(server)]}}}
