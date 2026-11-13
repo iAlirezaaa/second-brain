@@ -3,9 +3,12 @@
 همه دستورات از **ریشهٔ مخزن** اجرا می‌شوند — همان پوشه‌ای که clone کرده‌اید؛ هیچ مسیر مطلق
 ثابتی در این سند نیست، چون یک مخزن روی ماشین نویسندهٔ خودش نمی‌ماند. نسخهٔ پایینیِ پشتیبانی‌شده
 ۳.۹ است (`requires-python` در `pyproject.toml`، و همان عددی که CI روی ubuntu-24.04 و
-windows-latest اثبات می‌کند). اگر `python` پیش‌فرض سیستم ۳.۹ باشد و کنسول ویندوز cp1252، خروجی
-فارسی در دیکد کردن می‌شکند: `py -3.10` یا یک کانسول UTF-8 استفاده کنید. `start.bat` هم نسخهٔ
-جدیدتر را صدا می‌زند و خودش فقط ASCII است.
+windows-latest اثبات می‌کند). ابتدا `python --version` را بررسی کنید: نسخهٔ ۳.۹
+یا جدیدتر لازم است. در ویندوز اگر Python Launcher نصب است، `py -3 --version` نیز
+یک نسخهٔ نصب‌شده از Python 3 را مشخص می‌کند؛ به نسخهٔ جزئی خاصی مثل ۳.۱۰
+وابسته نیستیم. در بعضی تنظیمات قدیمی ویندوز، کنسول cp1252 نمی‌تواند
+خروجی فارسی را درست نمایش دهد؛ برای این حالت از ترمینال UTF-8 استفاده کنید.
+دستورهای زیر با `python` نوشته شده‌اند و باید از ریشهٔ مخزن اجرا شوند.
 
 ## ۰) اندازه‌های امروز (خودکار، نه تایپی)
 
@@ -16,7 +19,7 @@ windows-latest اثبات می‌کند). اگر `python` پیش‌فرض سیس
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 1117 |
+| tests collected (`python -m unittest discover -s tests`) | 1119 |
 | health gates (`python scripts/health.py`) | 17 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
@@ -47,9 +50,9 @@ python scripts/first_success.py --repeat 3
 ## ۱) اول بررسی کن که سالم است
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\hades.py doctor
-py -3.10 15_SYSTEM\scripts\hades.py status
-py -3.10 15_SYSTEM\scripts\hades.py index
+python 15_SYSTEM\scripts\hades.py doctor
+python 15_SYSTEM\scripts\hades.py status
+python 15_SYSTEM\scripts\hades.py index
 ```
 
 `doctor` ناحیه‌ها، مانیفست‌ها، رابطه‌ها، `.gitignore`، رازها و بهداشت فارسی را
@@ -60,16 +63,16 @@ py -3.10 15_SYSTEM\scripts\hades.py index
 ## ۲) یک چیز جدید بساز: اول پلان، بعد تأیید
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\hades.py plan --kind project --name "پروژه انیمیشن" --description "هدف" --type animation
+python 15_SYSTEM\scripts\hades.py plan --kind project --name "پروژه انیمیشن" --description "هدف" --type animation
 # خروجی: PLAN-XXXXXXXXXXXX | id | path
-py -3.10 15_SYSTEM\scripts\hades.py apply --plan PLAN-XXXXXXXXXXXX --approve
+python 15_SYSTEM\scripts\hades.py apply --plan PLAN-XXXXXXXXXXXX --approve
 ```
 
 `plan` فقط می‌نویسد چه می‌خواهد بسازد؛ `apply --approve` می‌سازد. اگر عجله داری،
 `new` همان دو را با هم انجام می‌دهد ولی باز هم `--approve` لازم دارد:
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\hades.py new --kind organization --name "Example Provider" --url "https://example.com" --approve
+python 15_SYSTEM\scripts\hades.py new --kind organization --name "Example Provider" --url "https://example.com" --approve
 ```
 
 نام فارسی در مانیفست می‌ماند و مسیر پوشه ASCII می‌شود. این عمدی است: هارنس‌ها،
@@ -89,12 +92,12 @@ Git و ابزارهای خط فرمان با مسیر غیرASCII می‌لنگ�
 ## ۴) پیدا کردن و وصل کردن
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\hades.py list --kind skill
-py -3.10 15_SYSTEM\scripts\hades.py show --id SKL-XXXXXXXX
-py -3.10 15_SYSTEM\scripts\hades.py search --query "انیمیشن"
-py -3.10 15_SYSTEM\scripts\hades.py link --id PRJ-XXXXXXXX --rel depends_on --to MOD-XXXXXXXX
-py -3.10 15_SYSTEM\scripts\hades.py graph
-py -3.10 15_SYSTEM\scripts\hades.py context --project PRJ-XXXXXXXX
+python 15_SYSTEM\scripts\hades.py list --kind skill
+python 15_SYSTEM\scripts\hades.py show --id SKL-XXXXXXXX
+python 15_SYSTEM\scripts\hades.py search --query "انیمیشن"
+python 15_SYSTEM\scripts\hades.py link --id PRJ-XXXXXXXX --rel depends_on --to MOD-XXXXXXXX
+python 15_SYSTEM\scripts\hades.py graph
+python 15_SYSTEM\scripts\hades.py context --project PRJ-XXXXXXXX
 ```
 
 `context` بسته‌ای که به ایجنت می‌دهی را می‌سازد و سقف کاراکتش از config می‌آید؛
@@ -103,8 +106,8 @@ py -3.10 15_SYSTEM\scripts\hades.py context --project PRJ-XXXXXXXX
 ## ۵) از آزمایشگاه تا نهایی
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\hades.py promote --id EXP-XXXXXXXX --to candidates --approve
-py -3.10 15_SYSTEM\scripts\hades.py promote --id CAND-XXXXXXXX --to production --approve
+python 15_SYSTEM\scripts\hades.py promote --id EXP-XXXXXXXX --to candidates --approve
+python 15_SYSTEM\scripts\hades.py promote --id CAND-XXXXXXXX --to production --approve
 ```
 
 ارتقا چهار شرط را یک‌جا می‌خواهد: `evaluation.passed`، `safety_review.passed`،
@@ -115,13 +118,13 @@ py -3.10 15_SYSTEM\scripts\hades.py promote --id CAND-XXXXXXXX --to production -
 بازگشت هم راه‌بر دارد، نه خاطره. پیش از دست زدن به چیزی:
 
 ```powershell
-py -3.10 scripts\base.py --save --note "پیش از تغییر"
-py -3.10 scripts\base.py --status
+python scripts\base.py --save --note "پیش از تغییر"
+python scripts\base.py --status
 ```
 
 `--save` فقط وقتی ثبت می‌کند که همهٔ گیت‌ها سبز باشند؛ خانهٔ قرمز پایه نمی‌شود، چون
 پایه‌ای که نشود به آن اعتماد کرد دو بار کار را خراب می‌کند. بعد از تغییری که اندازه‌گیری‌اش
-بد شد: `py -3.10 scripts\base.py --recover --candidate 14_CANDIDATES/loop/cand-x.md`
+بد شد: `python scripts\base.py --recover --candidate 14_CANDIDATES/loop/cand-x.md`
 همان بایت‌ها را برمی‌گرداند، اثرانگشت را دوباره اثبات می‌کند و `fell_back: true` را در
 `14_CANDIDATES/loop/recovery.jsonl` می‌نویسد. برگشت مغز را برمی‌گرداند و کاغذها را نه:
 ردیف‌های قفسه و درس‌هایی که بعد از پایه ثبت شده‌اند می‌مانند، و فایلی که بعد از پایه
@@ -130,7 +133,7 @@ py -3.10 scripts\base.py --status
 ## ۶) اسکیل را به هارنس بده
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\hades.py sync --harness HAR-XXXXXXXX
+python 15_SYSTEM\scripts\hades.py sync --harness HAR-XXXXXXXX
 ```
 
 فقط اسکیل‌های `status: approved` که در `approved_for_harness_ids` آن هارنس هستند
@@ -146,16 +149,16 @@ py -3.10 15_SYSTEM\scripts\hades.py sync --harness HAR-XXXXXXXX
 روی قفسهٔ قرنطینه می‌گذارد — ایجنت پیشنهاد می‌دهد، انسان تصمیم می‌گیرد.
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\mcp_server.py          # خودِ دروازه؛ هارنس این را اجرا می‌کند
-py -3.10 15_SYSTEM\scripts\runs.py start --agent AGT-XXXXXXXX --goal "..."
-py -3.10 15_SYSTEM\scripts\runs.py step --run RUN-XXXXXXXX --text "..."
-py -3.10 15_SYSTEM\scripts\runs.py finish --run RUN-XXXXXXXX --status completed
-py -3.10 15_SYSTEM\scripts\runs.py promote --run RUN-XXXXXXXX   # خروجِ شاهد از صفحهٔ یک‌بارمصرف
-py -3.10 15_SYSTEM\scripts\runs.py list
-py -3.10 15_SYSTEM\scripts\orchestrator.py workflow validate --file WF.json
-py -3.10 15_SYSTEM\scripts\orchestrator.py workflow run --file WF.json --agent AGT-XXXXXXXX
-py -3.10 15_SYSTEM\scripts\orchestrator.py tool list
-py -3.10 15_SYSTEM\scripts\orchestrator.py ltm fetch --query "..."
+python 15_SYSTEM\scripts\mcp_server.py          # خودِ دروازه؛ هارنس این را اجرا می‌کند
+python 15_SYSTEM\scripts\runs.py start --agent AGT-XXXXXXXX --goal "..."
+python 15_SYSTEM\scripts\runs.py step --run RUN-XXXXXXXX --text "..."
+python 15_SYSTEM\scripts\runs.py finish --run RUN-XXXXXXXX --status completed
+python 15_SYSTEM\scripts\runs.py promote --run RUN-XXXXXXXX   # خروجِ شاهد از صفحهٔ یک‌بارمصرف
+python 15_SYSTEM\scripts\runs.py list
+python 15_SYSTEM\scripts\orchestrator.py workflow validate --file WF.json
+python 15_SYSTEM\scripts\orchestrator.py workflow run --file WF.json --agent AGT-XXXXXXXX
+python 15_SYSTEM\scripts\orchestrator.py tool list
+python 15_SYSTEM\scripts\orchestrator.py ltm fetch --query "..."
 ```
 
 موتورِ اجرا در پکیج `15_SYSTEM/scripts/backend/` است — لاجیک SuperAGI به‌صورت stdlib:
@@ -170,8 +173,8 @@ workflow اعلانی، ریاضیِ schedule و حافظهٔ بلندمدت FTS
 ## ۸) ویکی
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\wiki.py build
-py -3.10 15_SYSTEM\scripts\wiki.py serve
+python 15_SYSTEM\scripts\wiki.py build
+python 15_SYSTEM\scripts\wiki.py serve
 ```
 
 سایت فقط از ناحیه‌های ۰۰ تا ۱۰ ساخته می‌شود و `01_INBOX` و `10_ARCHIVE` را هم
@@ -181,8 +184,8 @@ py -3.10 15_SYSTEM\scripts\wiki.py serve
 ## ۹) انتشار به GitHub
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\hades.py export --path 11_CONTROL/skills/SKL-XXXXXXXX-name
-py -3.10 15_SYSTEM\scripts\hades.py publish --path 11_CONTROL/skills/SKL-XXXXXXXX-name --repo OWNER/REPO --approve
+python 15_SYSTEM\scripts\hades.py export --path 11_CONTROL/skills/SKL-XXXXXXXX-name
+python 15_SYSTEM\scripts\hades.py publish --path 11_CONTROL/skills/SKL-XXXXXXXX-name --repo OWNER/REPO --approve
 ```
 
 `export` تک‌تک فایل‌ها را برای راز، symlink و نوع باینری بررسی می‌کند؛ یک
@@ -198,7 +201,7 @@ visibility را از GitHub دوباره می‌خواند؛ اگر PRIVATE نب
 ## ۱۱) تست گیت‌ها
 
 ```powershell
-py -3.10 15_SYSTEM\scripts\test_hades.py
+python 15_SYSTEM\scripts\test_hades.py
 ```
 
 یک والت موقت می‌سازد، عیب عمدی داخلش می‌گذارد و بررسی می‌کند که ابزار قرمز شود.

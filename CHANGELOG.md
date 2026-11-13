@@ -6,6 +6,15 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (pending CI verification)
+- Public onboarding commands no longer require the Windows-only
+  `py -3.10` launcher pin. The first-session instructions, Persian START
+  walkthrough, canonical AGENTS instructions, five rendered host projections
+  and self-audit skill now use verified Python 3.9+ commands instead.
+  `tests/test_portable_python_entrypoints.py` prevents regression for those
+  entrypoints. This is a bounded correction for #46; historical docs remain
+  to be inventoried separately.
+
 ### Added (pending CI and review)
 - Reproducible local first-recall smoke probe: `scripts/first_success.py`
   runs the real keyword KB ingest + search CLI against only disposable,

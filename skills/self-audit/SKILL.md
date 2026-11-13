@@ -12,12 +12,12 @@ row with a number attached, and every fix carries a test that failed before it.
 
 ```
 python scripts/ci_hades_plane.py --battery     # a fresh clone: doctor, seeder, zone counts, hygiene
-py -3.9  -m unittest discover -s tests
-py -3.10 -m unittest discover -s tests
+python -m unittest discover -s tests
 python scripts/health.py
+# Independently confirm the Python 3.9/3.12 OS matrix in .github/workflows/ci.yml
 ```
 
-Both Python versions, because CI runs both and a 3.10-only feature is a red build on Linux.
+Run locally with any supported Python (3.9+); CI separately proves 3.9 and 3.12 on Ubuntu/Windows. Do not assume the Windows `py` launcher or Python 3.10 exists on another machine.
 Do not audit your working folder — audit the clone replica. Untracked local files hide
 missing `git add` entries, and that is how "works on my machine" is born.
 

@@ -27,6 +27,25 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P0 — Portable Python entrypoints (issue #46; PR under review)
+
+- [ ] **S** Replace the stale `py -3.10` Windows command pin in the public
+      first-session guide, `AGENTS.md`, rendered agent-host entrypoints and the
+      Persian `00_START_HERE/START.md`. Test portability with
+      `tests/test_portable_python_entrypoints.py` and keep generated hosts in
+      sync. The supported floor remains Python 3.9, verified by the OS CI matrix.
+- [ ] Verify this focused onboarding slice on Linux and Windows CI and merge
+      only on green. Issue #46 stays **open**: older project-internal documents
+      may still carry hardcoded interpreter commands; they need their own scoped
+      audit and an inventory before closure.
+
+**Next 1:** finish #46 by inventorying all remaining version-pinned Markdown
+and updating supported examples without rewriting historical evidence.
+**Next 2:** verify a provenance-preserving, explicitly read-only MCP quickstart
+with a denied-write fixture and no added runtime permissions.
+
+---
+
 ## P0 — Reproducible offline first-recall smoke metrics (issue #93; PR pending)
 
 - [ ] **S** Add `scripts/first_success.py` with an independent disposable synthetic
