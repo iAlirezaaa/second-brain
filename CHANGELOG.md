@@ -6,6 +6,14 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (PR #97; pending cross-platform CI)
+- The MCP registration regression tests now compare the *canonical* server
+  location rather than the textual name returned by a temporary directory.
+  Windows CI #283 exposed `RUNNER~1` 8.3 path aliases while `--root` resolved to
+  the same directory under its long path. Both host-schema assertions now
+  reflect the intended contract, without changing runtime configuration,
+  permissions, server behavior or introducing dependencies.
+
 ### Added (issue #96; pending CI/review)
 - A portable, standard-library-only `scripts/mcp_config.py` prints a
   host-specific JSON registration snippet for Claude Desktop or OpenCode with

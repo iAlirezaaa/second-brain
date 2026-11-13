@@ -32,7 +32,9 @@ class HostConfigTests(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         cfg = json.loads(run.stdout)["mcpServers"]["second-brain"]
         self.assertEqual(cfg["command"], str(Path(sys.executable).absolute()))
-        self.assertEqual(cfg["args"], [str(self.server)])
+        # Windows TemporaryDirectory can yield an 8.3 RUNNER~1 alias; the
+        # generator correctly resolves --root before emitting the server path.
+        self.assertEqual(cfg["args"], [str(self.server.resolve())])
         self.assertTrue(Path(cfg["args"][0]).is_absolute())
 
     def test_opencode_has_local_mcp_command_and_absolute_paths(self):
@@ -41,7 +43,8 @@ class HostConfigTests(unittest.TestCase):
         cfg = json.loads(run.stdout)["mcp"]["second-brain"]
         self.assertEqual(cfg["type"], "local")
         self.assertTrue(cfg["enabled"])
-        self.assertEqual(cfg["command"], [str(Path(sys.executable).absolute()), str(self.server)])
+        self.assertEqual(cfg["command"], [str(Path(sys.executable).absolute()),
+                                           str(self.server.resolve())])
 
     def test_missing_server_refuses_without_printing_a_config(self):
         self.server.unlink()

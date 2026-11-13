@@ -37,6 +37,13 @@ over something it cannot see is a silent gate, not a clean house.
       across Python 3.9/3.12 on Windows and Ubuntu; ensure examples clearly
       show placeholders and document write-tool exposure before PR merge.
       This generates registration JSON only, not a successful host handshake.
+- [x] CI #283 exposed two Windows-only *test expectation* failures: a temp
+      checkout was expressed using an 8.3 `RUNNER~1` alias while the generator
+      resolved that same directory to its canonical long path. Both client
+      assertions now expect the resolved fixture path; no application or
+      permission logic is relaxed (PR #97, verification pending).
+- [ ] Re-run all four Windows/Ubuntu Python 3.9/3.12 tests and the cross-machine
+      backup jobs on the updated PR head before considering a merge.
 
 **Next 1:** add a bounded real MCP stdio handshake + provenance-bearing read
 test, with an explicitly denied write and no private data.
