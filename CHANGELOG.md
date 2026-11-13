@@ -6,7 +6,19 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-### Fixed (pending CI verification)
+### Added (issue #96; pending CI/review)
+- A portable, standard-library-only `scripts/mcp_config.py` prints a
+  host-specific JSON registration snippet for Claude Desktop or OpenCode with
+  absolute paths to the running interpreter and local MCP server. It refuses
+  absent or symlinked server files and never edits either host configuration.
+  `tests/test_mcp_host_config.py` exercises five isolated scenarios including
+  Unicode/space paths, both host schemas, missing/symlink refusal and no host
+  settings mutation. Integration documentation now explains manual merge,
+  nonportable templates and the MCP door's existing write-tool exposure.
+  This is **not** an end-to-end host handshake, read-only enforcement or a
+  new permission boundary.
+
+### Fixed (CI #280 green; merged PR #95)
 - Public onboarding commands no longer require the Windows-only
   `py -3.10` launcher pin. The first-session instructions, Persian START
   walkthrough, canonical AGENTS instructions, five rendered host projections
@@ -15,7 +27,7 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   entrypoints. This is a bounded correction for #46; historical docs remain
   to be inventoried separately.
 
-### Added (pending CI and review)
+### Added (CI #277 green; merged PR #94)
 - Reproducible local first-recall smoke probe: `scripts/first_success.py`
   runs the real keyword KB ingest + search CLI against only disposable,
   synthetic notes, verifies the resulting source path and local index, then
