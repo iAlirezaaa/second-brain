@@ -27,29 +27,30 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## P1 — Portable MCP host registration (issue #96; pending CI/review)
+## P1 — Portable MCP host registration and offline stdio check (#96, #98)
 
-- [ ] **M** Replace host-specific or working-directory-dependent examples with
-      read-only JSON generation in `scripts/mcp_config.py` for Claude Desktop and
-      OpenCode. It must print absolute paths for the current interpreter and
-      checkout, never change host settings, and fail closed if the server is absent.
-- [ ] Verify five synthetic integration tests in `tests/test_mcp_host_config.py`
-      across Python 3.9/3.12 on Windows and Ubuntu; ensure examples clearly
-      show placeholders and document write-tool exposure before PR merge.
-      This generates registration JSON only, not a successful host handshake.
-- [x] CI #283 exposed two Windows-only *test expectation* failures: a temp
-      checkout was expressed using an 8.3 `RUNNER~1` alias while the generator
-      resolved that same directory to its canonical long path. Both client
-      assertions now expect the resolved fixture path; no application or
-      permission logic is relaxed (PR #97, verification pending).
-- [ ] Re-run all four Windows/Ubuntu Python 3.9/3.12 tests and the cross-machine
-      backup jobs on the updated PR head before considering a merge.
+- [x] **M** Generate portable, machine-local Claude Desktop/OpenCode JSON with
+      `scripts/mcp_config.py`, without changing host settings or permission grants.
+      All 7 CI jobs passed on the updated branch (run #43486609444);
+      PR #97 merged as `674afe63ae688822e790f9925d72ac89db5d9a9a`;
+      issue #96 closed. Configuration generation alone does not connect a host.
+- [ ] **S** Add `scripts/mcp_smoke.py`: with a synthetic `02_WIKI` note
+      inside a disposable root, launch the **real** MCP server over stdio and
+      check JSON-RPC initialize, tagged tool discovery, a provenance-bearing
+      `vault_search` result and strict-session refusal of
+      `candidate_propose` without session metadata. Require no candidate shelf
+      and JSON-only exit status. Regression: `tests/test_mcp_smoke.py`
+      (2 tests; issue #98; PR pending independent CI verification).
+- [ ] Re-run `python scripts/health.py`, the full Python 3.9/3.12
+      Windows/Ubuntu test matrix and cross-host backup tests on the PR head;
+      merge only on seven green jobs. The probe does not certify third-party
+      host integrations or OS-backed access control.
 
-**Next 1:** add a bounded real MCP stdio handshake + provenance-bearing read
-test, with an explicitly denied write and no private data.
-**Next 2:** build a user-guided reversible registration workflow that preserves
-other host entries; require a separate approval and rollback check before
-writing any client configuration.
+**Next 1:** verify actual Claude Code/Codex/OpenCode connections with
+explicit version/permission gates, synthetic fixtures and per-host approvals.
+**Next 2:** write a separate ADR and rollback-tested plan for opt-in,
+reversible host registration that preserves existing configs.
+
 
 ---
 

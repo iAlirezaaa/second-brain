@@ -6,7 +6,18 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-### Fixed (PR #97; pending cross-platform CI)
+### Added (issue #98; pending independent CI)
+- An offline `python scripts/mcp_smoke.py` diagnostic starts the actual
+  MCP stdio server twice against one disposable, synthetic note. It checks
+  JSON-RPC initialization, tool tags, a source-cited `vault_search` result,
+  and refusal of a valid `candidate_propose` call when strict session mode
+  has no session metadata. It also checks that no proposal shelf was created.
+  Reports JSON with elapsed time or a nonzero failure exit. Two tests exercise
+  the live door and missing-server refusal. No host settings, private data,
+  permission defaults, or network services are touched. This is not a real
+  Claude/Codex/OpenCode client certification or an OS security guarantee.
+
+### Fixed (PR #97 merged; seven CI jobs passed in run #43486609444)
 - The MCP registration regression tests now compare the *canonical* server
   location rather than the textual name returned by a temporary directory.
   Windows CI #283 exposed `RUNNER~1` 8.3 path aliases while `--root` resolved to
@@ -14,7 +25,7 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   reflect the intended contract, without changing runtime configuration,
   permissions, server behavior or introducing dependencies.
 
-### Added (issue #96; pending CI/review)
+### Added (issue #96; merged PR #97)
 - A portable, standard-library-only `scripts/mcp_config.py` prints a
   host-specific JSON registration snippet for Claude Desktop or OpenCode with
   absolute paths to the running interpreter and local MCP server. It refuses
