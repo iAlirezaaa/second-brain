@@ -30,7 +30,7 @@ class FirstSessionOnboarding(unittest.TestCase):
                 self.assertIsNotNone(block, "Onboarding needs a copyable git clone block")
                 clone = re.search(
                     r"(?m)^git clone https://github\.com/iAlirezaaa/"
-                    r"(?P<repo>[a-zA-Z0-9_.-]+)(?:\.git)?"
+                    r"(?P<repo>[a-zA-Z0-9_.-]+?)(?:\.git)?"
                     r"(?:\s+(?P<destination>[a-zA-Z0-9_.-]+))?\s*$", block)
                 self.assertIsNotNone(clone, "Document the exact repository clone")
                 cd = re.search(r"(?m)^cd ([a-zA-Z0-9_.-]+)\s*$", block)
