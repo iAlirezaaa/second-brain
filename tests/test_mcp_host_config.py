@@ -40,11 +40,23 @@ class HostConfigTests(unittest.TestCase):
     def test_opencode_has_local_mcp_command_and_absolute_paths(self):
         run = self.invoke("opencode")
         self.assertEqual(run.returncode, 0, run.stderr)
-        cfg = json.loads(run.stdout)["mcp"]["second-brain"]
+        parsed = json.loads(run.stdout)
+        # OpenCode V2: server names belong under mcp.servers; the V1
+        # mcp.<name>/enabled shape used to pass our own test but not V2.
+        self.assertEqual(set(parsed["mcp"]), {"servers"})
+        self.assertEqual(set(parsed["mcp"]["servers"]), {"second-brain"})
+        cfg = parsed["mcp"]["servers"]["second-brain"]
         self.assertEqual(cfg["type"], "local")
-        self.assertTrue(cfg["enabled"])
+        self.assertEqual(set(cfg), {"type", "command", "disabled"})
+        self.assertIs(cfg["disabled"], True)
         self.assertEqual(cfg["command"], [str(Path(sys.executable).absolute()),
                                            str(self.server.resolve())])
+        example = json.loads((ROOT / "15_SYSTEM" / "integrations" /
+                              "opencode.example.json").read_text(encoding="utf-8"))
+        template = example["mcp"]["servers"]["second-brain"]
+        self.assertEqual(set(template), set(cfg))
+        self.assertIs(template["disabled"], True)
+        self.assertNotIn("enabled", template)
 
     def test_missing_server_refuses_without_printing_a_config(self):
         self.server.unlink()

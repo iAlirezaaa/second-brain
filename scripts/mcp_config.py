@@ -3,7 +3,7 @@
 
 Usage:
   python scripts/mcp_config.py --client claude-desktop
-  python scripts/mcp_config.py --client opencode
+  python scripts/mcp_config.py --client opencode  # V2, disabled by default
 
 The JSON contains absolute paths for this checkout and the Python interpreter
 running this script. Re-run it if either moves; do not commit machine-local JSON.
@@ -32,8 +32,11 @@ def generate(client, root, python_executable):
     if client == "claude-desktop":
         return {"mcpServers": {"second-brain": {
             "command": str(executable), "args": [str(server)]}}}
-    return {"mcp": {"second-brain": {"type": "local",
-             "command": [str(executable), str(server)], "enabled": True}}}
+    # OpenCode V2 requires mcp.servers; its V1 mcp.<name>/enabled form
+    # is no longer accepted. Leave the entry disabled pending human review
+    # because this server currently advertises write-capable tools.
+    return {"mcp": {"servers": {"second-brain": {"type": "local",
+             "command": [str(executable), str(server)], "disabled": True}}}}
 
 
 def main(argv=None):
