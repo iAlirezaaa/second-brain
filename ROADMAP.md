@@ -27,14 +27,17 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## P0 — OpenCode V2 MCP configuration drift (issue #100; verification pending)
+## P1 — Native OpenCode V2 MCP registration (issue #100; verification pending)
 
 - [ ] **S** Match the first-party OpenCode V2 config contract:
       `mcp.servers.second-brain` with `type: local`, an absolute command
       and `disabled: true` pending human inspection of existing write tools.
       The previous V1 `mcp.second-brain` and `enabled: true` output
-      did not match the published V2 schema (observed 2026-11-13 at
-      https://opencode.ai/docs/mcp-servers).
+      did not use the *native* V2 schema (observed 2026-11-13 at
+      https://opencode.ai/docs/mcp-servers). The official
+      https://opencode.ai/docs/migrate-v1 explicitly says V2 still accepts
+      supported V1 configurations for migration. **No prior connection
+      failure has been reproduced or claimed.**
 - [ ] Make the generated snippet, placeholder example, regression assertions
       and English integration docs agree; preserve Claude Desktop behavior
       and all refusal tests. No host configuration is mutated.

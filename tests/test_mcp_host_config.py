@@ -41,8 +41,8 @@ class HostConfigTests(unittest.TestCase):
         run = self.invoke("opencode")
         self.assertEqual(run.returncode, 0, run.stderr)
         parsed = json.loads(run.stdout)
-        # OpenCode V2: server names belong under mcp.servers; the V1
-        # mcp.<name>/enabled shape used to pass our own test but not V2.
+        # Assert the native OpenCode V2 shape, not just the accepted
+        # V1 compatibility syntax that our old test could not distinguish.
         self.assertEqual(set(parsed["mcp"]), {"servers"})
         self.assertEqual(set(parsed["mcp"]["servers"]), {"second-brain"})
         cfg = parsed["mcp"]["servers"]["second-brain"]

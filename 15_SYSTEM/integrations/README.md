@@ -30,11 +30,12 @@ Back up your existing host configuration, then manually merge only the generated
 `mcp.servers.second-brain` entry (OpenCode **V2**) into it. Preserve your other
 servers. The OpenCode entry is deliberately `disabled: true`; **only after**
 reviewing the server's write tools and host permission policy, change it to
-`disabled: false` and restart the host. OpenCode V1's `mcp.second-brain` and
-`enabled: true` layout must not be used with V2. Confirm the installed host
-version first; this generator has not been tested against an installed client.
-V2 config contract checked against the [official OpenCode MCP documentation](https://opencode.ai/docs/mcp-servers)
-on 2026-11-13.
+`disabled: false` and restart the host. V2 also accepts **supported V1 MCP
+configuration** for migration, but this generator deliberately outputs native
+V2 syntax. Confirm the installed host version first; this generator has not
+been tested against an installed client. Schema and migration behavior checked
+against the [OpenCode MCP documentation](https://opencode.ai/docs/mcp-servers)
+and [V1 migration guide](https://opencode.ai/docs/migrate-v1) on 2026-11-13.
 The generator neither installs a package nor connects a host nor changes
 permissions. It does not demonstrate a successful MCP handshake; the host still
 needs a compatible MCP client implementation.

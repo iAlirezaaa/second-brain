@@ -32,8 +32,9 @@ def generate(client, root, python_executable):
     if client == "claude-desktop":
         return {"mcpServers": {"second-brain": {
             "command": str(executable), "args": [str(server)]}}}
-    # OpenCode V2 requires mcp.servers; its V1 mcp.<name>/enabled form
-    # is no longer accepted. Leave the entry disabled pending human review
+    # Prefer the native OpenCode V2 mcp.servers shape. V2 still accepts
+    # supported V1 config for migration. Leave this entry disabled pending
+    # human review of the server's existing write-capable tools
     # because this server currently advertises write-capable tools.
     return {"mcp": {"servers": {"second-brain": {"type": "local",
              "command": [str(executable), str(server)], "disabled": True}}}}
