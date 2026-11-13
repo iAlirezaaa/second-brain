@@ -16,7 +16,7 @@ windows-latest اثبات می‌کند). اگر `python` پیش‌فرض سیس
 <!-- BEGIN measured — written by `python scripts/doc_report.py --write` -->
 | measure | now |
 | --- | --- |
-| tests collected (`python -m unittest discover -s tests`) | 1113 |
+| tests collected (`python -m unittest discover -s tests`) | 1117 |
 | health gates (`python scripts/health.py`) | 17 |
 | registry records (`11_CONTROL/**/*.json`) | 20 |
 | skills in the pack (`skills/*/SKILL.md`) | 14 |
@@ -28,6 +28,21 @@ windows-latest اثبات می‌کند). اگر `python` پیش‌فرض سیس
 | zones a fresh clone reproduces / declared (`12_RUNTIME`, `13_LAB` are gitignored) | 12 / 16 |
 | python floor | 3.9 (standard library only) |
 <!-- END measured -->
+
+## آزمون سریع بازیابی بدون دادهٔ خصوصی
+
+از ریشهٔ مخزن با Python 3.9 یا جدیدتر:
+
+```powershell
+python scripts/first_success.py --repeat 3
+```
+
+این برنامه فقط دو یادداشت **ساختگی** در پوشهٔ موقت می‌سازد، ایندکس SQLite
+محلی را ایجاد می‌کند، جست‌وجوی کلیدواژه را با ابزار واقعی اجرا می‌کند و
+نرخ موفقیت و مدت زمان هر آزمایش را به‌صورت JSON گزارش می‌دهد. اگر هر آزمایش
+شکست بخورد با کد خطا خارج می‌شود. هیچ فایل شخصی یا سرویس ابری لازم ندارد.
+مدت ثبت‌شده شامل Clone و راه‌اندازی کاربر نیست؛ بنابراین اثبات نمی‌کند
+کل تجربهٔ شروع پروژه کمتر از پنج دقیقه طول می‌کشد.
 
 ## ۱) اول بررسی کن که سالم است
 

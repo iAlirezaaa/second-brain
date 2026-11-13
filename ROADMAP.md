@@ -27,13 +27,30 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## P0 — Local KB alias boundary (issue #90; CI pending)
+## P0 — Reproducible offline first-recall smoke metrics (issue #93; PR pending)
 
-- [ ] **S** Ignore symlinked Markdown, symlinked parent directories and
+- [ ] **S** Add `scripts/first_success.py` with an independent disposable synthetic
+      note fixture per trial, real CLI ingest/search, machine-readable success and latency,
+      a bounded repeat count and a nonzero failure exit; guard with
+      `tests/test_first_success_probe.py` (four regressions; pending CI/merge).
+- [ ] Confirm on Python 3.9/3.12 Ubuntu/Windows CI, then mark verified.
+      The measurement excludes clone/setup and is **not** an end-to-end five-minute
+      UX test or semantic-memory benchmark; do not claim these from synthetic timings.
+
+**Next 1:** time the complete clean-clone + first search procedure separately
+on real supported platforms with a published fixture and environment details.
+**Next 2:** add a minimal provenance-aware MCP client example that demonstrates
+safe read and an explicitly denied write, without changing permission defaults.
+
+---
+
+## P0 — Local KB alias boundary (issue #90; merged PR #91; CI #275 verified)
+
+- [x] **S** Ignore symlinked Markdown, symlinked parent directories and
       broken links during KB indexing; never mistake an out-of-root target for
       a clone-readable local note. Implementation: `scripts/kb.py`;
       synthetic coverage: `tests/test_kb_corpus_symlink_boundary.py`.
-- [ ] Run health and the complete OS/Python matrix, then merge, close #90,
+- [x] Ran health and the complete OS/Python matrix; merged #91, closed #90,
       and document that pre-existing indexes need a fresh
       `python scripts/kb.py ingest` to discard formerly indexed aliases.
       This is not a TOCTOU-safe filesystem sandbox or a blanket security claim.
@@ -71,7 +88,7 @@ The plan below does not claim shipped features.
 
 - [ ] **P0 — Five-minute first success:** repair onboarding, keep an offline first-recall
       walkthrough in `README.md` and `skills/first-session/SKILL.md`, and verify it in
-      `tests/test_first_session_onboarding.py` (tracked as issue #86; pending CI/merge).
+      `tests/test_first_session_onboarding.py` (issue #86; merged PR #87 after green CI).
 - [ ] **P0 — Trust first:** finish high-impact bugs in the open issue ledger and CI;
       require a reproducible clean-clone pass on Windows and Ubuntu before promotion.
 - [ ] **P1 — One-click-ish host setup:** independently test an opt-in, reversible
