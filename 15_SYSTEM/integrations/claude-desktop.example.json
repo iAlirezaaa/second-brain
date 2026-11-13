@@ -1,8 +1,10 @@
 {
   "mcpServers": {
     "second-brain": {
-      "command": "python",
-      "args": ["C:/Users/Raven/Documents/Default Project/sb-repo/15_SYSTEM/scripts/mcp_server.py"]
+      "command": "ABSOLUTE_PATH_TO_PYTHON",
+      "args": [
+        "ABSOLUTE_PATH_TO_SECOND_BRAIN_OS/15_SYSTEM/scripts/mcp_server.py"
+      ]
     }
   }
 }
