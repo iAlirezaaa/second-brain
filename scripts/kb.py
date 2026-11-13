@@ -77,9 +77,31 @@ def db_path(root):
     return Path(root) / KB
 
 
+def _regular_contained_note(root, path, real_root):
+    """Only real Markdown files, never aliases or paths outside the brain.
+
+    A lexical in-zone path can be a symlink to a different location. Resolving
+    the final target alone is not enough: a symlink to an *inside* file creates
+    a duplicate note, and a symlinked parent may hide a foreign directory.
+    This is static corpus hygiene, not an OS-enforced race-free sandbox.
+    """
+    try:
+        relative = path.relative_to(root)
+        candidate = root
+        for segment in relative.parts:
+            candidate = candidate / segment
+            if candidate.is_symlink():
+                return False
+        return path.is_file() and path.resolve(strict=True).is_relative_to(real_root)
+    except (OSError, ValueError, RuntimeError):
+        # Broken links, permissions and disappearing files cannot be evidence.
+        return False
+
+
 def corpus(root):
-    """Yield (relative posix path, absolute path) for every note a clone would carry."""
+    """Yield indexed, clone-readable real files without following symlink aliases."""
     root = Path(root)
+    real_root = root.resolve()
     for path in iter_markdown(root):
         rel = path.relative_to(root).as_posix()
         if rel in DOORS or rel.startswith(NOT_CORPUS) or rel.startswith(MACHINE_PLANE):
@@ -87,6 +109,8 @@ def corpus(root):
         if any(part.startswith(".") for part in rel.split("/")[:-1]):
             continue  # host folders (.github, .cursor, ...) are configuration, not notes
         if not clone_readable(rel):
+            continue
+        if not _regular_contained_note(root, path, real_root):
             continue
         yield rel, path
 
