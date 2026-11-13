@@ -6,6 +6,14 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (pending CI verification)
+- KB corpus no longer follows aliased Markdown files or symlinked parent folders,
+  including links that resolve outside the brain root, nor crashes on broken
+  links. `kb.py ingest` rebuilds its derived search index without those aliases.
+  This is an index hygiene boundary, not a race-free filesystem sandbox;
+  synthetic regression coverage: `tests/test_kb_corpus_symlink_boundary.py`.
+  Tracked by #90; release only after the full Windows/Linux CI matrix passes.
+
 ### Fixed
 - In the Phase 44 validity-window test fixture, compute relative expiration and
   verification dates from the runner's current date, not the historical
