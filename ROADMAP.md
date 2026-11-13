@@ -27,6 +27,24 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P0 — Local KB alias boundary (issue #90; CI pending)
+
+- [ ] **S** Ignore symlinked Markdown, symlinked parent directories and
+      broken links during KB indexing; never mistake an out-of-root target for
+      a clone-readable local note. Implementation: `scripts/kb.py`;
+      synthetic coverage: `tests/test_kb_corpus_symlink_boundary.py`.
+- [ ] Run health and the complete OS/Python matrix, then merge, close #90,
+      and document that pre-existing indexes need a fresh
+      `python scripts/kb.py ingest` to discard formerly indexed aliases.
+      This is not a TOCTOU-safe filesystem sandbox or a blanket security claim.
+
+**Next 1:** validate a real five-minute clean-clone recall path and record
+wall time with the same fixed fixture (no fabricated benchmark).
+**Next 2:** use the local-first MCP client's existing read-only tools for a
+small, deterministic demonstration with explicit provenance and denials.
+
+---
+
 ## P0 — CI time-invariant test gates (issue #88; verified on CI #270; merged in #89)
 
 - [ ] **S** Phase 44 validity-window fixtures: replace the frozen test epoch in
