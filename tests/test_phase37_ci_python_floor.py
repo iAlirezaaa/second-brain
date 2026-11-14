@@ -90,9 +90,30 @@ class TestParsing(unittest.TestCase):
 class TestRefusals(unittest.TestCase):
     def test_a_workspace_where_everything_agrees_is_green(self):
         with tempfile.TemporaryDirectory() as tmp:
-            problems, floor = ci_floor.check(fixture(tmp))
+            root = fixture(tmp)
+            problems, floor = ci_floor.check(root)
             self.assertEqual(problems, [])
             self.assertEqual(floor, "3.9")
+            # Issue #107: green CI must not be called mergeable when protected
+            # main still requires obsolete ubuntu-latest matrix check names.
+            wanted = [
+                "test (ubuntu-24.04, 3.12)", "test (ubuntu-24.04, 3.9)",
+                "test (windows-latest, 3.12)", "test (windows-latest, 3.9)",
+            ]
+            self.assertEqual(ci_floor.expected_required_test_contexts(root), wanted)
+            snapshot = {"protected": True, "protection": {
+                "required_status_checks": {"contexts": list(wanted)}}}
+            self.assertEqual(ci_floor.required_status_context_problems(root, snapshot), [])
+            snapshot["protection"]["required_status_checks"]["contexts"] = [
+                name.replace("ubuntu-24.04", "ubuntu-latest") for name in wanted]
+            stale = "\n".join(ci_floor.required_status_context_problems(root, snapshot))
+            self.assertIn("test (ubuntu-24.04, 3.9)", stale)
+            self.assertIn("test (ubuntu-latest, 3.9)", stale)
+            self.assertIn("test (ubuntu-24.04, 3.12)", stale)
+            for bad in ({}, {"protected": False},
+                        {"protected": True, "protection": {}}):
+                self.assertTrue(ci_floor.required_status_context_problems(root, bad),
+                                "unknown/absent protection must not look green")
 
     def test_a_floor_ci_never_installs_is_named(self):
         with tempfile.TemporaryDirectory() as tmp:
