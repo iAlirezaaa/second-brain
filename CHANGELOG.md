@@ -6,7 +6,25 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-### Changed (issue #100; native OpenCode V2 config; CI pending)
+### Fixed (issue #102; PR #103 review; CI recheck pending)
+- The Codex TOML path regression now decodes emitted string literals before
+  comparing their values. CI run #43537155432 found its JSON-lowercase-escape
+  assertion rejected valid TOML uppercase hexadecimal Unicode escapes across
+  Windows and Ubuntu. Python 3.9 uses the standard-library `ast` parser for the
+  two string/list fields; Python 3.11+ also checks the full TOML with `tomllib`.
+  No generator, host settings, runtime permission or stored user data changed.
+
+### Added (issue #102; Codex CLI snippet; CI pending)
+- `scripts/mcp_config.py --client codex` can print machine-local Codex TOML
+  `[mcp_servers.second-brain]` with absolute Python/server paths and
+  `enabled = false` pending human approval. Standard library only; supplementary
+  Unicode and Windows paths use TOML-valid escapes. Existing host-config tests
+  now check Codex schema, nonmutation, missing/symlinked server refusal and
+  preserve the existing JSON output shapes. English/Persian quickstarts and
+  integration docs explain manual merge and limitations. No installed Codex
+  handshake, actual host permission test, or user settings mutation claimed.
+
+### Changed (issue #100; native OpenCode V2 config; PR #101 merged, 7 CI jobs passed in #43522910025)
 - `scripts/mcp_config.py --client opencode` now prints
   `mcp.servers.second-brain` with a local absolute command instead of
   the legacy V1 `mcp.second-brain` layout. The native V2 entry uses

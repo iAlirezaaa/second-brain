@@ -16,14 +16,24 @@ if `python` is unavailable):
 ```sh
 python scripts/mcp_config.py --client claude-desktop
 python scripts/mcp_config.py --client opencode
+python scripts/mcp_config.py --client codex
 ```
 
-The CLI prints JSON to stdout and does not edit either app's settings. It uses
+The first two print JSON; **Codex CLI prints TOML** for
+`[mcp_servers.second-brain]` with absolute `command` and `args`, and
+`enabled = false` by default. The CLI does not edit any app's settings. It uses
 the absolute path to this checkout's `mcp_server.py` and the interpreter that
 ran the CLI, so it works when the host launches from another working directory
 and when paths contain spaces or non-ASCII characters. Re-run it if the checkout
 or Python environment moves. The `*.example.json` files are **templates with
 placeholders**, not copy-paste-ready configurations.
+
+For Codex, review the snippet before manually merging it into
+`~/.codex/config.toml` (or another approved Codex config scope), preserving
+other servers. Only set `enabled = true` after reviewing the server's
+write-capable tools, the local data boundary and Codex's approval settings.
+This is based on the [Codex configuration reference](https://developers.openai.com/codex/config-reference)
+checked on 2026-11-14; **no installed Codex client or handshake was verified**.
 
 Back up your existing host configuration, then manually merge only the generated
 `mcpServers.second-brain` entry (Claude Desktop) or the

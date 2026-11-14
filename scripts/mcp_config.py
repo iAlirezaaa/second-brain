@@ -4,8 +4,9 @@
 Usage:
   python scripts/mcp_config.py --client claude-desktop
   python scripts/mcp_config.py --client opencode  # V2, disabled by default
+  python scripts/mcp_config.py --client codex     # TOML, disabled by default
 
-The JSON contains absolute paths for this checkout and the Python interpreter
+The snippet contains absolute paths for this checkout and the Python interpreter
 running this script. Re-run it if either moves; do not commit machine-local JSON.
 """
 import argparse
@@ -14,7 +15,22 @@ import sys
 from pathlib import Path
 
 SERVER = Path("15_SYSTEM") / "scripts" / "mcp_server.py"
-CLIENTS = ("claude-desktop", "opencode")
+CLIENTS = ("claude-desktop", "opencode", "codex")
+
+
+def _toml_string(value):
+    """Encode a TOML basic string, including supplementary Unicode and Windows paths."""
+    quoted = json.dumps(str(value), ensure_ascii=False)
+    # JSON escapes ASCII controls like TOML, but JSON's \u surrogate pairs
+    # for emoji are invalid TOML. Emit actual TOML \UXXXXXXXX escapes.
+    def escape(char):
+        point = ord(char)
+        if point > 0xFFFF:
+            return "\\U%08X" % point
+        if point > 0x7F:
+            return "\\u%04X" % point
+        return char
+    return "".join(escape(char) for char in quoted)
 
 
 def generate(client, root, python_executable):
@@ -32,6 +48,13 @@ def generate(client, root, python_executable):
     if client == "claude-desktop":
         return {"mcpServers": {"second-brain": {
             "command": str(executable), "args": [str(server)]}}}
+    if client == "codex":
+        # Codex CLI's local stdio server shape; users decide whether to enable.
+        # No client config is read or written and no process is started.
+        return ("[mcp_servers.second-brain]\n"
+                "command = " + _toml_string(executable) + "\n"
+                "args = [" + _toml_string(server) + "]\n"
+                "enabled = false\n")
     # Prefer the native OpenCode V2 mcp.servers shape. V2 still accepts
     # supported V1 config for migration. Leave this entry disabled pending
     # human review of the server's existing write-capable tools
@@ -50,9 +73,12 @@ def main(argv=None):
         configuration = generate(args.client, args.root, sys.executable)
     except ValueError as exc:
         parser.error(str(exc))
-    # JSON ASCII escaping keeps Unicode filesystem paths safe even under Windows
-    # legacy cp1252/console encodings; JSON clients decode the path normally.
-    print(json.dumps(configuration, indent=2, ensure_ascii=True))
+    # Both JSON and TOML stay ASCII even when the paths contain non-ASCII,
+    # so legacy Windows console encodings cannot corrupt a copied snippet.
+    if isinstance(configuration, str):
+        print(configuration, end="")
+    else:
+        print(json.dumps(configuration, indent=2, ensure_ascii=True))
     return 0
 
 

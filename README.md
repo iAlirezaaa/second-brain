@@ -121,16 +121,20 @@ Start the MCP server for compatible agent hosts:
 python 15_SYSTEM/scripts/mcp_server.py
 ```
 
-For Claude Desktop or OpenCode, generate a machine-local config snippet instead
+For Claude Desktop, OpenCode V2 or Codex CLI, generate a machine-local config snippet instead
 of copying someone else's filesystem path:
 
 ```bash
 python scripts/mcp_config.py --client claude-desktop
 python scripts/mcp_config.py --client opencode
+python scripts/mcp_config.py --client codex
 ```
 
-These commands print JSON only; manually merge the appropriate entry into your
-host config. **OpenCode V2** uses `mcp.servers.second-brain`; its generated
+Claude/OpenCode output JSON; Codex output is TOML (`[mcp_servers.second-brain]`
+with `enabled = false`). Manually merge the appropriate entry into your
+host config without replacing existing servers. Codex config is typically
+`~/.codex/config.toml`; inspect the Codex permissions and manually enable only
+after review. **OpenCode V2** uses `mcp.servers.second-brain`; its generated
 entry starts `disabled: true` because the server offers write-capable tools.
 Only enable it after reviewing tool permissions. These commands do not connect
 a host or grant tools permission. The MCP server
