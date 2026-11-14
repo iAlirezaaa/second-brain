@@ -28,6 +28,12 @@ and when paths contain spaces or non-ASCII characters. Re-run it if the checkout
 or Python environment moves. The `*.example.json` files are **templates with
 placeholders**, not copy-paste-ready configurations.
 
+For safety, the generator refuses a server file **or a parent path component**
+that is a symlink, and refuses a server that resolves outside the checkout.
+In particular, a linked `15_SYSTEM/scripts` directory is not trusted even
+when its `mcp_server.py` looks like a regular file. This checks the local
+registration path; it is not a signature, sandbox or proof of host identity.
+
 For Codex, review the snippet before manually merging it into
 `~/.codex/config.toml` (or another approved Codex config scope), preserving
 other servers. Only set `enabled = true` after reviewing the server's
