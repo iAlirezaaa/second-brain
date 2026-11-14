@@ -45,6 +45,9 @@ class HostConfigTests(unittest.TestCase):
         self.assertEqual(code_run.returncode, 0, code_run.stderr)
         self.assertTrue(code_run.stdout.isascii())
         self.assertEqual(json.loads(code_run.stdout), json.loads(run.stdout))
+        # Generated machine-local host configs should not appear in git add -A.
+        ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("second-brain.mcp.local.json", ignored)
 
     def test_opencode_has_local_mcp_command_and_absolute_paths(self):
         run = self.invoke("opencode")
