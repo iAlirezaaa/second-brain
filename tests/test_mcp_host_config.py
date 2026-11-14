@@ -39,6 +39,16 @@ class HostConfigTests(unittest.TestCase):
         self.assertEqual(cfg["args"], [str(self.server.resolve())])
         self.assertTrue(Path(cfg["args"][0]).is_absolute())
 
+        # Claude Code's explicit --mcp-config file accepts the same stdio
+        # mcpServers JSON; generation must not register or enable tools.
+        code_run = self.invoke("claude-code")
+        self.assertEqual(code_run.returncode, 0, code_run.stderr)
+        self.assertTrue(code_run.stdout.isascii())
+        self.assertEqual(json.loads(code_run.stdout), json.loads(run.stdout))
+        # Generated machine-local host configs should not appear in git add -A.
+        ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+        self.assertIn("second-brain.mcp.local.json", ignored)
+
     def test_opencode_has_local_mcp_command_and_absolute_paths(self):
         run = self.invoke("opencode")
         self.assertEqual(run.returncode, 0, run.stderr)
@@ -97,7 +107,7 @@ class HostConfigTests(unittest.TestCase):
 
     def test_missing_server_refuses_without_printing_a_config(self):
         self.server.unlink()
-        for client in ("claude-desktop", "opencode", "codex"):
+        for client in ("claude-desktop", "claude-code", "opencode", "codex"):
             with self.subTest(client=client):
                 run = self.invoke(client)
                 self.assertNotEqual(run.returncode, 0)
@@ -112,7 +122,7 @@ class HostConfigTests(unittest.TestCase):
             self.server.symlink_to(outside)
         except (OSError, NotImplementedError):
             self.skipTest("creating symlinks is restricted by this platform")
-        for client in ("opencode", "codex"):
+        for client in ("claude-desktop", "claude-code", "opencode", "codex"):
             with self.subTest(client=client):
                 run = self.invoke(client)
                 self.assertNotEqual(run.returncode, 0)
@@ -134,7 +144,7 @@ class HostConfigTests(unittest.TestCase):
         self.assertFalse(self.server.is_symlink())
         self.assertTrue(self.server.is_file())
         self.assertFalse(self.server.resolve().is_relative_to(self.repo.resolve()))
-        for client in ("claude-desktop", "opencode", "codex"):
+        for client in ("claude-desktop", "claude-code", "opencode", "codex"):
             with self.subTest(parent_symlink=True, client=client):
                 run = self.invoke(client)
                 self.assertNotEqual(run.returncode, 0, run.stdout)
@@ -146,7 +156,7 @@ class HostConfigTests(unittest.TestCase):
         fake_config.write_text('{"keep":true}\n', encoding="utf-8")
         fake_codex = Path(self.tmp.name) / "config.toml"
         fake_codex.write_text('# KEEP THIS FILE\n', encoding="utf-8")
-        for client in ("claude-desktop", "opencode", "codex"):
+        for client in ("claude-desktop", "claude-code", "opencode", "codex"):
             with self.subTest(client=client):
                 run = self.invoke(client)
                 self.assertEqual(run.returncode, 0, run.stderr)

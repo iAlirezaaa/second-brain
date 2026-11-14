@@ -89,6 +89,21 @@ Codex را بررسی کنید. فقط به‌صورت دستی در `~/.codex/c
 اتصال واقعی نسخهٔ نصب‌شدهٔ Codex هنوز آزمایش نشده است.
 دسترسی به سرور به‌معنای فقط‌خواندنی بودن آن نیست.
 
+## اتصال دستی Claude Code CLI با تنظیمات موقت
+
+```powershell
+python scripts/mcp_config.py --client claude-code > second-brain.mcp.local.json
+claude -p "Check memory server health" --mcp-config second-brain.mcp.local.json --allowedTools "mcp__second-brain__doctor_status"
+```
+
+خروجی یک فایل JSON محلی با مسیر مطلق Python و سرور MCP است؛ این دستور
+تنظیمات دائمی Claude Code را ویرایش یا سروری را خودکار ثبت نمی‌کند.
+فایلِ دارای مسیر شخصی را در Git کامیت نکنید. گزینهٔ `--allowedTools`
+فقط دسترسی به ابزار مشخص‌شده را در این فراخوانی هدف می‌گیرد؛ **سرور را
+به حالت فقط‌خواندنی تبدیل نمی‌کند** و خود سرور ابزار نوشتن هم دارد.
+پیش از اتصال حافظهٔ شخصی، دسترسی‌ها و خروج داده به مدل میزبان را بررسی کنید.
+اتصال واقعی به نسخهٔ نصب‌شدهٔ Claude Code هنوز تأیید نشده است.
+
 ## ۱) اول بررسی کن که سالم است
 
 ```powershell

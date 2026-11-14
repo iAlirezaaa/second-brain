@@ -15,11 +15,12 @@ if `python` is unavailable):
 
 ```sh
 python scripts/mcp_config.py --client claude-desktop
+python scripts/mcp_config.py --client claude-code
 python scripts/mcp_config.py --client opencode
 python scripts/mcp_config.py --client codex
 ```
 
-The first two print JSON; **Codex CLI prints TOML** for
+Claude Desktop, Claude Code CLI and OpenCode print JSON; **Codex CLI prints TOML** for
 `[mcp_servers.second-brain]` with absolute `command` and `args`, and
 `enabled = false` by default. The CLI does not edit any app's settings. It uses
 the absolute path to this checkout's `mcp_server.py` and the interpreter that
@@ -33,6 +34,26 @@ that is a symlink, and refuses a server that resolves outside the checkout.
 In particular, a linked `15_SYSTEM/scripts` directory is not trusted even
 when its `mcp_server.py` looks like a regular file. This checks the local
 registration path; it is not a signature, sandbox or proof of host identity.
+
+### Claude Code CLI: temporary, explicit configuration
+
+Generate a stdio `mcpServers` JSON file, then pass it explicitly to Claude
+Code rather than modifying the user's host settings:
+
+```sh
+python scripts/mcp_config.py --client claude-code > second-brain.mcp.local.json
+claude -p "Check memory server health" --mcp-config second-brain.mcp.local.json --allowedTools "mcp__second-brain__doctor_status"
+```
+
+This uses the [Anthropic Claude Code MCP/CLI JSON contract](https://docs.anthropic.com/en/docs/claude-code/sdk)
+(checked 2026-11-14). The JSON includes absolute machine-local paths: keep it
+out of Git and delete it when finished. `--allowedTools` identifies one
+read tool for this sample; **do not pass a server-wide allow-all**. Neither
+this flag nor config generation makes the server intrinsically read-only, and
+the host may request additional permissions. Inspect the host's actual policy
+and treat responses containing private memory as information the host's model
+provider may receive. **Installed Claude Code client/version handshake and
+write-denial behavior have not yet been tested.**
 
 For Codex, review the snippet before manually merging it into
 `~/.codex/config.toml` (or another approved Codex config scope), preserving

@@ -27,6 +27,26 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P1 — Claude Code CLI temporary MCP config (issue #106; stacked PR pending)
+
+- [ ] **S** Generate `--client claude-code` JSON in the explicit
+      `mcpServers.second-brain` stdio shape for `claude --mcp-config FILE`,
+      retaining absolute checkout/interpreter paths and the security boundary
+      of #104. No host settings writes or permissions are granted.
+- [ ] Extend the existing synthetic host config regression for Unicode paths,
+      missing/symlinked server refusals, and unchanged other host formats.
+      Document a targeted read-tool smoke (not a read-only guarantee).
+- [ ] **Merge gate:** installed-host handshake is a separate compatibility test;
+      this snippet needs seven green CI jobs and current branch-protection
+      requirements, currently blocked by obsolete Ubuntu contexts (#107).
+
+**Next 1:** version-pinned installed Claude Code/Codex/OpenCode handshake with
+synthetic source-cited recall and explicit host write-denial checks.
+**Next 2:** ADR for opt-in reversible registration with backups, explicit
+consent, conflict detection and tested rollback.
+
+---
+
 ## P0 — Reject escaped MCP server paths in host snippets (issue #104; PR review pending)
 
 - [ ] **S** Refuse both final-file symlinks and **symlinked ancestor directories**
