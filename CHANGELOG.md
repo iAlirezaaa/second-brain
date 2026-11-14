@@ -6,6 +6,10 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (nightly loop merge identity, issue #41; CI pending)
+- GitHub Actions run [#43577040140](https://github.com/iAlirezaaa/second-brain-os/actions/runs/43577040140) failed before the nightly report cycle: refreshing `loop/nightly` against `main` may create a merge commit, but the workflow set `user.name` and `user.email` only in its later publish step. The checkout step now configures the existing bot identity locally **before** merging. The existing CI governance test checks this ordering. A synthetic two-branch Git reproduction failed without an identity (exit 128) and succeeded after it was set (exit 0). This does not resolve the separate Actions PR-creation permission issue (#41 / PR #81), certify a successful live scheduled run, or change branch protection.
+
+
 ### Fixed (issue #102; PR #103 review; CI recheck pending)
 - The Codex TOML path regression now decodes emitted string literals before
   comparing their values. CI run #43537155432 found its JSON-lowercase-escape
