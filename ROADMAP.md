@@ -29,6 +29,13 @@ over something it cannot see is a silent gate, not a clean house.
 
 ## P1 — Safe Codex CLI local MCP snippet (issue #102; under review)
 
+- [ ] CI run #43537155432 failed on all four OS/Python test jobs because the
+      regression asserted JSON-style lowercase hex escapes on valid TOML
+      `\\uXXXX`/`\\UXXXXXXXX` strings. A dedicated test-only fix now round-trips
+      the emitted interpreter and script paths (Python 3.9 `ast.literal_eval`,
+      Python 3.11+ `tomllib`) without changing host settings. Full CI rerun
+      is required before checking off this acceptance gate or merging PR #103.
+
 - [ ] **S** Generate a self-contained TOML `[mcp_servers.second-brain]`
       entry from `scripts/mcp_config.py --client codex`: absolute local
       interpreter/script paths, ASCII-safe TOML escaping (including supplementary
