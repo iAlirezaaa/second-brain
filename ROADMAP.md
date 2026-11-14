@@ -29,7 +29,7 @@ over something it cannot see is a silent gate, not a clean house.
 
 ## P0 — Prevent local SQLite index escaping via symlink aliases (#115; in review)
 
-- [x] **S** Reproduced an external SQLite write by linking a brain's `.kb` directory to an unrelated directory. `scripts/kb.py:db_path` now rejects symlinked cache directories and database files (including dangling aliases) before any SQLite open, ingest, read or write. This is static hygiene, **not** a TOCTOU-safe filesystem sandbox.
+- [x] **S** Reproduced an external SQLite write by linking a brain's `.kb` directory to an unrelated directory. `scripts/kb.py` (`db_path`) now rejects symlinked cache directories and database files (including dangling aliases) before any SQLite open, ingest, read or write. This is static hygiene, **not** a TOCTOU-safe filesystem sandbox.
 - [x] Extend the existing alias regression (no test-case count drift) to verify that ordinary real notes remain indexed, while both cache alias forms are refused before a synthetic outside database can change.
 - [ ] Independently confirm full Ubuntu/Windows Python 3.9/3.12 health and unittest jobs plus three backup jobs; only then consider merge. Protected-main required-check drift in #107 still blocks merge; never bypass it.
 - [ ] Observe clean-clone KB ingest/search smoke on supported platforms; do not claim actual under-five-minute onboarding from this narrow regression.
