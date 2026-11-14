@@ -72,6 +72,14 @@ created, prints a JSON result and exits nonzero on failure. Both processes
 run only against a disposable root and are bounded by a timeout; existing
 host configurations and private brain data are never read by this probe.
 
+The diagnostic child receives only OS launch essentials and the two explicit
+protocol-test settings (`SBO_REQUIRE_SESSION`, `PYTHONIOENCODING`), not the
+caller's unrelated API keys, `PYTHONPATH`, or other `SBO_*` variables.
+It also disables Python user-site imports. This is a defense against accidental
+environment forwarding, **not** a secure sandbox: the same OS user still
+has its normal filesystem permissions. Only synthetic notes are used by
+the diagnostic; a real host integration has a separate permission review.
+
 This is a local transport and strict-gate smoke test, **not** a verification
 that any specific version of Claude Desktop, Claude Code, Codex, or OpenCode
 connects, nor an OS-level sandbox or a blanket read-only guarantee. Outside
