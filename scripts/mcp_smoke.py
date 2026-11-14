@@ -20,13 +20,28 @@ SENTINEL = "sbo_smoke_coral_7843"
 PROTOCOL_VERSION = "2025-06-18"
 
 
-def _exchange(server, root, messages, strict, timeout):
-    """Run a bounded stdio conversation; never run against a person's home."""
-    env = os.environ.copy()
-    # These child processes see ONLY root's synthetic note. Explicitly test the
-    # legacy read path and the opt-in strict session boundary in separate runs.
+# Retain only process-launch essentials. A developer may have API keys,
+# PYTHONPATH, or SBO_* session overrides in their terminal: a diagnostic
+# against synthetic notes must not forward any of them to the MCP child.
+# This reduces ambient credential exposure, not OS-level filesystem access.
+_CHILD_ENV_KEYS = (
+    "PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT",
+    "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE",
+    "HOMEDRIVE", "HOMEPATH", "LANG", "LC_ALL", "LC_CTYPE",
+)
+
+
+def _child_environment(strict):
+    env = {key: os.environ[key] for key in _CHILD_ENV_KEYS if key in os.environ}
     env["SBO_REQUIRE_SESSION"] = "1" if strict else "0"
     env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONNOUSERSITE"] = "1"
+    return env
+
+
+def _exchange(server, root, messages, strict, timeout):
+    """Run a bounded stdio conversation against a synthetic brain root."""
+    env = _child_environment(strict)
     payload = "".join(json.dumps(message, ensure_ascii=True) + "\n" for message in messages)
     process = subprocess.run([sys.executable, str(server), "--root", str(root)],
                              input=payload, capture_output=True, text=True,
