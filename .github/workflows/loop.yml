@@ -45,6 +45,10 @@ jobs:
       - name: Check out persistent report branch
         if: github.event_name != 'schedule' || steps.due.outputs.run == 'true'
         run: |
+          # The refresh merge may create a commit; set the identity BEFORE it.
+          # Keep this on the runner checkout, not in global Git configuration.
+          git config --local user.name "second-brain-loop[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git ls-remote --exit-code origin refs/heads/loop/nightly >/dev/null; then
             git fetch origin loop/nightly
             git checkout -B loop/nightly FETCH_HEAD
