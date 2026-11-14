@@ -29,7 +29,7 @@ over something it cannot see is a silent gate, not a clean house.
 
 ## P0 — First-recall smoke must verify actual SQLite evidence (issue #110)
 
-- [x] **S, reproduced 2026-11-14:** the original `scripts/first_success.py` success predicate accepted a forged CLI's `indexed 2 notes` and `02_WIKI/demo.md [...]` stdout when its `.kb/kb.sqlite` was **empty** (0 bytes, zero rows). This is a failure of the smoke probe's evidence standard, not a demonstrated failure of the real keyword engine.
+- [x] **S, reproduced 2026-11-14:** the original `scripts/first_success.py` success predicate accepted a forged CLI's `indexed 2 notes` and `02_WIKI/demo.md [...]` stdout when its ignored, disposable SQLite index was **empty** (0 bytes, zero rows). This is a failure of the smoke probe's evidence standard, not a demonstrated failure of the real keyword engine.
 - [x] Extend the existing `tests/test_first_success_probe.py` missing-CLI regression with the forged-stdout/empty-index case (no new test-count claim). It must fail before the fix.
 - [x] Verify the exact two disposable Markdown bodies and paths in the actual SQLite `notes` table; missing, corrupt or mismatched indexes fail closed. Keep JSON fields, temp cleanup, Python 3.9+ standard library and no user/private data access.
 - [ ] **In review:** require green `health.py`, four OS/Python unit-test jobs and three backup jobs before any merge. A locally isolated SQLite helper test is not a full repository or end-to-end installation test. The under-five-minute clone-to-first-use goal remains **unknown** until independently timed on actual machines.
