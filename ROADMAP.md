@@ -27,6 +27,31 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P1 — Native OpenCode V2 MCP registration (issue #100; verification pending)
+
+- [ ] **S** Match the first-party OpenCode V2 config contract:
+      `mcp.servers.second-brain` with `type: local`, an absolute command
+      and `disabled: true` pending human inspection of existing write tools.
+      The previous V1 `mcp.second-brain` and `enabled: true` output
+      did not use the *native* V2 schema (observed 2026-11-13 at
+      https://opencode.ai/docs/mcp-servers). The official
+      https://opencode.ai/docs/migrate-v1 explicitly says V2 still accepts
+      supported V1 configurations for migration. **No prior connection
+      failure has been reproduced or claimed.**
+- [ ] Make the generated snippet, placeholder example, regression assertions
+      and English/Persian onboarding docs agree; preserve Claude Desktop behavior
+      and all refusal tests. No host configuration is mutated.
+- [ ] Require the full Ubuntu/Windows Python 3.9/3.12 health/unit-test matrix
+      and backup jobs before merging. This is **schema compliance only**:
+      installed OpenCode and its permissions have not been independently tested.
+
+**Next 1:** test a real version-pinned OpenCode V2 handshake on a disposable
+synthetic note before claiming host compatibility.
+**Next 2:** build an explicit opt-in, reversible setup flow (proposal/ADR,
+user confirmation, existing-config backup and verified rollback).
+
+---
+
 ## P1 — Portable MCP host registration and offline stdio check (#96, #98)
 
 - [x] **M** Generate portable, machine-local Claude Desktop/OpenCode JSON with
@@ -34,17 +59,19 @@ over something it cannot see is a silent gate, not a clean house.
       All 7 CI jobs passed on the updated branch (run #43486609444);
       PR #97 merged as `674afe63ae688822e790f9925d72ac89db5d9a9a`;
       issue #96 closed. Configuration generation alone does not connect a host.
-- [ ] **S** Add `scripts/mcp_smoke.py`: with a synthetic `02_WIKI` note
+- [x] **S** Add `scripts/mcp_smoke.py`: with a synthetic `02_WIKI` note
       inside a disposable root, launch the **real** MCP server over stdio and
       check JSON-RPC initialize, tagged tool discovery, a provenance-bearing
       `vault_search` result and strict-session refusal of
       `candidate_propose` without session metadata. Require no candidate shelf
       and JSON-only exit status. Regression: `tests/test_mcp_smoke.py`
-      (2 tests; issue #98; PR pending independent CI verification).
-- [ ] Re-run `python scripts/health.py`, the full Python 3.9/3.12
-      Windows/Ubuntu test matrix and cross-host backup tests on the PR head;
-      merge only on seven green jobs. The probe does not certify third-party
-      host integrations or OS-backed access control.
+      (2 tests; issue #98; PR #99 merged after seven green CI jobs in
+      run #43507137025).
+- [x] `python scripts/health.py`, full Python 3.9/3.12 Windows/Ubuntu
+      matrix and cross-host backup CI passed in run #43507137025; PR #99
+      merged as `0f6ed4290b494505437909e4740849d54e295527`.
+      The probe does not certify third-party host integrations or OS-backed
+      access control.
 
 **Next 1:** verify actual Claude Code/Codex/OpenCode connections with
 explicit version/permission gates, synthetic fixtures and per-host approvals.

@@ -6,7 +6,21 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-### Added (issue #98; pending independent CI)
+### Changed (issue #100; native OpenCode V2 config; CI pending)
+- `scripts/mcp_config.py --client opencode` now prints
+  `mcp.servers.second-brain` with a local absolute command instead of
+  the legacy V1 `mcp.second-brain` layout. The native V2 entry uses
+  `disabled` instead of `enabled`, starting `disabled: true` until a person reviews
+  write-tool permissions. The checked-in placeholder template, docs and
+  existing host-config regression test and Persian START guide enforce the
+  same shape. No client
+  settings are touched; actual OpenCode V2 connection remains unverified.
+  V2 still accepts supported V1 configurations for migration; the previous
+  snippet was **not** independently shown to fail. References:
+  https://opencode.ai/docs/mcp-servers and
+  https://opencode.ai/docs/migrate-v1 (checked 2026-11-13).
+
+### Added (issue #98; merged PR #99; seven CI jobs green in run #43507137025)
 - An offline `python scripts/mcp_smoke.py` diagnostic starts the actual
   MCP stdio server twice against one disposable, synthetic note. It checks
   JSON-RPC initialization, tool tags, a source-cited `vault_search` result,

@@ -130,7 +130,10 @@ python scripts/mcp_config.py --client opencode
 ```
 
 These commands print JSON only; manually merge the appropriate entry into your
-host config. They do not connect a host or grant tools permission. The MCP server
+host config. **OpenCode V2** uses `mcp.servers.second-brain`; its generated
+entry starts `disabled: true` because the server offers write-capable tools.
+Only enable it after reviewing tool permissions. These commands do not connect
+a host or grant tools permission. The MCP server
 offers write tools as well as reads, so review the host's tool approvals and
 privacy boundary before connecting. [Integration instructions and limitations](15_SYSTEM/integrations/README.md).
 

@@ -26,8 +26,16 @@ or Python environment moves. The `*.example.json` files are **templates with
 placeholders**, not copy-paste-ready configurations.
 
 Back up your existing host configuration, then manually merge only the generated
-`mcpServers.second-brain` entry (Claude Desktop) or `mcp.second-brain`
-entry (OpenCode) into it. Preserve your other servers. Restart the host.
+`mcpServers.second-brain` entry (Claude Desktop) or the
+`mcp.servers.second-brain` entry (OpenCode **V2**) into it. Preserve your other
+servers. The OpenCode entry is deliberately `disabled: true`; **only after**
+reviewing the server's write tools and host permission policy, change it to
+`disabled: false` and restart the host. V2 also accepts **supported V1 MCP
+configuration** for migration, but this generator deliberately outputs native
+V2 syntax. Confirm the installed host version first; this generator has not
+been tested against an installed client. Schema and migration behavior checked
+against the [OpenCode MCP documentation](https://opencode.ai/docs/mcp-servers)
+and [V1 migration guide](https://opencode.ai/docs/migrate-v1) on 2026-11-13.
 The generator neither installs a package nor connects a host nor changes
 permissions. It does not demonstrate a successful MCP handshake; the host still
 needs a compatible MCP client implementation.
