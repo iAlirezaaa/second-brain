@@ -8,6 +8,7 @@ allowed to live in different files with nothing comparing them.
 
 `scripts/ci_floor.py` compares them; each class below is red on the state of the repo before it.
 """
+import json
 import sys
 import tempfile
 import unittest
@@ -104,12 +105,25 @@ class TestRefusals(unittest.TestCase):
             snapshot = {"protected": True, "protection": {
                 "required_status_checks": {"contexts": list(wanted)}}}
             self.assertEqual(ci_floor.required_status_context_problems(root, snapshot), [])
+            # Exercise the public CLI in strictly offline replay mode too;
+            # the helper passing alone would not prove its flags are wired.
+            (root / ".git").mkdir()
+            snapshot_path = root / "protected-branch-fixture.json"
+            snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+            argv = [sys.executable, str(ROOT / "scripts" / "ci_floor.py"),
+                    "--root", str(root), "--branch-json", str(snapshot_path)]
+            good = common.run_utf8(argv, cwd=str(ROOT))
+            self.assertEqual(good.returncode, 0, good.stdout + good.stderr)
             snapshot["protection"]["required_status_checks"]["contexts"] = [
                 name.replace("ubuntu-24.04", "ubuntu-latest") for name in wanted]
             stale = "\n".join(ci_floor.required_status_context_problems(root, snapshot))
             self.assertIn("test (ubuntu-24.04, 3.9)", stale)
             self.assertIn("test (ubuntu-latest, 3.9)", stale)
             self.assertIn("test (ubuntu-24.04, 3.12)", stale)
+            snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+            blocked = common.run_utf8(argv, cwd=str(ROOT))
+            self.assertEqual(blocked.returncode, 1, blocked.stdout + blocked.stderr)
+            self.assertIn("obsolete/unmatched required test check", blocked.stdout)
             for bad in ({}, {"protected": False},
                         {"protected": True, "protection": {}}):
                 self.assertTrue(ci_floor.required_status_context_problems(root, bad),
