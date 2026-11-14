@@ -6,6 +6,10 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (issue #115; KB cache symlink boundary, review pending)
+- `scripts/kb.py` now refuses symbolic links at `.kb/` or `.kb/kb.sqlite` before opening its derived SQLite index. A disposable cache directory pointing outside the brain could previously cause `ingest` to write to an unrelated SQLite file despite symlink-safe Markdown corpus enumeration. A synthetic regression covers directory/file/dangling aliases without touching real user data. No schema, network, dependency or permission changes. This is a static alias check, **not** a race-free or OS-level sandbox; full CI and protected-branch merge remain pending.
+
+
 ### Fixed (issue #102; PR #103 review; CI recheck pending)
 - The Codex TOML path regression now decodes emitted string literals before
   comparing their values. CI run #43537155432 found its JSON-lowercase-escape
