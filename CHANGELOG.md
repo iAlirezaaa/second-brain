@@ -6,6 +6,17 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (issue #113; PR #114 in review; CI pending)
+- The synthetic MCP stdio diagnostic now launches its child with an explicit
+  allowlist of OS process-launch variables, instead of inheriting the caller's
+  full environment (which could contain unrelated API credentials,
+  `PYTHONPATH`, and `SBO_*` session overrides). Both strict and non-strict
+  runs still set their own session policy and UTF-8 output. The existing
+  regression uses a fake child process to check that a synthetic canary never
+  reaches it. The change only reduces accidental environment forwarding;
+  it does **not** sandbox the server, alter MCP tools or modify user data.
+  Cross-platform CI and the real smoke must pass before release.
+
 ### Fixed (issue #102; PR #103 review; CI recheck pending)
 - The Codex TOML path regression now decodes emitted string literals before
   comparing their values. CI run #43537155432 found its JSON-lowercase-escape
