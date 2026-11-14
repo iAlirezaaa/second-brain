@@ -74,7 +74,17 @@ def terms_of(text):
 
 
 def db_path(root):
-    return Path(root) / KB
+    """Refuse aliases for the disposable SQLite store before opening it.
+
+    Corpus hygiene rejects symlinked *notes*; the index itself needs the same
+    rule because SQLite writes through filesystem aliases. This is a static
+    check, not a race-free filesystem security boundary.
+    """
+    cache_dir = Path(root) / KB.parent
+    database = cache_dir / KB.name
+    if cache_dir.is_symlink() or database.is_symlink():
+        raise RuntimeError("refusing symlinked KB cache directory or database")
+    return database
 
 
 def _regular_contained_note(root, path, real_root):
