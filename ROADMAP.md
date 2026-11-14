@@ -27,6 +27,27 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P0 — Keep synthetic MCP diagnostics free of ambient credentials (issue #113; PR #114 in review)
+
+- [ ] **S** Replace inherited `os.environ.copy()` in
+      `scripts/mcp_smoke.py` with a small platform-launch allowlist and explicit
+      `SBO_REQUIRE_SESSION` / UTF-8 settings. The local diagnostic should not
+      forward unrelated API keys, `PYTHONPATH`, or other `SBO_*` overrides to
+      the subprocess it launches. This is **not** filesystem sandboxing.
+- [ ] Extend the existing regression in `tests/test_mcp_smoke.py` with a
+      synthetic subprocess that reports whether a canary or `PYTHONPATH` reached
+      it, for both strict and non-strict sessions. Keep the current test count
+      stable and preserve the real source-cited MCP smoke.
+- [ ] Merge only after the `ubuntu-24.04` / Windows Python 3.9 / 3.12
+      suite and the backup jobs are green, and protected-main requirements
+      agree with the actual checks (see issue #107). A local isolated test
+      cannot substitute for cross-OS CI.
+
+**Next 1:** test the smoke with an inherited, synthetic `SBO_*` override on
+Windows and Ubuntu and record the exact CI evidence after merge.
+**Next 2:** inspect MCP server startup for any implicit home-directory or
+ambient-state access, with a standalone denial test before changing behavior.
+
 ## P1 — Safe Codex CLI local MCP snippet (issue #102; under review)
 
 - [ ] CI run #43537155432 failed on all four OS/Python test jobs because the
