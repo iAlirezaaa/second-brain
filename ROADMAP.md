@@ -27,9 +27,30 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## P1 — Native OpenCode V2 MCP registration (issue #100; verification pending)
+## P1 — Safe Codex CLI local MCP snippet (issue #102; under review)
 
-- [ ] **S** Match the first-party OpenCode V2 config contract:
+- [ ] **S** Generate a self-contained TOML `[mcp_servers.second-brain]`
+      entry from `scripts/mcp_config.py --client codex`: absolute local
+      interpreter/script paths, ASCII-safe TOML escaping (including supplementary
+      Unicode), and `enabled = false` until the person reviews write permissions.
+      No installed Codex compatibility claim or configuration-file writes.
+- [ ] Keep Claude Desktop/OpenCode JSON unchanged; extend the existing
+      host-config regressions for Codex, absent and symlinked server refusal,
+      nonmutation and Windows/Persian paths. Update English/Persian quickstarts.
+- [ ] Only merge on all seven current CI jobs green. Test the installed
+      Codex binary against a disposable synthetic note in a later, separately
+      scoped compatibility gate; do not infer host success from snippet shape.
+
+**Next 1:** version-pinned installed Codex synthetic MCP handshake and explicit
+tool-permission review.
+**Next 2:** proposal/ADR for opt-in, reversible multi-host registration with
+backups, conflict detection, explicit consent and rollback tests.
+
+---
+
+## P1 — Native OpenCode V2 MCP registration (issue #100; verified in PR #101)
+
+- [x] **S** Match the first-party OpenCode V2 config contract:
       `mcp.servers.second-brain` with `type: local`, an absolute command
       and `disabled: true` pending human inspection of existing write tools.
       The previous V1 `mcp.second-brain` and `enabled: true` output
@@ -38,11 +59,12 @@ over something it cannot see is a silent gate, not a clean house.
       https://opencode.ai/docs/migrate-v1 explicitly says V2 still accepts
       supported V1 configurations for migration. **No prior connection
       failure has been reproduced or claimed.**
-- [ ] Make the generated snippet, placeholder example, regression assertions
+- [x] Make the generated snippet, placeholder example, regression assertions
       and English/Persian onboarding docs agree; preserve Claude Desktop behavior
       and all refusal tests. No host configuration is mutated.
-- [ ] Require the full Ubuntu/Windows Python 3.9/3.12 health/unit-test matrix
-      and backup jobs before merging. This is **schema compliance only**:
+- [x] Seven jobs completed successfully in CI #43522910025; PR #101 merged
+      as `78dc28f4d7b873159c4f431cd553fb0e1ccb0a83`. Full Ubuntu/Windows
+      Python 3.9/3.12 health/unit-test matrix and backup jobs verified. This is **schema compliance only**:
       installed OpenCode and its permissions have not been independently tested.
 
 **Next 1:** test a real version-pinned OpenCode V2 handshake on a disposable
