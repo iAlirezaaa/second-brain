@@ -79,7 +79,10 @@ python scripts/kb.py search "memory"
 
 The first command builds a local index of the repository's tracked Markdown; the
 second prints matching file paths and excerpts. Your index lives at `.kb/kb.sqlite`,
-which is gitignored, and the commands need no network or API key. This is
+which is gitignored. A symlinked `.kb` folder or `kb.sqlite` cache file is
+refused before opening SQLite to avoid writing through aliases to unrelated files;
+move the alias aside yourself if you intended to regenerate the disposable index.
+This is a static check, not an OS sandbox. The commands need no network or API key. This is
 **keyword-based retrieval**, not semantic memory. Symlinked Markdown files and notes reached through
 symlinked directories are excluded from the index to avoid aliases crossing
 knowledge boundaries. Re-run `python scripts/kb.py ingest` after updating to

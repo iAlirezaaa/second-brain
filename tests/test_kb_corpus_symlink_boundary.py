@@ -3,6 +3,7 @@
 Each fixture is disposable; the outside sentinel is synthetic, never user data.
 """
 import os
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -77,6 +78,38 @@ class KbCorpusAliases(unittest.TestCase):
         with patch.object(kb, "iter_markdown",
                           return_value=[self.real, linked / "note.md"]):
             self.assertEqual({"02_WIKI/real.md"}, self.indexed())
+
+        # The derived SQLite index is not trusted input: aliases to another
+        # database must be refused BEFORE sqlite3.connect or table resets.
+        foreign_cache = self.base / "external-cache"
+        foreign_cache.mkdir()
+        foreign_db = foreign_cache / "kb.sqlite"
+        with sqlite3.connect(str(foreign_db)) as conn:
+            conn.execute("CREATE TABLE sentinel (value TEXT)")
+            conn.execute("INSERT INTO sentinel VALUES ('unchanged')")
+        before = foreign_db.read_bytes()
+
+        cache_dir = self.root / ".kb"
+        cache_dir.symlink_to(foreign_cache, target_is_directory=True)
+        with self.assertRaisesRegex(RuntimeError, "symlink"):
+            kb.ingest(self.root)
+        self.assertEqual(before, foreign_db.read_bytes())
+        cache_dir.unlink()
+
+        cache_dir.mkdir()
+        link = cache_dir / "kb.sqlite"
+        link.symlink_to(foreign_db)
+        with self.assertRaisesRegex(RuntimeError, "symlink"):
+            kb.ingest(self.root)
+        self.assertEqual(before, foreign_db.read_bytes())
+
+        # A dangling alias must not become a newly created outside database.
+        link.unlink()
+        missing = self.base / "must-not-create.sqlite"
+        link.symlink_to(missing)
+        with self.assertRaisesRegex(RuntimeError, "symlink"):
+            kb.ingest(self.root)
+        self.assertFalse(missing.exists())
 
 
 if __name__ == "__main__":
