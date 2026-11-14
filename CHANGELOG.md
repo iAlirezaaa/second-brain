@@ -6,6 +6,17 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (issue #110; PR in review, not released)
+- The offline `scripts/first_success.py` keyword-recall probe now checks the actual
+  two synthetic `notes` rows in its disposable SQLite database instead of trusting
+  only CLI stdout and the existence of a database filename. A forged CLI could
+  previously print expected filenames/counts and create a zero-byte SQLite file,
+  causing a false-positive smoke verdict. Missing, corrupt and mismatched indexes
+  now fail closed. The existing regression test exercises this adversarial case
+  without touching a real vault. This does **not** establish full installation
+  time, semantic memory accuracy or real-user performance.
+
+
 ### Fixed (issue #102; PR #103 review; CI recheck pending)
 - The Codex TOML path regression now decodes emitted string literals before
   comparing their values. CI run #43537155432 found its JSON-lowercase-escape
