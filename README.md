@@ -95,8 +95,9 @@ python scripts/first_success.py --repeat 3
 
 This bounded, offline smoke probe creates disposable Markdown, invokes the real
 `kb.py ingest` and `kb.py search` commands, and prints JSON containing observed
-success rate and per-trial/median latency. It exits nonzero on any failed
-trial and cleans up its temporary index. **It does not measure Git clone,
+success rate and per-trial/median latency. It checks the actual synthetic rows
+inside the temporary SQLite index rather than trusting only CLI success text.
+It exits nonzero on any failed trial and cleans up its temporary index. **It does not measure Git clone,
 installation, full first-use time, semantic recall or real-user performance.**
 The current under-five-minute end-to-end onboarding goal remains unverified.
 See [first-success acceptance criteria](https://github.com/iAlirezaaa/second-brain-os/issues/93).
