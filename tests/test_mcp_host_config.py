@@ -1,4 +1,5 @@
 """MCP host config must be copyable, safe, and independent of client cwd."""
+import ast
 import importlib.util
 import json
 import subprocess
@@ -65,11 +66,19 @@ class HostConfigTests(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertEqual(run.stdout.splitlines()[0], "[mcp_servers.second-brain]")
         self.assertIn("enabled = false\n", run.stdout)
-        self.assertIn("command = " + json.dumps(str(Path(sys.executable).absolute()),
-                                              ensure_ascii=True), run.stdout)
-        self.assertIn("args = [" + json.dumps(str(self.server.resolve()),
-                                            ensure_ascii=True) + "]", run.stdout)
-        self.assertEqual(len(run.stdout.splitlines()), 4)
+        # TOML basic strings escape non-ASCII as \\u/\\U with case-insensitive
+        # hexadecimal digits. Comparing to JSON serialization spuriously fails
+        # on valid uppercase escapes, as seen on every OS in CI #43537155432.
+        # ast.literal_eval round-trips the two string fields on Python 3.9;
+        # Python 3.11+ additionally checks the complete TOML using tomllib.
+        lines = run.stdout.splitlines()
+        self.assertEqual(len(lines), 4)
+        self.assertTrue(run.stdout.isascii())
+        self.assertEqual(ast.literal_eval(lines[1].split(" = ", 1)[1]),
+                         str(Path(sys.executable).absolute()))
+        self.assertEqual(ast.literal_eval(lines[2].split(" = ", 1)[1]),
+                         [str(self.server.resolve())])
+        self.assertEqual(lines[3], "enabled = false")
         # TOML needs \UXXXXXXXX for emoji; JSON's surrogate-pair escape is invalid.
         spec = importlib.util.spec_from_file_location("mcp_host_config", SCRIPT)
         module = importlib.util.module_from_spec(spec)
