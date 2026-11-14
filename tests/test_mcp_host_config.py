@@ -118,6 +118,29 @@ class HostConfigTests(unittest.TestCase):
                 self.assertNotEqual(run.returncode, 0)
                 self.assertEqual(run.stdout, "")
 
+        # A regular mcp_server.py behind a symlinked PARENT directory
+        # must also be refused. is_symlink() on the final file alone
+        # returns False for this external-target escape.
+        self.server.unlink()
+        self.server.parent.rmdir()
+        outside_scripts = Path(self.tmp.name) / "outside-scripts"
+        outside_scripts.mkdir()
+        (outside_scripts / "mcp_server.py").write_text("# synthetic external target\\n",
+                                                        encoding="utf-8")
+        try:
+            self.server.parent.symlink_to(outside_scripts, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("directory symlinks are restricted by this platform")
+        self.assertFalse(self.server.is_symlink())
+        self.assertTrue(self.server.is_file())
+        self.assertFalse(self.server.resolve().is_relative_to(self.repo.resolve()))
+        for client in ("claude-desktop", "opencode", "codex"):
+            with self.subTest(parent_symlink=True, client=client):
+                run = self.invoke(client)
+                self.assertNotEqual(run.returncode, 0, run.stdout)
+                self.assertEqual(run.stdout, "")
+                self.assertIn("not a Second Brain OS checkout", run.stderr)
+
     def test_generator_never_writes_to_a_host_settings_file(self):
         fake_config = Path(self.tmp.name) / "claude_desktop_config.json"
         fake_config.write_text('{"keep":true}\n', encoding="utf-8")

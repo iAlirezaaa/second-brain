@@ -39,7 +39,14 @@ def generate(client, root, python_executable):
         raise ValueError("unknown client: %s" % client)
     root = Path(root).expanduser().resolve()
     server = root / SERVER
-    if not (root / "AGENTS.md").is_file() or server.is_symlink() or not server.is_file():
+    # Checking only the final file misses a symlinked scripts/ directory: an
+    # apparently valid host snippet could then launch code outside the checkout.
+    # Reject any symlinked component and resolve again for Windows junctions.
+    components = (root / "15_SYSTEM", root / "15_SYSTEM" / "scripts", server)
+    if (not (root / "AGENTS.md").is_file()
+            or any(component.is_symlink() for component in components)
+            or not server.resolve().is_relative_to(root)
+            or not server.is_file()):
         raise ValueError("not a Second Brain OS checkout: expected AGENTS.md and a regular " 
                          "15_SYSTEM/scripts/mcp_server.py under --root")
     executable = Path(python_executable).expanduser().absolute()

@@ -6,23 +6,28 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
-### Fixed (issue #102; PR #103 review; CI recheck pending)
-- The Codex TOML path regression now decodes emitted string literals before
-  comparing their values. CI run #43537155432 found its JSON-lowercase-escape
-  assertion rejected valid TOML uppercase hexadecimal Unicode escapes across
-  Windows and Ubuntu. Python 3.9 uses the standard-library `ast` parser for the
-  two string/list fields; Python 3.11+ also checks the full TOML with `tomllib`.
-  No generator, host settings, runtime permission or stored user data changed.
+### Fixed (issue #104; MCP host path boundary; CI review pending)
+- `scripts/mcp_config.py` now refuses intermediate symlinked directories
+  under the checkout and resolved server paths escaping the checkout; the
+  old final-file-only check accepted a regular external `mcp_server.py`
+  via a symlinked `15_SYSTEM/scripts` directory. The existing host-config
+  regression exercises the external-target case for Claude Desktop,
+  OpenCode and Codex without changing the collected-test count. Generator
+  output remains local and no host configuration is opened or edited.
+  Full CI / merge verification is still pending.
 
-### Added (issue #102; Codex CLI snippet; CI pending)
-- `scripts/mcp_config.py --client codex` can print machine-local Codex TOML
-  `[mcp_servers.second-brain]` with absolute Python/server paths and
-  `enabled = false` pending human approval. Standard library only; supplementary
-  Unicode and Windows paths use TOML-valid escapes. Existing host-config tests
-  now check Codex schema, nonmutation, missing/symlinked server refusal and
-  preserve the existing JSON output shapes. English/Persian quickstarts and
-  integration docs explain manual merge and limitations. No installed Codex
-  handshake, actual host permission test, or user settings mutation claimed.
+### Fixed (issue #102; PR #103 merged; seven CI jobs green in #43549027077)
+- The Codex TOML path regression decodes emitted string literals before
+  comparing their values. The prior CI #43537155432 rejected valid TOML
+  uppercase Unicode escapes on Windows and Ubuntu. Python 3.9 uses
+  standard-library `ast` for fields; Python 3.11+ also checks the complete
+  document with `tomllib`. No runtime permissions or stored data changed.
+
+### Added (issue #102; PR #103 merged; seven CI jobs green in #43549027077)
+- `scripts/mcp_config.py --client codex` prints disabled-by-default,
+  ASCII-safe local TOML with absolute paths, without writing to host
+  settings; tests and English/Persian documentation cover manual merge
+  and compatibility limitations. Installed Codex handshake remains unknown.
 
 ### Changed (issue #100; native OpenCode V2 config; PR #101 merged, 7 CI jobs passed in #43522910025)
 - `scripts/mcp_config.py --client opencode` now prints
