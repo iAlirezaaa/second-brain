@@ -69,3 +69,6 @@ Desktop.ini
 
 # Optional local Laya Python environment (may contain downloaded checkpoints)
 .venv-laya/
+
+# Local Claude Code MCP snippet: contains machine-specific absolute paths.
+second-brain.mcp.local.json
