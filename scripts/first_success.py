@@ -12,17 +12,38 @@ import argparse
 import datetime
 import json
 import re
+import sqlite3
 import statistics
 import subprocess
 import sys
 import tempfile
 import time
+from contextlib import closing
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 EXPECTED = "02_WIKI/demo.md"
 QUERY = "ORCHIDMEMORY2026"
+MATCHING_BODY = "# Example memory\n" + QUERY + " is a made-up recall marker.\n"
+DISTRACTOR_BODY = "# A different note\nThis note has no matching token.\n"
 MAX_REPEAT = 10
+
+
+def _indexed_fixture_matches(index):
+    """Verify real source rows, not merely a filename and CLI success text."""
+    if not index.is_file():
+        return False
+    try:
+        with closing(sqlite3.connect(str(index))) as conn:
+            rows = conn.execute("SELECT path, body FROM notes").fetchall()
+        return (len(rows) == 2
+                and dict(rows) == {
+                    EXPECTED: MATCHING_BODY,
+                    "02_WIKI/distractor.md": DISTRACTOR_BODY,
+                })
+    except (sqlite3.Error, OSError):
+        # Empty/corrupt/incompatible databases must fail closed.
+        return False
 
 
 def trial(kb_script, timeout=30):
@@ -31,12 +52,8 @@ def trial(kb_script, timeout=30):
         vault = Path(tmp)
         notes = vault / "02_WIKI"
         notes.mkdir()
-        (notes / "demo.md").write_text(
-            "# Example memory\n" + QUERY + " is a made-up recall marker.\n",
-            encoding="utf-8")
-        (notes / "distractor.md").write_text(
-            "# A different note\nThis note has no matching token.\n",
-            encoding="utf-8")
+        (notes / "demo.md").write_text(MATCHING_BODY, encoding="utf-8")
+        (notes / "distractor.md").write_text(DISTRACTOR_BODY, encoding="utf-8")
 
         def invoke(*args):
             return subprocess.run(
@@ -59,12 +76,12 @@ def trial(kb_script, timeout=30):
             return {"success": False, "elapsed_ms": round((time.perf_counter() - start) * 1000, 3),
                     "reason": "process_start_failed"}
 
-        index = (vault / ".kb" / "kb.sqlite").is_file()
+        index_matches = _indexed_fixture_matches(vault / ".kb" / "kb.sqlite")
         # Only the matching note can appear as a result; the search must not
         # silently return an unrelated note, or only an empty/error message.
         paths = re.findall(r"(?m)^((?:[\w-]+/)+[\w.-]+\.md)\s+\[", search.stdout)
         indexed = re.search(r"\bindexed (\d+) notes\b", ingest.stdout)
-        passed = (search.returncode == 0 and index and indexed is not None
+        passed = (search.returncode == 0 and index_matches and indexed is not None
                   and int(indexed.group(1)) == 2 and paths == [EXPECTED])
         return {"success": bool(passed), "elapsed_ms": elapsed,
                 "reason": "ok" if passed else "unexpected_search_or_index",
