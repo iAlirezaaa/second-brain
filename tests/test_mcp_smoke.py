@@ -42,15 +42,15 @@ class MCPSmokeTests(unittest.TestCase):
             # used here is a synthetic environment observer.
             observer = Path(td) / "observer.py"
             observer.write_text(
-                "import json, os, sys\\n"
-                "for line in sys.stdin:\\n"
-                "    message = json.loads(line)\\n"
-                "    if 'id' in message:\\n"
+                "import json, os, sys\n"
+                "for line in sys.stdin:\n"
+                "    message = json.loads(line)\n"
+                "    if 'id' in message:\n"
                 "        result = {'canary': 'SBO_MCP_SMOKE_TEST_CANARY' in os.environ, "
                 "'pythonpath': 'PYTHONPATH' in os.environ, "
-                "'strict': os.getenv('SBO_REQUIRE_SESSION')}\\n"
+                "'strict': os.getenv('SBO_REQUIRE_SESSION')}\n"
                 "        print(json.dumps({'jsonrpc': '2.0', 'id': message['id'], "
-                "'result': result}), flush=True)\\n",
+                "'result': result}), flush=True)\n",
                 encoding="utf-8")
             with mock.patch.dict(os.environ, {
                     "SBO_MCP_SMOKE_TEST_CANARY": "synthetic-only",
