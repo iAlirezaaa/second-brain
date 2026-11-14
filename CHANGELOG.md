@@ -6,6 +6,19 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Added (issue #107; P0 check audit in review)
+- The existing `scripts/ci_floor.py` can optionally compare GitHub's **actual**
+  protected-main required status names against the current `jobs.test` matrix,
+  with either `--live-protection` (explicit public read-only HTTPS) or
+  `--branch-json` (offline fixture). It fails closed on absent protection,
+  missing checks, obsolete runner names or unreadable responses and never edits
+  GitHub settings. The existing CI-floor regression covers current, stale and
+  unverifiable protection snapshots without changing test counts.
+  `00_START_HERE/BRANCH_PROTECTION.md` documents the necessary **manual
+  administrator** update. This does not itself unblock PR merges or certify
+  branch-rule compliance; issue #107 remains open pending that action.
+
+
 ### Fixed (issue #102; PR #103 review; CI recheck pending)
 - The Codex TOML path regression now decodes emitted string literals before
   comparing their values. CI run #43537155432 found its JSON-lowercase-escape
