@@ -27,6 +27,19 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P0 — Nightly review branch fails before its report can run (issue #41)
+
+- [x] **S, confirmed 2026-11-14:** [scheduled run #43577040140](https://github.com/iAlirezaaa/second-brain-os/actions/runs/43577040140) reaches the report-branch checkout, then `git merge --no-edit --no-ff origin/main` exits 128: Git lacks a committer identity. The later publish step configures an identity, but too late for a merge commit.
+- [x] Extend the existing `tests/test_ci_issue_hardening.py` nightly-workflow regression to require repository-local name and email **before** the merge. The unfixed workflow fails the predicate; an isolated two-branch Git reproduction fails without the identity and succeeds once it is configured.
+- [x] Configure the existing `second-brain-loop[bot]` identity on the runner checkout *before* the merge, without global configuration, changed permissions, force push or direct push to protected `main`. This is a CI-workflow fix, not a change to stored memory.
+- [ ] **In review:** complete the four OS/Python CI jobs and three backup jobs; verify a subsequent real scheduled loop reaches its review/publish stage. A local Git reproduction is not a successful scheduled run.
+- [ ] Coordinate adjacent [PR #81](https://github.com/iAlirezaaa/second-brain-os/pull/81), which separately removes the unauthorized `gh pr create` fallback. Do not conflate the two defects or weaken workflow permissions.
+
+**Next 1:** reconcile and review PR #81 against this checkout fix so nightly reports use the existing review PR #80 without permission escalation.
+**Next 2:** after CI and branch-protection status contexts are repaired (#107), verify a real loop report lands on `loop/nightly`; retain an explicit failure verdict if it does not.
+
+---
+
 ## P1 — Safe Codex CLI local MCP snippet (issue #102; under review)
 
 - [ ] CI run #43537155432 failed on all four OS/Python test jobs because the
