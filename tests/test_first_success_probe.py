@@ -25,12 +25,28 @@ class FirstRecallProbe(unittest.TestCase):
         self.assertGreaterEqual(report["median_ms"], 0)
         self.assertTrue(all(t["matched_paths"] == ["02_WIKI/demo.md"] for t in report["trials"]))
 
-    def test_missing_cli_is_a_failure_not_a_false_success(self):
+    def test_missing_or_forged_cli_is_a_failure_not_a_false_success(self):
         with tempfile.TemporaryDirectory() as directory:
             report = first_success.evaluate(1, Path(directory) / "absent_kb.py")
+            # Forged stdout and an empty SQLite file are not recall evidence.
+            forged_cli = Path(directory) / "fake_kb.py"
+            forged_cli.write_text(
+                "import sqlite3, sys\n"
+                "from pathlib import Path\n"
+                "vault = Path(sys.argv[sys.argv.index('--vault') + 1])\n"
+                "if 'ingest' in sys.argv:\n"
+                "    (vault / '.kb').mkdir(exist_ok=True)\n"
+                "    sqlite3.connect(str(vault / '.kb' / 'kb.sqlite')).close()\n"
+                "    print('indexed 2 notes from the tracked corpus')\n"
+                "else:\n"
+                "    print('02_WIKI/demo.md [synthetic] fabricated result')\n",
+                encoding="utf-8")
+            forged = first_success.evaluate(1, forged_cli)
         self.assertEqual(report["status"], "fail")
         self.assertEqual(report["success_rate"], 0)
         self.assertFalse(report["trials"][0]["success"])
+        self.assertEqual(forged["status"], "fail", forged)
+        self.assertEqual(forged["success_rate"], 0)
 
     def test_invalid_repeat_cannot_run_unbounded_probes(self):
         for repeat in ("0", "11", "garbage"):
