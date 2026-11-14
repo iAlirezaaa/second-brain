@@ -22,8 +22,10 @@ there: the gate says so in one stated line and exits 0. A checkout missing the m
 defect and still refuses.
 """
 import argparse
+import json
 import re
 import sys
+import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -78,6 +80,67 @@ def workflow_matrix(root, name):
 
 def ubuntu_images(runs):
     return [image for image in (runs or []) if image.startswith("ubuntu")]
+
+
+def expected_required_test_contexts(root):
+    """Derive the four `test (os, version)` check names from the actual CI matrix.
+
+    Read only the `test` job: backup jobs and the nightly loop are separate
+    checks, and treating their versions as a second matrix would create a lie.
+    Refuse an unfamiliar layout or custom job name rather than guess.
+    """
+    path = Path(root) / ".github/workflows/ci.yml"
+    if not path.is_file():
+        raise ValueError("ci.yml is missing")
+    source = path.read_text(encoding="utf-8")
+    match = re.search(r"(?ms)^  test:\s*\n(.*?)(?=^  [\w-]+:\s*(?:\n|$)|\Z)", source)
+    if not match:
+        raise ValueError("ci.yml has no recognizable jobs.test matrix")
+    block = match.group(1)
+    if re.search(r"(?m)^    name:\s*", block):
+        raise ValueError("jobs.test has a custom name; inspect emitted check names manually")
+
+    def values(key):
+        fields = re.findall(r"(?m)^\s+" + re.escape(key) +
+                            r":\s*\[([^\]\n]+)\]\s*$", block)
+        if len(fields) != 1:
+            raise ValueError("jobs.test must have one inline %s matrix" % key)
+        parsed = [item.strip().strip("'\"") for item in fields[0].split(",")]
+        if not parsed or any(not item for item in parsed) or len(set(parsed)) != len(parsed):
+            raise ValueError("jobs.test %s matrix contains empty/duplicate values" % key)
+        return parsed
+
+    images, versions = values("os"), values("python-version")
+    return sorted("test (%s, %s)" % (image, version)
+                  for image in images for version in versions)
+
+
+def required_status_context_problems(root, branch):
+    """Compare public branches/main metadata to the actual jobs, fail closed.
+
+    Branch metadata is read-only data; this audit never edits protection or
+    treats a green Actions job as permission to bypass an obsolete requirement.
+    """
+    if not isinstance(branch, dict) or branch.get("protected") is not True:
+        return ["main protection is absent or unverifiable"]
+    protection = branch.get("protection")
+    checks = protection.get("required_status_checks") if isinstance(protection, dict) else None
+    contexts = checks.get("contexts") if isinstance(checks, dict) else None
+    if not isinstance(contexts, list) or not contexts or not all(
+            isinstance(item, str) and item for item in contexts):
+        return ["main required check contexts are absent or unverifiable"]
+    try:
+        expected = set(expected_required_test_contexts(root))
+    except (OSError, ValueError) as exc:
+        return ["cannot derive the CI test matrix: %s" % exc]
+    current = set(contexts)
+    problems = []
+    for name in sorted(expected - current):
+        problems.append("required check missing: %s" % name)
+    for name in sorted(current - expected):
+        if name.startswith("test ("):
+            problems.append("obsolete/unmatched required test check: %s" % name)
+    return problems
 
 
 def documented_floor_rows(root):
@@ -148,8 +211,17 @@ def check(root):
 def main():
     parser = argparse.ArgumentParser(description="the python floor: one number, four places")
     parser.add_argument("--root", default=None, help="repo root override (tests)")
+    parser.add_argument("--branch-json", default=None,
+                        help="offline exported GitHub GET /branches/main response (read-only)")
+    parser.add_argument("--live-protection", action="store_true",
+                        help="opt-in public GitHub API read; no token, config write or bypass")
     args = parser.parse_args()
+    if args.branch_json and args.live_protection:
+        parser.error("choose --branch-json OR --live-protection")
     root = Path(args.root) if args.root else find_root(Path(__file__))
+    if not is_repo_checkout(root) and (args.branch_json or args.live_protection):
+        print("REFUSED: CI protection can only be audited from a repository checkout")
+        return 1
     if not is_repo_checkout(root):
         print("OK — no floor to prove in %s: this folder is an installed brain home, not a repo "
               "checkout (no .git, no pyproject.toml), and the promise this gate inspects is the "
@@ -162,6 +234,31 @@ def main():
             print("INVALID  %s" % problem)
         print("REFUSED: this folder promises a python floor it does not prove")
         return 1
+    if args.branch_json or args.live_protection:
+        try:
+            if args.branch_json:
+                branch = json.loads(Path(args.branch_json).read_text(encoding="utf-8"))
+            else:
+                url = ("https://api.github.com/repos/"
+                       "iAlirezaaa/second-brain-os/branches/main")
+                request = urllib.request.Request(
+                    url, headers={"Accept": "application/vnd.github+json",
+                                  "User-Agent": "second-brain-os-ci-protection-audit"})
+                with urllib.request.urlopen(request, timeout=10) as response:
+                    branch = json.loads(response.read(262145).decode("utf-8"))
+            problems = required_status_context_problems(root, branch)
+        except (OSError, ValueError, UnicodeError) as exc:
+            print("REFUSED: cannot inspect required checks (%s: %s)" %
+                  (type(exc).__name__, exc))
+            return 1
+        if problems:
+            for problem in problems:
+                print("INVALID  %s" % problem)
+            print("REFUSED: protected main requires checks the current CI cannot emit")
+            return 1
+        print("OK — required protected-main test checks match ci.yml; "
+              "this does not certify other branch rules or authorize a merge")
+        return 0
     ci_versions, ci_runs = workflow_matrix(root, "ci.yml")
     loop_versions, _ = workflow_matrix(root, "loop.yml")
     print("OK — python floor %s: pyproject agrees, ci installs %s on %s, the nightly loop runs "

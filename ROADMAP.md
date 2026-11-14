@@ -27,6 +27,36 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
+## P0 — Protected-main required check drift (issue #107; auditable, admin fix pending)
+
+- [x] **S** Add a **read-only, opt-in** GitHub branch-status diagnostic to
+      `scripts/ci_floor.py` (`--live-protection` public GET, or
+      `--branch-json` for offline replay). It derives the four `jobs.test`
+      check names from the checked-in CI matrix, refuses absent/malformed
+      branch-protection data and reports missing/obsolete contexts. The
+      existing regression `tests/test_phase37_ci_python_floor.py` now tests
+      correct, stale and unverifiable snapshots without increasing test count.
+      No new dependency, default network traffic, admin write or bypass.
+- [ ] **P0 blocker:** an administrator must replace the stale
+      `test (ubuntu-latest, 3.9/3.12)` required contexts with the actual
+      `test (ubuntu-24.04, 3.9/3.12)` checks while preserving Windows checks
+      and all other protections. Documented in
+      `00_START_HERE/BRANCH_PROTECTION.md`.
+      Observed on 2026-11-14:
+      https://api.github.com/repos/iAlirezaaa/second-brain-os/branches/main
+      and https://github.com/iAlirezaaa/second-brain-os/actions/runs/43587402335.
+      Seven green CI jobs do not imply the protected-branch merge gate passed.
+- [ ] Verify the new diagnostic in full Ubuntu/Windows CI, independently
+      confirm the live required statuses after admin action, then only merge
+      approved changes once GitHub actually permits it.
+
+**Next 1:** reconcile the two obsolete Ubuntu branch-protection contexts
+without bypassing protection; re-audit and inspect PR #105 mergeability.
+**Next 2:** after a permitted merge, test the next pinned-runner matrix change
+against required check names before claiming CI and branch rules agree.
+
+---
+
 ## P1 — Safe Codex CLI local MCP snippet (issue #102; under review)
 
 - [ ] CI run #43537155432 failed on all four OS/Python test jobs because the
