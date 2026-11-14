@@ -27,31 +27,44 @@ over something it cannot see is a silent gate, not a clean house.
 
 ---
 
-## P1 — Safe Codex CLI local MCP snippet (issue #102; under review)
+## P0 — Reject escaped MCP server paths in host snippets (issue #104; PR review pending)
 
-- [ ] CI run #43537155432 failed on all four OS/Python test jobs because the
-      regression asserted JSON-style lowercase hex escapes on valid TOML
-      `\\uXXXX`/`\\UXXXXXXXX` strings. A dedicated test-only fix now round-trips
-      the emitted interpreter and script paths (Python 3.9 `ast.literal_eval`,
-      Python 3.11+ `tomllib`) without changing host settings. Full CI rerun
-      is required before checking off this acceptance gate or merging PR #103.
+- [ ] **S** Refuse both final-file symlinks and **symlinked ancestor directories**
+      under the resolved checkout root in `scripts/mcp_config.py`. Also refuse
+      a resolved server outside the checkout (including Windows reparse-point
+      escapes). Synthetic reproduction on Linux, 2026-11-14: the old guard
+      accepts an external target when `15_SYSTEM/scripts` is a symlink, even
+      though `mcp_server.py` itself is a regular file.
+- [ ] Extend the existing host-config symlink regression (no inflated test
+      count) for all three clients. Preserve normal paths, Unicode, and the
+      guarantee that the generator never edits host settings.
+- [ ] **Merge gate:** CI must pass Ubuntu/Windows Python 3.9/3.12 plus three
+      backup jobs. A local-path check is not installed-host verification.
 
-- [ ] **S** Generate a self-contained TOML `[mcp_servers.second-brain]`
-      entry from `scripts/mcp_config.py --client codex`: absolute local
-      interpreter/script paths, ASCII-safe TOML escaping (including supplementary
-      Unicode), and `enabled = false` until the person reviews write permissions.
-      No installed Codex compatibility claim or configuration-file writes.
-- [ ] Keep Claude Desktop/OpenCode JSON unchanged; extend the existing
-      host-config regressions for Codex, absent and symlinked server refusal,
-      nonmutation and Windows/Persian paths. Update English/Persian quickstarts.
-- [ ] Only merge on all seven current CI jobs green. Test the installed
-      Codex binary against a disposable synthetic note in a later, separately
-      scoped compatibility gate; do not infer host success from snippet shape.
+**Next 1:** version-pinned Codex/Claude/OpenCode synthetic host handshake and
+explicit write-permission review.
+**Next 2:** ADR for opt-in reversible host registration (consent, backups,
+conflict detection and rollback), without automatic changes to user settings.
 
-**Next 1:** version-pinned installed Codex synthetic MCP handshake and explicit
-tool-permission review.
-**Next 2:** proposal/ADR for opt-in, reversible multi-host registration with
-backups, conflict detection, explicit consent and rollback tests.
+---
+
+## P1 — Safe Codex CLI local MCP snippet (issue #102; verified in PR #103)
+
+- [x] **S** Generate a stdlib-only TOML `[mcp_servers.second-brain]` entry
+      with absolute interpreter/server paths and `enabled = false`. Windows
+      and supplementary Unicode paths are escaped correctly; no installed
+      Codex compatibility has been asserted.
+- [x] Existing host-config regression checks Codex, missing/symlinked
+      files, nonmutation and Windows/Persian paths; English/Persian
+      onboarding was updated with manual-merge limitations.
+- [x] Test-only TOML escape-case regression repaired after CI
+      #43537155432; full 7/7 CI passed in #43549027077. PR #103 merged
+      as `bb5e8f68df1ef5427a26c055c6f5cd7965b4da90`.
+      This proves output shape and gates, **not** a real installed client.
+
+**Next 1:** installed Codex local-client synthetic handshake with version and
+permissions recorded.
+**Next 2:** proposal/ADR for explicit-consent reversible host registration.
 
 ---
 
