@@ -119,6 +119,17 @@ class CIGovernanceTests(unittest.TestCase):
     def test_nightly_never_pushes_directly_into_protected_main(self):
         wf = (ROOT / ".github/workflows/loop.yml").read_text(encoding="utf-8")
         self.assertIn("refs/heads/loop/nightly", wf)
+        # A merge can create a commit before the later publish step sets
+        # user.name/user.email. Check the ordering, not just whether Git
+        # identity appears anywhere in the workflow (run #43577040140).
+        checkout = wf.split("      - name: Check out persistent report branch", 1)[1].split(
+            "      - name: Run improvement cycle", 1)[0]
+        before_merge = checkout.split('git merge --no-edit --no-ff "origin/main"', 1)[0]
+        self.assertIn('git config --local user.name "second-brain-loop[bot]"',
+                      before_merge, "merge has no repository-local committer identity")
+        self.assertIn('git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"',
+                      before_merge, "merge has no repository-local committer email")
+        self.assertNotIn("git config --global", before_merge)
         self.assertNotIn("continue-on-error: true", wf)
         self.assertIn("gh pr create", wf)
         self.assertIn("if [ \"$CYCLE_RC\" != \"0\" ]", wf)

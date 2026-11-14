@@ -75,6 +75,20 @@ exactly the same gate names; `tests/test_backlog_governance.py` checks drift.
 A new gate must be implemented, registered, tested and documented together;
 removing a failing gate is not a repair.
 
+## Nightly review branch maintenance
+
+The scheduled `loop.yml` workflow refreshes `loop/nightly` by merging the
+current `main` **on the ephemeral runner** before attempting to record a candidate
+report. Git requires a repository-local bot committer identity **before** that merge,
+not only before the later report commit. The regression in
+`tests/test_ci_issue_hardening.py` checks the order (failure observed in
+[Actions run 43577040140](https://github.com/iAlirezaaa/second-brain-os/actions/runs/43577040140)).
+The report branch and its existing [review PR #80](https://github.com/iAlirezaaa/second-brain-os/pull/80)
+are not an alternative to protected `main` or a grant of permission to create PRs.
+The separate [PR #81](https://github.com/iAlirezaaa/second-brain-os/pull/81)
+addresses the Actions PR-creation refusal; changes to it must be reconciled
+before merge. Never use a force push or relax branch protection to fix a report run.
+
 ## What a good PR looks like
 
 - title follows Conventional Commits (`feat:`, `fix:`, `docs:`, `test:`, `chore:`) — the version
