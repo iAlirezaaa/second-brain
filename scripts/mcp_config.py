@@ -3,6 +3,7 @@
 
 Usage:
   python scripts/mcp_config.py --client claude-desktop
+  python scripts/mcp_config.py --client claude-code  # for --mcp-config; no host settings changed
   python scripts/mcp_config.py --client opencode  # V2, disabled by default
   python scripts/mcp_config.py --client codex     # TOML, disabled by default
 
@@ -15,7 +16,7 @@ import sys
 from pathlib import Path
 
 SERVER = Path("15_SYSTEM") / "scripts" / "mcp_server.py"
-CLIENTS = ("claude-desktop", "opencode", "codex")
+CLIENTS = ("claude-desktop", "claude-code", "opencode", "codex")
 
 
 def _toml_string(value):
@@ -52,7 +53,9 @@ def generate(client, root, python_executable):
     executable = Path(python_executable).expanduser().absolute()
     if not executable.is_file():
         raise ValueError("Python interpreter is not an executable file; use Python 3.9+")
-    if client == "claude-desktop":
+    # Claude Code --mcp-config accepts the same stdio mcpServers JSON.
+    # Merely emitting JSON is not permission to invoke this server's write tools.
+    if client in ("claude-desktop", "claude-code"):
         return {"mcpServers": {"second-brain": {
             "command": str(executable), "args": [str(server)]}}}
     if client == "codex":

@@ -6,6 +6,16 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Added (issue #106; Claude Code CLI config; stacked PR pending)
+- `scripts/mcp_config.py --client claude-code` emits machine-local
+  `mcpServers.second-brain` JSON for explicit `claude --mcp-config FILE`
+  without editing or registering host settings. Existing synthetic MCP config
+  regressions cover path/Unicode parity, absent/symlinked server refusals and
+  unchanged Claude Desktop/OpenCode/Codex behavior. Documentation describes
+  targeted read-tool use and write/privacy risks; an installed Claude Code
+  handshake is **not** claimed. CI review is pending.
+
+
 ### Fixed (issue #104; MCP host path boundary; CI review pending)
 - `scripts/mcp_config.py` now refuses intermediate symlinked directories
   under the checkout and resolved server paths escaping the checkout; the
@@ -14,7 +24,8 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
   regression exercises the external-target case for Claude Desktop,
   OpenCode and Codex without changing the collected-test count. Generator
   output remains local and no host configuration is opened or edited.
-  Full CI / merge verification is still pending.
+  Seven CI jobs passed in run #43559047708; merge remains blocked by
+  stale required Ubuntu check names in protected main (issue #107).
 
 ### Fixed (issue #102; PR #103 merged; seven CI jobs green in #43549027077)
 - The Codex TOML path regression decodes emitted string literals before

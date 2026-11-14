@@ -121,11 +121,12 @@ Start the MCP server for compatible agent hosts:
 python 15_SYSTEM/scripts/mcp_server.py
 ```
 
-For Claude Desktop, OpenCode V2 or Codex CLI, generate a machine-local config snippet instead
+For Claude Desktop, Claude Code CLI, OpenCode V2 or Codex CLI, generate a machine-local config snippet instead
 of copying someone else's filesystem path:
 
 ```bash
 python scripts/mcp_config.py --client claude-desktop
+python scripts/mcp_config.py --client claude-code
 python scripts/mcp_config.py --client opencode
 python scripts/mcp_config.py --client codex
 ```
@@ -139,7 +140,12 @@ entry starts `disabled: true` because the server offers write-capable tools.
 Only enable it after reviewing tool permissions. These commands do not connect
 a host or grant tools permission. The MCP server
 offers write tools as well as reads, so review the host's tool approvals and
-privacy boundary before connecting. [Integration instructions and limitations](15_SYSTEM/integrations/README.md).
+privacy boundary before connecting. For Claude Code CLI, save the output to a local,
+ignored JSON file and supply it with `claude --mcp-config FILE`; this does not
+register a server in Claude Code's persistent settings. A targeted
+`--allowedTools mcp__second-brain__doctor_status` approval is **not** a
+server-wide read-only sandbox. Installed Claude Code compatibility is not yet
+verified. [Integration instructions and limitations](15_SYSTEM/integrations/README.md).
 
 To verify the **real local stdio server**, without connecting a host or
 loading private notes, run `python scripts/mcp_smoke.py`. It performs a
