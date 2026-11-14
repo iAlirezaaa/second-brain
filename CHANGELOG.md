@@ -6,6 +6,14 @@ versioning: SemVer. Nightly-loop activity lives in `14_CANDIDATES/loop/` and is
 
 ## [Unreleased]
 
+### Fixed (issue #102; PR #103 review; CI recheck pending)
+- The Codex TOML path regression now decodes emitted string literals before
+  comparing their values. CI run #43537155432 found its JSON-lowercase-escape
+  assertion rejected valid TOML uppercase hexadecimal Unicode escapes across
+  Windows and Ubuntu. Python 3.9 uses the standard-library `ast` parser for the
+  two string/list fields; Python 3.11+ also checks the full TOML with `tomllib`.
+  No generator, host settings, runtime permission or stored user data changed.
+
 ### Added (issue #102; Codex CLI snippet; CI pending)
 - `scripts/mcp_config.py --client codex` can print machine-local Codex TOML
   `[mcp_servers.second-brain]` with absolute Python/server paths and
